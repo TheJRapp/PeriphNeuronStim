@@ -14,28 +14,78 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QWidget" name="e_field_widget" native="true">
-    <property name="geometry">
-     <rect>
-      <x>740</x>
-      <y>20</y>
-      <width>341</width>
-      <height>271</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="e_field_layout"/>
-   </widget>
-   <widget class="QWidget" name="axon_potential_widget" native="true">
-    <property name="geometry">
-     <rect>
-      <x>740</x>
-      <y>310</y>
-      <width>341</width>
-      <height>291</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="potential_layout"/>
-   </widget>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="label_2">
+      <property name="text">
+       <string>Nerves</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="2" rowspan="5">
+     <widget class="QWidget" name="e_field_widget" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <layout class="QVBoxLayout" name="e_field_layout"/>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLineEdit" name="nerve_name_line_edit"/>
+    </item>
+    <item row="1" column="1" rowspan="2">
+     <widget class="QPushButton" name="add_nerve_button">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="text">
+       <string>Add nerve</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QComboBox" name="nerve_combo_box"/>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Axon list</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QListWidget" name="listWidget"/>
+    </item>
+    <item row="5" column="0">
+     <widget class="QPushButton" name="add_axon_button">
+      <property name="text">
+       <string>Add axon</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="2" rowspan="2">
+     <widget class="QWidget" name="axon_potential_widget" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <layout class="QVBoxLayout" name="potential_layout"/>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="title">
+       <string>Properties</string>
+      </property>
+      <layout class="QVBoxLayout" name="property_layout"/>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

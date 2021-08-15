@@ -4,7 +4,7 @@ import neuron_sim as ns
 # ToDo: Insert distribution of (a) axon diameters, (b) axon starting points within radius around centre point
 class Nerve():
 
-    def __init__(self, x, y, z, length, nerv_diam, name='Nerve'):
+    def __init__(self, x=0, y=0, z=0, length=0, nerv_diam=1, name='Nerve'):
 
         self.axon_infos_list = []
         self.x = x
@@ -47,5 +47,4 @@ class Nerve():
             for k in self.mrg_diam_list:
                 model_info = ns.AxonInformation(self.x, self.y, self.z, self.length, k, 'mrg')
                 self.axon_infos_list.append(model_info)
-
 

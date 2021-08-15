@@ -2,7 +2,8 @@ import pickle
 import database
 import file_parser
 import numpy as np
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+
 
 def get_e_field(model_name):
     # storage = database.DataBase()
@@ -65,3 +66,5 @@ def get_e_field(model_name):
     # plt.show()
 
     return e_field_list
+
+
