@@ -7,12 +7,14 @@ from matplotlib.figure import Figure
 
 def get_e_field(model_name):
     # storage = database.DataBase()
-    # parser = file_parser.NewCSTFileParser("D:/Files/Doktorarbeit/NEURON_Phrenicus/CST_files/", "Halsmodell_E_field_Phrenic.txt")
+    # # parser = file_parser.NewCSTFileParser("D:/Files/Doktorarbeit/NEURON_Phrenicus/CST_files/", "Halsmodell_E_field_Phrenic.txt")
+    # parser = file_parser.NewCSTFileParser("H:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/cst_files/",
+    #                                       "Biovoxel_E_field.txt")
     # parser.parse_file(storage)
     # storage.convert_units(1e3)  # convert mm from CST to um used for cable
-
-    # Save:
-    # with open("halsmodell_phrenic", 'wb') as f:
+    #
+    # # Save:
+    # with open("biovoxel_phrenic", 'wb') as f:
     #     pickle.dump(storage, f)
 
     # Load:
@@ -23,11 +25,12 @@ def get_e_field(model_name):
 
     # # Save matrix list:
     # e_field_matrix_list = storage.generate_e_field_matrix()
-    # with open("Halsmodell_phrenic_e_field_matrix_list", 'wb') as f:
+    # with open("Biovoxel_phrenic_e_field_matrix_list", 'wb') as f:
     #     pickle.dump(e_field_matrix_list, f)
 
     # Open matrix list:
     path = 'D:/Files/Doktorarbeit/NEURON_Phrenicus/CST_files/'
+    # path = 'H:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/CST_files/'
     with open(path + "20210325_biovoxel_e_field_matrix_list", 'rb') as e:
         biovoxel_e_field_matrix_list = pickle.load(e)
     with open(path + "20210325_halsmodell_e_field_matrix_list", 'rb') as e:
