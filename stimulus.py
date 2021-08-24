@@ -934,13 +934,58 @@ def get_list_of_selected_stimuli(total_time, start_time, duration, flank_percent
     stimulus_dict[name] = stimulus_th
     time_axis, stimulus_th, name = get_cosine(total_time, start_time, duration, 1)
     stimulus_dict[name] = stimulus_th
+    time_axis, stimulus_th, name = get_polyphasic_cosine(total_time, start_time, duration, 1)
+    stimulus_dict[name] = stimulus_th
     time_axis, stimulus_th, name = get_real_squarewave(total_time, start_time, duration, 1)
     stimulus_dict[name] = stimulus_th
     time_axis, stimulus_th, name = get_real_squarewave_mod_end(total_time, start_time, duration, 1)
     stimulus_dict[name] = stimulus_th
     time_axis, stimulus_th, name = get_real_squarewave_mod_centre(total_time, start_time, duration, 1)
     stimulus_dict[name] = stimulus_th
-    time_axis, stimulus_th, name = get_polyphasic_cosine(total_time, start_time, duration, 1)
-    stimulus_dict[name] = stimulus_th
 
     return time_axis, stimulus_dict
+
+
+def stimulus_string_list():
+    stim_list = [
+        'half_cosine',
+        'cosine',
+        'double_cosine',
+        'half_sine',
+        'sine',
+        'double_sine',
+        'ideal_rect',
+        'real_rect_a',
+        'real_rect_b',
+        'real_rect_c',
+        'triangle',
+        'decreasing_triangle'
+    ]
+    return stim_list
+
+
+def get_stim_from_string(stim_name, total_time, start_time, duration):
+    if stim_name == 'half_cosine':
+        return get_half_cosine(total_time, start_time, duration)
+    if stim_name == 'cosine':
+        return get_cosine(total_time, start_time, duration)
+    if stim_name == 'double_cosine':
+        return get_polyphasic_cosine(total_time, start_time, duration)
+    if stim_name == 'half_sine':
+        return get_monophasic_sine(total_time, start_time, duration)
+    if stim_name == 'sine':
+        return get_sine(total_time, start_time, duration)
+    if stim_name == 'double_sine':
+        return get_polyphasic_sine(total_time, start_time, duration)
+    if stim_name == 'ideal_rect':
+        return get_squarewave(total_time, start_time, duration)
+    if stim_name == 'real_rect_a':
+        return get_real_squarewave(total_time, start_time, duration)
+    if stim_name == 'real_rect_b':
+        return get_real_squarewave_mod_end(total_time, start_time, duration)
+    if stim_name == 'real_rect_c':
+        return  get_real_squarewave_mod_centre(total_time, start_time, duration)
+    if stim_name == 'triangle':
+        return get_triangle(total_time, start_time, duration)
+    if stim_name == 'decreasing_triangle':
+        get_decreasing_triangle(total_time, start_time, duration)

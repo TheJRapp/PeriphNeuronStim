@@ -30,6 +30,7 @@ Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 Ui_PropertyWidget, QWidget = uic.loadUiType("ui_nerve_property_widget.ui")
 
 rmg_diameter_list = ["5.7", "7.3", "8.7", "10.0", "11.5", "12.8", "14.0", "15.0", "16"]
+interpolation_radius_index = 2
 
 class windowTest(QWidget, Ui_PropertyWidget):
     def __init__(self, parent = None):
@@ -56,8 +57,9 @@ class Main(QMainWindow, Ui_MainWindow):
         self.property_layout.addWidget(self.nerve_prop_widget)
         self.axon_diam_spin_box.setVisible(False)
         self.axon_diam_combo_box.addItems(rmg_diameter_list)
-        # for diam in rmg_diameter_list:
-        #     self.axon_diam_combo_box.setModel(self.nerve_list_item_model)
+
+        self.stimulus_combo_box.addItems(stim.stimulus_string_list())
+        self.update_stimulus()
 
         # signal connections
         self.add_nerve_button.clicked.connect(self.add_nerve)
@@ -73,6 +75,9 @@ class Main(QMainWindow, Ui_MainWindow):
         self.nerve_prop_widget.z_spin_box.valueChanged.connect(self.set_nerve_z)
         self.nerve_prop_widget.length_spin_box.valueChanged.connect(self.set_nerve_length)
         self.nerve_prop_widget.diam_spin_box.valueChanged.connect(self.set_nerve_diam)
+
+        self.stimulus_combo_box.currentTextChanged.connect(self.update_stimulus)
+        self.quasipot_button.clicked.connect(self.checkin_nerve)
 
     def add_plot(self, fig):
         self.canvas = FigureCanvas(fig)
@@ -199,6 +204,39 @@ class Main(QMainWindow, Ui_MainWindow):
         self.remove_plot()
         self.add_plot(fig)
 
+    def update_stimulus(self):
+        if hasattr(self, 'stim_canvas'):
+            self.stimulus_layout.removeWidget(self.stim_canvas)
+            self.stim_canvas.close()
+        self.time_axis, self.stimulus, self.stim_name = stim.get_stim_from_string(self.stimulus_combo_box.currentText(),
+                                                                   self.total_time_spin_box.value(),
+                                                                   self.start_time_spin_box.value(),
+                                                                   self.stimulus_duration_spin_box.value())
+        fig1 = Figure()
+        ax1f1 = fig1.add_subplot(111)
+        ax1f1.plot(self.time_axis, self.stimulus)
+        self.stim_canvas = FigureCanvas(fig1)
+        self.stimulus_layout.addWidget(self.stim_canvas)
+        self.stim_canvas.draw()
+
+    def checkin_nerve(self):
+        if not self.nerve_dict:
+            return
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        if not selected_nerve.axon_infos_list:
+            return
+        if hasattr(self, 'field_axon_canvas'):
+            self.potential_layout.removeWidget(self.field_axon_canvas)
+            self.field_axon_canvas.close()
+        selected_nerve.neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list, self.e_field_list, self.time_axis, self.stimulus, self.total_time)
+        selected_nerve.neuron_sim.quasipot(interpolation_radius_index)
+        e_field_along_axon = selected_nerve.neuron_sim.e_field_along_axon
+        fig1 = Figure()
+        ax1f1 = fig1.add_subplot(111)
+        ax1f1.plot(e_field_along_axon)
+        self.field_axon_canvas = FigureCanvas(fig1)
+        self.potential_layout.addWidget(self.field_axon_canvas)
+        self.field_axon_canvas.draw()
 
 if __name__ == '__main__':
     import sys
