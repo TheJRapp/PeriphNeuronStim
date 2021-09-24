@@ -63,7 +63,9 @@ class Main(QMainWindow, Ui_MainWindow):
         self.update_stimulus()
 
         # signal connections
+
         self.conf_efield_button.clicked.connect(self.configure_efield)
+        self.e_field_widget.e_field_changed.connect(self.update_e_field())
 
         self.add_nerve_button.clicked.connect(self.add_nerve)
         self.delete_nerve_button.clicked.connect(self.delete_nerve)

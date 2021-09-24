@@ -10,6 +10,7 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
 
+from PyQt5.QtCore import pyqtSignal
 from PyQt5 import uic, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
 
@@ -24,26 +25,30 @@ Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_manipulation_widget
 class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
     def __init__(self, parent = None):
         super(eFieldWidget, self).__init__(parent)
+        self.e_field_changed = pyqtSignal()
         self.setupUi(self)
 
-        self.load_cst_button.clicked.connect(self.add_nerve)
+        self.load_cst_button.clicked.connect(self.openFileNameDialog)
 
 # class and widget functions
 
     def openFileNameDialog(self):
+        self.e_field_changed.emit()
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
         if fileName:
-            print(fileName)
+            self.load_cst_file(fileName)
+            self.update_e_field()
+            self.e_field_changed.emit()
 
-    def load_cst_file(self, path, filename):
+    def load_cst_file(self, filename):
         storage = database.DataBase()
         # parser = file_parser.NewCSTFileParser("D:/Files/Doktorarbeit/NEURON_Phrenicus/CST_files/", "Halsmodell_E_field_Phrenic.txt")
-        parser = file_parser.NewCSTFileParser(path, filename)
+        parser = file_parser.NewCSTFileParser("", filename)
         parser.parse_file(storage)
         storage.convert_units(1e3)  # convert mm from CST to um used for cable
-        self.e_field_matrix_list = storage.generate_e_field_matrix()
+        self.e_field_list = storage.generate_e_field_matrix()
 
     def save_e_field(self, file_name, path):
         with open("Biovoxel_phrenic_e_field_matrix_list", 'wb') as f:
@@ -54,7 +59,13 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         # path = 'H:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/CST_files/'
         # with open(path + "20210325_biovoxel_e_field_matrix_list", 'rb') as e:
         with open(path + filename, 'rb') as e:
-            self.e_field_matrix_list = pickle.load(e)
+            self.e_field_list = pickle.load(e)
+            self.update_e_field()
+
+    def update_e_field(self):
+        fig = self.plot_e_field(self.e_field_list[0])
+        self.remove_plot()
+        self.add_plot(fig)
 
     # to be deleted
     def get_e_field(self, model_name):
@@ -128,6 +139,7 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.e_field_layout.addWidget(self.toolbar)
 
     def remove_plot(self,):
+        # if hasattr(self, 'canvas'):
         self.e_field_layout.removeWidget(self.canvas)
         self.canvas.close()
         self.e_field_layout.removeWidget(self.toolbar)
