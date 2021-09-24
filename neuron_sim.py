@@ -32,9 +32,9 @@ class NeuronSim:
         # mp = model parameters
 
 
-        if mp.type == 'hh':
+        if mp.axon_type == 'HH':
             axon = self.hh(mp.diameter, mp.x, mp.y, mp.z, mp.length)
-        elif mp.type == 'mrg':
+        elif mp.axon_type == 'RMG':
             axon = self.mrg(mp.diameter, mp.x, mp.y, mp.z, mp.length)
         else:
             axon = self.simple(mp.diameter, mp.x, mp.y, mp.z, mp.length)
@@ -119,11 +119,11 @@ class NeuronSim:
 
 
 class AxonInformation:
-    def __init__(self, start_x, start_y, start_z, length, diameter, type):
+    def __init__(self, start_x, start_y, start_z, length, diameter, axon_type):
         super(AxonInformation, self).__init__()
         self.x = start_x
         self.y = start_y
         self.z = start_z
         self.length = length
         self.diameter = diameter
-        self.type = type
+        self.axon_type = axon_type

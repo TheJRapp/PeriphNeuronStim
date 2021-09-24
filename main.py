@@ -12,6 +12,8 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
 
+from config_widgets import windowTest, stimulusWidget
+from e_field_manipulation import eFieldWidget
 
 import numpy as np
 import sys
@@ -27,27 +29,25 @@ import field_plot as fp
 
 
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
-Ui_PropertyWidget, QWidget = uic.loadUiType("ui_nerve_property_widget.ui")
+
 
 rmg_diameter_list = ["5.7", "7.3", "8.7", "10.0", "11.5", "12.8", "14.0", "15.0", "16"]
 interpolation_radius_index = 2
-
-class windowTest(QWidget, Ui_PropertyWidget):
-    def __init__(self, parent = None):
-        super(windowTest, self).__init__(parent)
-        self.setupUi(self)
+scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
 
 
 class Main(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
         super(Main, self).__init__()
+
         self.setupUi(self)
 
+        self.e_field_widget = eFieldWidget()
         e_field_name = 'halsmodell'
-        e_field_list = em.get_e_field(e_field_name)
-        self.field_plot_manager = fp.FieldPlot(e_field_list[0])
+        self.e_field_list = self.e_field_widget.get_e_field(e_field_name)
+        # self.field_plot_manager = fp.FieldPlot(self.e_field_list[0])
 
-        self.add_plot(self.field_plot_manager.plot_e_field())
+        self.add_plot(self.e_field_widget.plot_e_field(self.e_field_list[0]))
         self.nerve_dict = {}
         self.axon_list_item_model = QtGui.QStandardItemModel(self.axon_list_view)
         self.nerve_list_item_model = QtGui.QStandardItemModel(self.nerve_combo_box)
@@ -58,10 +58,13 @@ class Main(QMainWindow, Ui_MainWindow):
         self.axon_diam_spin_box.setVisible(False)
         self.axon_diam_combo_box.addItems(rmg_diameter_list)
 
-        self.stimulus_combo_box.addItems(stim.stimulus_string_list())
+        self.stimulus_widget = stimulusWidget()
+        self.stimulus_widget.stim_combo_box.addItems(stim.stimulus_string_list())
         self.update_stimulus()
 
         # signal connections
+        self.conf_efield_button.clicked.connect(self.configure_efield)
+
         self.add_nerve_button.clicked.connect(self.add_nerve)
         self.delete_nerve_button.clicked.connect(self.delete_nerve)
         self.nerve_combo_box.currentTextChanged.connect(self.change_nerve_property_box)
@@ -76,7 +79,11 @@ class Main(QMainWindow, Ui_MainWindow):
         self.nerve_prop_widget.length_spin_box.valueChanged.connect(self.set_nerve_length)
         self.nerve_prop_widget.diam_spin_box.valueChanged.connect(self.set_nerve_diam)
 
-        self.stimulus_combo_box.currentTextChanged.connect(self.update_stimulus)
+        self.stimulus_widget.stim_combo_box.currentTextChanged.connect(self.update_stimulus)
+        self.stimulus_widget.total_time_spin_box.valueChanged.connect(self.update_stimulus)
+        self.stimulus_widget.start_time_spin_box.valueChanged.connect(self.update_stimulus)
+        self.stimulus_widget.stimulus_duration_spin_box.valueChanged.connect(self.update_stimulus)
+        self.stimulus_button.clicked.connect(self.open_stimulus_widget)
         self.quasipot_button.clicked.connect(self.checkin_nerve)
 
     def add_plot(self, fig):
@@ -93,14 +100,24 @@ class Main(QMainWindow, Ui_MainWindow):
         self.e_field_layout.removeWidget(self.toolbar)
         self.toolbar.close()
 
+    def configure_efield(self):
+        self.e_field_widget.show()
+        # TODO: update field_plot_manager
+
     def add_nerve(self):
         if self.nerve_name_line_edit.text() and self.nerve_name_line_edit.text() not in self.nerve_dict:
-            self.nerve_dict[self.nerve_name_line_edit.text()] = ner.Nerve(name=self.nerve_name_line_edit.text())
-            # self.nerve_combo_box.addItem(self.nerve_name_line_edit.text())
+            test = self.nerve_prop_widget.length_spin_box.value()
+            self.nerve_dict[self.nerve_name_line_edit.text()] = ner.Nerve(
+                x=self.nerve_prop_widget.x_spin_box.value() * scaling, y=self.nerve_prop_widget.y_spin_box.value() * scaling,
+                z=self.nerve_prop_widget.z_spin_box.value() * scaling,
+                length=self.nerve_prop_widget.length_spin_box.value() * scaling,
+                nerv_diam=self.nerve_prop_widget.diam_spin_box.value(), name=self.nerve_name_line_edit.text())
             item = QtGui.QStandardItem(self.nerve_name_line_edit.text())
             self.nerve_list_item_model.appendRow(item)
             self.nerve_combo_box.setModel(self.nerve_list_item_model)
             self.nerve_name_line_edit.setText("")
+            self.update_e_field()
+
 
     def delete_nerve(self):
         if not self.nerve_dict:
@@ -127,9 +144,17 @@ class Main(QMainWindow, Ui_MainWindow):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
         self.axon_list_item_model.clear()
         for axon_info in selected_nerve.axon_infos_list:
-            item = QtGui.QStandardItem(axon_info.type + "_" + str(axon_info.diameter))
+            item = QtGui.QStandardItem(axon_info.axon_type + "_" + str(axon_info.diameter))
             self.axon_list_item_model.appendRow(item)
         self.axon_list_view.setModel(self.axon_list_item_model)
+
+    def update_axons(self):
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        for axon_info in selected_nerve.axon_infos_list:
+            axon_info.x = selected_nerve.x
+            axon_info.y = selected_nerve.y
+            axon_info.z = selected_nerve.z
+            axon_info.length = selected_nerve.length
 
     def delete_axon(self):
         if not self.nerve_dict:
@@ -145,14 +170,9 @@ class Main(QMainWindow, Ui_MainWindow):
         if self.axon_type_combo_box.currentText() == "RMG":
             self.axon_diam_combo_box.setVisible(True)
             self.axon_diam_spin_box.setVisible(False)
-            # self.axon_diam_layout.addWidget(self.axon_diam_combo_box)
         else:
             self.axon_diam_combo_box.setVisible(False)
             self.axon_diam_spin_box.setVisible(True)
-        # if self.axon_type_combo_box.currentText() == "RMG":
-        #     self.axon_diam_layout.replaceWidget(self.axon_diam_spin_box, self.axon_diam_combo_box)
-        # else:
-        #     self.axon_diam_layout.replaceWidget(self.axon_diam_combo_box, self.axon_diam_spin_box)
 
     def change_nerve_property_box(self):
         if not self.nerve_dict:
@@ -162,31 +182,35 @@ class Main(QMainWindow, Ui_MainWindow):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
         self.update_axon_list()
         self.nerve_prop_widget.name_label.setText(self.nerve_combo_box.currentText())
-        self.nerve_prop_widget.x_spin_box.setValue(selected_nerve.x)
-        self.nerve_prop_widget.y_spin_box.setValue(selected_nerve.y)
-        self.nerve_prop_widget.z_spin_box.setValue(selected_nerve.z)
-        self.nerve_prop_widget.length_spin_box.setValue(selected_nerve.length)
+        self.nerve_prop_widget.x_spin_box.setValue(selected_nerve.x/scaling)
+        self.nerve_prop_widget.y_spin_box.setValue(selected_nerve.y/scaling)
+        self.nerve_prop_widget.z_spin_box.setValue(selected_nerve.z/scaling)
+        self.nerve_prop_widget.length_spin_box.setValue(selected_nerve.length/scaling)
         self.nerve_prop_widget.diam_spin_box.setValue(selected_nerve.nerve_diameter)
         self.update_e_field()
 
     def set_nerve_x(self, value):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
-        selected_nerve.x = value
+        selected_nerve.x = value * scaling  # convert from mm to um
+        self.update_axons()
         self.update_e_field()
 
     def set_nerve_y(self, value):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
-        selected_nerve.y = value
+        selected_nerve.y = value * scaling  # convert from mm to um
+        self.update_axons()
         self.update_e_field()
 
     def set_nerve_z(self, value):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
-        selected_nerve.z = value
+        selected_nerve.z = value * scaling  # convert from mm to um
+        self.update_axons()
         self.update_e_field()
 
     def set_nerve_length(self, value):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
-        selected_nerve.length = value
+        selected_nerve.length = value * scaling  # convert from mm to um
+        self.update_axons()
         self.update_e_field()
 
     def set_nerve_diam(self, value):
@@ -197,26 +221,31 @@ class Main(QMainWindow, Ui_MainWindow):
     def update_e_field(self):
         if not self.nerve_dict:
             self.remove_plot()
-            self.add_plot(self.field_plot_manager.plot_e_field())
+            self.add_plot(self.e_field_widget.plot_e_field(self.e_field_list[0]))
             return
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
-        fig = self.field_plot_manager.plot_2d_field_with_cable(selected_nerve, 1e3)
+        fig = self.e_field_widget.plot_2d_field_with_cable(self.e_field_list[0], selected_nerve, scaling)
         self.remove_plot()
         self.add_plot(fig)
 
+    def open_stimulus_widget(self):
+        self.stimulus_widget.show()
+        self.update_stimulus()
+
     def update_stimulus(self):
         if hasattr(self, 'stim_canvas'):
-            self.stimulus_layout.removeWidget(self.stim_canvas)
+            self.stimulus_widget.stimulus_layout.removeWidget(self.stim_canvas)
             self.stim_canvas.close()
-        self.time_axis, self.stimulus, self.stim_name = stim.get_stim_from_string(self.stimulus_combo_box.currentText(),
-                                                                   self.total_time_spin_box.value(),
-                                                                   self.start_time_spin_box.value(),
-                                                                   self.stimulus_duration_spin_box.value())
+        self.time_axis, self.stimulus, self.stim_name = stim.get_stim_from_string(self.stimulus_widget.stim_combo_box.currentText(),
+                                                                   self.stimulus_widget.total_time_spin_box.value(),
+                                                                   self.stimulus_widget.start_time_spin_box.value(),
+                                                                   self.stimulus_widget.stimulus_duration_spin_box.value())
+        self.total_time = self.stimulus_widget.total_time_spin_box.value()
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111)
         ax1f1.plot(self.time_axis, self.stimulus)
         self.stim_canvas = FigureCanvas(fig1)
-        self.stimulus_layout.addWidget(self.stim_canvas)
+        self.stimulus_widget.stimulus_layout.addWidget(self.stim_canvas)
         self.stim_canvas.draw()
 
     def checkin_nerve(self):
@@ -225,12 +254,16 @@ class Main(QMainWindow, Ui_MainWindow):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
         if not selected_nerve.axon_infos_list:
             return
+        if not self.axon_list_view.currentIndex().isValid():
+            return
+        selected_index = self.axon_list_view.currentIndex()
+
         if hasattr(self, 'field_axon_canvas'):
             self.potential_layout.removeWidget(self.field_axon_canvas)
             self.field_axon_canvas.close()
-        selected_nerve.neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list, self.e_field_list, self.time_axis, self.stimulus, self.total_time)
+        selected_nerve.neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_list, self.time_axis, self.stimulus, self.total_time)
         selected_nerve.neuron_sim.quasipot(interpolation_radius_index)
-        e_field_along_axon = selected_nerve.neuron_sim.e_field_along_axon
+        e_field_along_axon = selected_nerve.neuron_sim.axon.e_field_along_axon
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111)
         ax1f1.plot(e_field_along_axon)
