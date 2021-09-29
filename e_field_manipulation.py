@@ -10,12 +10,14 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
 
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5 import uic, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
 
 Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_manipulation_widget.ui")
 
+default_e_field_path = 'H:/Doktorarbeit/Phrenicus/e_field_data/biovoxel_phrenic_e_field_matrix_list'
+from matplotlib.backend_bases import key_press_handler
 
 # This class does:
 # - load field (from CST or E-Field-Matrix python file)
@@ -23,44 +25,78 @@ Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_manipulation_widget
 # - show field in widget
 # - manipulate field (user input, offset)
 class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
+    e_field_changed = pyqtSignal()
+
     def __init__(self, parent = None):
         super(eFieldWidget, self).__init__(parent)
-        self.e_field_changed = pyqtSignal()
-        self.setupUi(self)
 
-        self.load_cst_button.clicked.connect(self.openFileNameDialog)
+        self.setupUi(self)
+        self.press_coordinates = ()
+        self.release_coordinates = ()
+
+        self.load_cst_button.clicked.connect(self.load_cst_file)
+        self.load_e_field_button.clicked.connect(self.load_e_field)
+        self.save_e_field_button.clicked.connect(self.save_e_field)
+        self.confirm_button.clicked.connect(self.change_e_field)
+
 
 # class and widget functions
-
-    def openFileNameDialog(self):
-        self.e_field_changed.emit()
+    def openFileNameDialog(self, file_type):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+        # fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+        fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+                                                  file_type, options=options)
         if fileName:
-            self.load_cst_file(fileName)
-            self.update_e_field()
-            self.e_field_changed.emit()
+            return fileName
 
-    def load_cst_file(self, filename):
+    def saveFileNameDialog(self, file_type):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        # fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getOpenFileName()", "","All Files (*);;Python Files (*.py)", options=options)
+        fileName, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getOpenFileName()", "",
+                                                  file_type, options=options)
+        if fileName:
+            return fileName
+
+    def load_cst_file(self):
+        filename = self.openFileNameDialog("Text Files (*.txt)")
+        if not filename:
+            # TODO: warning
+            return
         storage = database.DataBase()
         # parser = file_parser.NewCSTFileParser("D:/Files/Doktorarbeit/NEURON_Phrenicus/CST_files/", "Halsmodell_E_field_Phrenic.txt")
         parser = file_parser.NewCSTFileParser("", filename)
         parser.parse_file(storage)
         storage.convert_units(1e3)  # convert mm from CST to um used for cable
         self.e_field_list = storage.generate_e_field_matrix()
+        self.update_e_field()
 
-    def save_e_field(self, file_name, path):
-        with open("Biovoxel_phrenic_e_field_matrix_list", 'wb') as f:
-            pickle.dump(self.e_field_matrix_list, f)
+    def load_e_field(self):
+        filename = self.openFileNameDialog("Pickle Files (*.pkl)")
+        # filename = self.openFileNameDialog("All Files (*);;Python Files (*.py)")
 
-    def load_e_field(self, path, filename):
+        if not filename:
+            # TODO: warning
+            return
         # path = 'D:/Files/Doktorarbeit/NEURON_Phrenicus/CST_files/'
         # path = 'H:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/CST_files/'
         # with open(path + "20210325_biovoxel_e_field_matrix_list", 'rb') as e:
-        with open(path + filename, 'rb') as e:
+        with open(filename, 'rb') as e:
             self.e_field_list = pickle.load(e)
-            self.update_e_field()
+        self.update_e_field()
+
+    def save_e_field(self):
+        filename = self.saveFileNameDialog("Pickle Files (*.pkl)")
+        if not filename:
+            # TODO: warning
+            return
+        if filename[-4:] == ".pkl":
+            with open(filename, 'wb') as f:
+                pickle.dump(self.e_field_list, f)
+        else:
+            with open(filename + ".pkl", 'wb') as f:
+                pickle.dump(self.e_field_list, f)
 
     def update_e_field(self):
         fig = self.plot_e_field(self.e_field_list[0])
@@ -69,69 +105,19 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
 
     # to be deleted
     def get_e_field(self, model_name):
-        # storage = database.DataBase()
-        # # parser = file_parser.NewCSTFileParser("D:/Files/Doktorarbeit/NEURON_Phrenicus/CST_files/", "Halsmodell_E_field_Phrenic.txt")
-        # parser = file_parser.NewCSTFileParser("H:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/cst_files/",
-        #                                       "Biovoxel_E_field.txt")
-        # parser.parse_file(storage)
-        # storage.convert_units(1e3)  # convert mm from CST to um used for cable
-        #
-        # # Save:
-        # with open("biovoxel_phrenic", 'wb') as f:
-        #     pickle.dump(storage, f)
-
-        # Load:
-        # with open("20210325_halsmodell", 'rb') as f:
-        #     halsmodell_storage = pickle.load(f)
-        # with open("20210325_biovoxel", 'rb') as f:
-        #     biovoxel_storage = pickle.load(f)
-
-        # # Save matrix list:
-        # e_field_matrix_list = storage.generate_e_field_matrix()
-        # with open("Biovoxel_phrenic_e_field_matrix_list", 'wb') as f:
-        #     pickle.dump(e_field_matrix_list, f)
-
-        # Open matrix list:
-        path = 'D:/Files/Doktorarbeit/NEURON_Phrenicus/CST_files/'
-        # path = 'H:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/CST_files/'
-        with open(path + "20210325_biovoxel_e_field_matrix_list", 'rb') as e:
-            biovoxel_e_field_matrix_list = pickle.load(e)
-        with open(path + "20210325_halsmodell_e_field_matrix_list", 'rb') as e:
-            halsmodell_e_field_matrix_list = pickle.load(e)
-
-        if model_name == 'biovoxel':
-            e_field_list = biovoxel_e_field_matrix_list
-
-        else:
-            e_field_list = halsmodell_e_field_matrix_list
-
-            # for e_field in e_field_list:
-            #
-            #     # no = neck only
-            #     e_x_no = e_field.e_x[182:228, 168:234]
-            #     e_y_no = e_field.e_y[182:228, 168:234]
-            #     e_z_no = e_field.e_z[182:228, 168:234]
-            #
-            #     e_field.e_x = np.zeros((101, 101))
-            #     y_offset = 32
-            #     x_offset = 17
-            #     e_field.e_x[y_offset:(y_offset + e_x_no.shape[0]), x_offset:(x_offset + e_x_no.shape[1])] = e_x_no
-            #     e_field.e_y = np.zeros((101, 101))
-            #     e_field.e_y[y_offset:(y_offset + e_y_no.shape[0]), x_offset:(x_offset + e_y_no.shape[1])] = e_y_no
-            #     e_field.e_z = np.zeros((101, 101))
-            #     e_field.e_z[y_offset:(y_offset + e_z_no.shape[0]), x_offset:(x_offset + e_z_no.shape[1])] = e_z_no
-            #
-            #     e_field.x = e_field.x[168 - x_offset:234 + 1 + x_offset]
-            #     e_field.y = e_field.y[182 - y_offset:228 + 1 + y_offset]
-            #     e_field.shape = len(e_field.x[e_field.x_min:e_field.x_max+1])
-
-        self.e_field_list = e_field_list
-        fig = self.plot_e_field(e_field_list[0])
+        with open(default_e_field_path, 'rb') as e:
+            self.e_field_list = pickle.load(e)
+        fig = self.plot_e_field(self.e_field_list[0])
         self.add_plot(fig)
-        return e_field_list
+        return self.e_field_list
+
+    def change_e_field(self):
+        self.e_field_changed.emit()
 
     def add_plot(self, fig):
         self.canvas = FigureCanvas(fig)
+        self.canvas.setFocus()
+        self.canvas.setFocusPolicy(Qt.StrongFocus)
         self.e_field_layout.addWidget(self.canvas)
         self.canvas.draw()
         self.toolbar = NavigationToolbar(self.canvas,
@@ -154,6 +140,11 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         ax1f1.imshow(e_field.e_y, extent=[min(e_field.y)/1e3, max(e_field.y)/1e3, min(e_field.y)/1e3, max(e_field.y)/1e3])
         # self.e_field_fig = fig1
         # fig1.colorbar(pos)
+
+        cid = fig1.canvas.mpl_connect('button_press_event', self.onclick)
+        cidr = fig1.canvas.mpl_connect('button_release_event', self.relclick)
+        cidk = fig1.canvas.mpl_connect('key_press_event', self.keyclick)
+
         return fig1
 
     def plot_2d_field_with_cable(self, e_field, nerve, scale):
@@ -168,3 +159,19 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         ax1f1 = fig1.add_subplot(111)
         ax1f1.imshow(e_modified, extent=[min(e_field.y)/scale, max(e_field.y)/scale, min(e_field.y)/scale, max(e_field.y)/scale])
         return fig1
+
+    def onclick(self, event):
+        print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
+              ('double' if event.dblclick else 'single', event.button,
+               event.x, event.y, event.xdata, event.ydata))
+        self.press_coordinates = (event.x, event.y)
+
+    def relclick(self, event):
+        print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
+              ('double' if event.dblclick else 'single', event.button,
+               event.x, event.y, event.xdata, event.ydata))
+        self.release_coordinates = (event.x, event.y)
+
+    def keyclick(self, event):
+        print("I was here")
+        key_press_handler(event, self.canvas, self.toolbar)

@@ -65,7 +65,7 @@ class Main(QMainWindow, Ui_MainWindow):
         # signal connections
 
         self.conf_efield_button.clicked.connect(self.configure_efield)
-        self.e_field_widget.e_field_changed.connect(self.update_e_field())
+        self.e_field_widget.e_field_changed.connect(self.update_e_field)
 
         self.add_nerve_button.clicked.connect(self.add_nerve)
         self.delete_nerve_button.clicked.connect(self.delete_nerve)
@@ -221,6 +221,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.update_e_field()
 
     def update_e_field(self):
+        self.e_field_list = self.e_field_widget.e_field_list
         if not self.nerve_dict:
             self.remove_plot()
             self.add_plot(self.e_field_widget.plot_e_field(self.e_field_list[0]))
