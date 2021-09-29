@@ -31,7 +31,7 @@ import field_plot as fp
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 
 
-rmg_diameter_list = ["5.7", "7.3", "8.7", "10.0", "11.5", "12.8", "14.0", "15.0", "16"]
+rmg_diameter_list = ["16.0", "15.0", "14.0", "12.8", "11.5", "10.0", "8.7", "7.3", "5.7"]
 interpolation_radius_index = 2
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
 
@@ -55,7 +55,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.nerve_prop_widget = windowTest()
         self.nerve_prop_widget.setEnabled(False)
         self.property_layout.addWidget(self.nerve_prop_widget)
-        self.axon_diam_spin_box.setVisible(False)
+        self.axon_diam_combo_box.setVisible(False)
         self.axon_diam_combo_box.addItems(rmg_diameter_list)
 
         self.stimulus_widget = stimulusWidget()

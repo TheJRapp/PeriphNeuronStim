@@ -31,8 +31,8 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         super(eFieldWidget, self).__init__(parent)
 
         self.setupUi(self)
-        self.press_coordinates = ()
-        self.release_coordinates = ()
+        self.updated_xlims = ()
+        self.updated_ylims = ()
 
         self.load_cst_button.clicked.connect(self.load_cst_file)
         self.load_e_field_button.clicked.connect(self.load_e_field)
@@ -98,6 +98,11 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
             with open(filename + ".pkl", 'wb') as f:
                 pickle.dump(self.e_field_list, f)
 
+    def cut_e_field(self):
+        self.e_field_list_mod = self.e_field_list.copy()
+        self.e_field_list_mod = self.e_field_list_mod[self.updated_xlims[0]:self.updated_xlims[1],self.updated_ylims[0]:self.updated_xlims[1]]
+
+
     def update_e_field(self):
         fig = self.plot_e_field(self.e_field_list[0])
         self.remove_plot()
@@ -112,12 +117,14 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         return self.e_field_list
 
     def change_e_field(self):
+        if hasattr(self, 'e_field_list_mod'):
+            self.e_field_list = self.e_field_list_mod
         self.e_field_changed.emit()
 
     def add_plot(self, fig):
         self.canvas = FigureCanvas(fig)
-        self.canvas.setFocus()
         self.canvas.setFocusPolicy(Qt.StrongFocus)
+        self.canvas.setFocus()
         self.e_field_layout.addWidget(self.canvas)
         self.canvas.draw()
         self.toolbar = NavigationToolbar(self.canvas,
@@ -141,9 +148,9 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         # self.e_field_fig = fig1
         # fig1.colorbar(pos)
 
-        cid = fig1.canvas.mpl_connect('button_press_event', self.onclick)
-        cidr = fig1.canvas.mpl_connect('button_release_event', self.relclick)
-        cidk = fig1.canvas.mpl_connect('key_press_event', self.keyclick)
+        ax1f1.callbacks.connect('xlim_changed', self.on_xlims_change)
+        ax1f1.callbacks.connect('ylim_changed', self.on_ylims_change)
+
 
         return fig1
 
@@ -160,18 +167,12 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         ax1f1.imshow(e_modified, extent=[min(e_field.y)/scale, max(e_field.y)/scale, min(e_field.y)/scale, max(e_field.y)/scale])
         return fig1
 
-    def onclick(self, event):
-        print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-              ('double' if event.dblclick else 'single', event.button,
-               event.x, event.y, event.xdata, event.ydata))
-        self.press_coordinates = (event.x, event.y)
+    def on_xlims_change(self, event_ax):
+        print("updated xlims: ", event_ax.get_xlim())
+        self.updated_xlims = event_ax.get_xlim()
+        self.cut_e_field()
 
-    def relclick(self, event):
-        print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-              ('double' if event.dblclick else 'single', event.button,
-               event.x, event.y, event.xdata, event.ydata))
-        self.release_coordinates = (event.x, event.y)
-
-    def keyclick(self, event):
-        print("I was here")
-        key_press_handler(event, self.canvas, self.toolbar)
+    def on_ylims_change(self, event_ax):
+        print("updated ylims: ", event_ax.get_ylim())
+        self.updated_ylims = event_ax.get_ylim()
+        self.cut_e_field()
