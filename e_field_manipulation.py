@@ -98,9 +98,13 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
             with open(filename + ".pkl", 'wb') as f:
                 pickle.dump(self.e_field_list, f)
 
-    def cut_e_field(self):
-        self.e_field_list_mod = self.e_field_list.copy()
-        self.e_field_list_mod = self.e_field_list_mod[self.updated_xlims[0]:self.updated_xlims[1],self.updated_ylims[0]:self.updated_xlims[1]]
+    # def cut_e_field(self):
+    #     self.e_field_list_mod = self.e_field_list.copy()
+    #     for e_field in self.e_field_list_mod:
+    #         e_field.e_x = e_field.e_x[int(self.updated_xlims[0]):int(self.updated_xlims[1]),
+    #                                 int(self.updated_ylims[0]):int(self.updated_ylims[1])]
+    #         e_field.e_y = e_field.e_y[int(self.updated_xlims[0]):int(self.updated_xlims[1]),
+    #                                 int(self.updated_ylims[0]):int(self.updated_ylims[1])]
 
 
     def update_e_field(self):
@@ -170,9 +174,9 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
     def on_xlims_change(self, event_ax):
         print("updated xlims: ", event_ax.get_xlim())
         self.updated_xlims = event_ax.get_xlim()
-        self.cut_e_field()
+        # self.cut_e_field()
 
     def on_ylims_change(self, event_ax):
         print("updated ylims: ", event_ax.get_ylim())
         self.updated_ylims = event_ax.get_ylim()
-        self.cut_e_field()
+        # self.cut_e_field()

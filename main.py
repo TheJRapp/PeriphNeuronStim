@@ -11,6 +11,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
+from matplotlib import pyplot as plt
 
 from config_widgets import windowTest, stimulusWidget
 from e_field_manipulation import eFieldWidget
@@ -78,6 +79,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.nerve_prop_widget.x_spin_box.valueChanged.connect(self.set_nerve_x)
         self.nerve_prop_widget.y_spin_box.valueChanged.connect(self.set_nerve_y)
         self.nerve_prop_widget.z_spin_box.valueChanged.connect(self.set_nerve_z)
+        self.nerve_prop_widgetangle_spin_box.valueChanged.connect(self.set_nerve_angle)
         self.nerve_prop_widget.length_spin_box.valueChanged.connect(self.set_nerve_length)
         self.nerve_prop_widget.diam_spin_box.valueChanged.connect(self.set_nerve_diam)
 
@@ -86,7 +88,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.stimulus_widget.start_time_spin_box.valueChanged.connect(self.update_stimulus)
         self.stimulus_widget.stimulus_duration_spin_box.valueChanged.connect(self.update_stimulus)
         self.stimulus_button.clicked.connect(self.open_stimulus_widget)
-        self.quasipot_button.clicked.connect(self.checkin_nerve)
+        self.e_field_along_axon_button.clicked.connect(self.checkin_nerve)
+        self.simulation_button.clicked.connect(self.start_simulation)
 
     def add_plot(self, fig):
         self.canvas = FigureCanvas(fig)
@@ -187,6 +190,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.nerve_prop_widget.x_spin_box.setValue(selected_nerve.x/scaling)
         self.nerve_prop_widget.y_spin_box.setValue(selected_nerve.y/scaling)
         self.nerve_prop_widget.z_spin_box.setValue(selected_nerve.z/scaling)
+        self.nerve_prop_widget.angle.spin_box.setValue(selected_nerve.)
         self.nerve_prop_widget.length_spin_box.setValue(selected_nerve.length/scaling)
         self.nerve_prop_widget.diam_spin_box.setValue(selected_nerve.nerve_diameter)
         self.update_e_field()
@@ -204,6 +208,12 @@ class Main(QMainWindow, Ui_MainWindow):
         self.update_e_field()
 
     def set_nerve_z(self, value):
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        selected_nerve.z = value * scaling  # convert from mm to um
+        self.update_axons()
+        self.update_e_field()
+
+    def set_nerve_angle(self, value):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
         selected_nerve.z = value * scaling  # convert from mm to um
         self.update_axons()
@@ -264,15 +274,28 @@ class Main(QMainWindow, Ui_MainWindow):
         if hasattr(self, 'field_axon_canvas'):
             self.potential_layout.removeWidget(self.field_axon_canvas)
             self.field_axon_canvas.close()
-        selected_nerve.neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_list, self.time_axis, self.stimulus, self.total_time)
-        selected_nerve.neuron_sim.quasipot(interpolation_radius_index)
-        e_field_along_axon = selected_nerve.neuron_sim.axon.e_field_along_axon
+        neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_list, self.time_axis, self.stimulus, self.total_time)
+        neuron_sim.quasipot(interpolation_radius_index)
+        e_field_along_axon = neuron_sim.axon.e_field_along_axon
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111)
         ax1f1.plot(e_field_along_axon)
         self.field_axon_canvas = FigureCanvas(fig1)
         self.potential_layout.addWidget(self.field_axon_canvas)
         self.field_axon_canvas.draw()
+
+    def start_simulation(self):
+        if not self.nerve_dict:
+            return
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        if not selected_nerve.axon_infos_list:
+            return
+        for axon in selected_nerve.axon_infos_list:
+            neuron_sim = ns.NeuronSim(axon, self.e_field_list,
+                                      self.time_axis, self.stimulus, self.total_time)
+            neuron_sim.quasipot(interpolation_radius_index)
+            neuron_sim.simple_simulation()
+        plt.show()
 
 if __name__ == '__main__':
     import sys

@@ -10,6 +10,7 @@ class Nerve():
         self.x = x
         self.y = y
         self.z = z
+        self.angle = 0
         # if name == 'N.Vagus':
         #     self.hh_diam_list = []
         #     self.simple_diam_list = []
