@@ -2,6 +2,7 @@ import pickle
 import database
 import file_parser
 import numpy as np
+import cv2
 
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -164,9 +165,16 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         # for x, y in zip(nerve.x, nerve.y):
         #     e_modified[(int(y/scale + dim)), (int(x/scale + dim))] = 800
 
-        e_modified[int(nerve.y/scale + dim):int(nerve.y/scale + dim + (nerve.length/scale)), int(nerve.x/scale + dim)] = 800
+        # e_modified[int(nerve.y/scale + dim):int(nerve.y/scale + dim + (nerve.length/scale)), int(nerve.x/scale + dim)] = 800
+
+        xrange = nerve.length * np.cos(nerve.angle / 360 * 2 * np.pi)
+        yrange = nerve.length * np.sin(nerve.angle / 360 * 2 * np.pi)
+
+        img_mod = cv2.line(e_modified, (int(nerve.x/scale + dim), int(nerve.y/scale + dim)), (int(nerve.x/scale + dim +
+                          xrange/scale), int(nerve.y/scale + dim + yrange/scale)), (255, 255, 255), 5)
 
         fig1 = Figure()
+        # cv2.imshow("Line", img_mod)
         ax1f1 = fig1.add_subplot(111)
         ax1f1.imshow(e_modified, extent=[min(e_field.y)/scale, max(e_field.y)/scale, min(e_field.y)/scale, max(e_field.y)/scale])
         return fig1
