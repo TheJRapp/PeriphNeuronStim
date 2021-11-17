@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFil
 
 Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_manipulation_widget.ui")
 
-default_e_field_path = 'H:/Doktorarbeit/Phrenicus/e_field_data/biovoxel_phrenic_e_field_matrix_list'
+default_e_field_path = 'Y:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/biovoxel.pkl'
 from matplotlib.backend_bases import key_press_handler
 
 # This class does:
@@ -149,7 +149,7 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
     def plot_e_field(self, e_field):
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111)
-        ax1f1.imshow(e_field.e_y, extent=[min(e_field.y)/1e3, max(e_field.y)/1e3, min(e_field.y)/1e3, max(e_field.y)/1e3])
+        ax1f1.imshow(e_field.e_y, extent=[min(e_field.y)/1e3, max(e_field.y)/1e3, min(e_field.x)/1e3, max(e_field.x)/1e3])
         # self.e_field_fig = fig1
         # fig1.colorbar(pos)
 
@@ -161,7 +161,8 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
 
     def plot_2d_field_with_cable(self, e_field, nerve, scale):
         e_modified = e_field.e_y.copy()
-        dim = round(e_field.shape/2)
+        xdim = round(e_field.xshape/2)
+        ydim = round(e_field.yshape / 2)
         # for x, y in zip(nerve.x, nerve.y):
         #     e_modified[(int(y/scale + dim)), (int(x/scale + dim))] = 800
 
@@ -170,13 +171,13 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         xrange = nerve.length * np.cos(nerve.angle / 360 * 2 * np.pi)
         yrange = nerve.length * np.sin(nerve.angle / 360 * 2 * np.pi)
 
-        img_mod = cv2.line(e_modified, (int(nerve.x/scale + dim), int(nerve.y/scale + dim)), (int(nerve.x/scale + dim +
-                          xrange/scale), int(nerve.y/scale + dim + yrange/scale)), (255, 255, 255), 5)
+        img_mod = cv2.line(e_modified, (int(nerve.x/scale + xdim), int(nerve.y/scale + ydim)), (int(nerve.x/scale + xdim +
+                          xrange/scale), int(nerve.y/scale + ydim + yrange/scale)), (255, 0, 0), 5)
 
         fig1 = Figure()
         # cv2.imshow("Line", img_mod)
         ax1f1 = fig1.add_subplot(111)
-        ax1f1.imshow(e_modified, extent=[min(e_field.y)/scale, max(e_field.y)/scale, min(e_field.y)/scale, max(e_field.y)/scale])
+        ax1f1.imshow(e_modified, extent=[min(e_field.y)/scale, max(e_field.y)/scale, min(e_field.x)/scale, max(e_field.x)/scale])
         return fig1
 
     def on_xlims_change(self, event_ax):
