@@ -11,6 +11,7 @@ import sys
 sys.path.insert(0, "C:/nrn/lib/python")
 import neuron
 
+
 class NeuronSim:
 
     def __init__(self, axon_model_parameter, static_e_field_list, time_axis, stimulus, total_time):
