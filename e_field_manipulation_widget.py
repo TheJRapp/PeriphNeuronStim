@@ -4,6 +4,7 @@ import file_parser
 import numpy as np
 import cv2
 
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
 matplotlib.use('Qt5Agg')
 from matplotlib.figure import Figure
@@ -11,13 +12,17 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar)
 
+from matplotlib import pyplot as plt
+
+from mpl_toolkits.mplot3d import Axes3D
+
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5 import uic, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
 
 Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_manipulation_widget.ui")
 
-default_e_field_path = 'Y:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/biovoxel.pkl'
+default_e_field_path = 'Z:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/biovoxel.pkl'
 from matplotlib.backend_bases import key_press_handler
 
 # This class does:
@@ -34,11 +39,17 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.setupUi(self)
         self.updated_xlims = ()
         self.updated_ylims = ()
+        # self.e_field_list
+        # self.nerve_shape
+        self.mode = 1  # 1 = e_field_matrix, 2 = nerve_shape
 
         self.load_cst_button.clicked.connect(self.load_cst_file)
         self.load_e_field_button.clicked.connect(self.load_e_field)
         self.save_e_field_button.clicked.connect(self.save_e_field)
         self.confirm_button.clicked.connect(self.change_e_field)
+        self.load_nerve_shape_button.clicked.connect(self.load_cst_nerve_shape)
+        self.load_saved_nerve_shape_button.clicked.connect(self.load_nerve_shape)
+        self.save_nerve_shape_button.clicked.connect(self.save_nerve_shape)
 
 
 # class and widget functions
@@ -99,6 +110,40 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
             with open(filename + ".pkl", 'wb') as f:
                 pickle.dump(self.e_field_list, f)
 
+    def load_cst_nerve_shape(self):
+        filename = self.openFileNameDialog("Text Files (*.txt)")
+        if not filename:
+            # TODO: warning
+            return
+        storage = database.DataBase()
+        parser = file_parser.NewCSTFileParser("", filename)
+        parser.parse_file(storage)
+        storage.convert_units(1e3)  # convert mm from CST to um used for cable
+        self.nerve_shape = storage.generate_nerve_shape()
+        self.mode = 0
+        self.update_e_field()
+
+    def load_nerve_shape(self):
+        filename = self.openFileNameDialog("Pickle Files (*.pkl)")
+        if not filename:
+            # TODO: warning
+            return
+        with open(filename, 'rb') as e:
+            self.e_field_list = pickle.load(e)
+        self.update_e_field()
+
+    def save_nerve_shape(self):
+        filename = self.saveFileNameDialog("Pickle Files (*.pkl)")
+        if not filename:
+            # TODO: warning
+            return
+        if filename[-4:] == ".pkl":
+            with open(filename, 'wb') as f:
+                pickle.dump(self.e_field_list, f)
+        else:
+            with open(filename + ".pkl", 'wb') as f:
+                pickle.dump(self.e_field_list, f)
+
     # def cut_e_field(self):
     #     self.e_field_list_mod = self.e_field_list.copy()
     #     for e_field in self.e_field_list_mod:
@@ -109,7 +154,10 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
 
 
     def update_e_field(self):
-        fig = self.plot_e_field(self.e_field_list[0])
+        if self.mode:
+            fig = self.plot_e_field(self.e_field_list[0])
+        else:
+            fig = self.plot_nerve_shape(self.nerve_shape)
         self.remove_plot()
         self.add_plot(fig)
 
@@ -156,6 +204,18 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         ax1f1.callbacks.connect('xlim_changed', self.on_xlims_change)
         ax1f1.callbacks.connect('ylim_changed', self.on_ylims_change)
 
+        return fig1
+
+    def plot_nerve_shape(self, nerve_shape):
+        fig1 = Figure()
+        ax1f1 = fig1.add_subplot(111, projection='3d')
+        ax1f1.scatter3D(nerve_shape.x, nerve_shape.y, nerve_shape.z, c=nerve_shape.e_y)
+        ax = plt.gca(projection='3d')
+        ax.scatter3D(nerve_shape.x, nerve_shape.y, nerve_shape.z, c=nerve_shape.e_y)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
+        plt.show()
 
         return fig1
 

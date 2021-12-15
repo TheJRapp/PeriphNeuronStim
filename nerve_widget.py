@@ -1,0 +1,173 @@
+import matplotlib
+matplotlib.use('Qt5Agg')
+
+from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5 import uic, QtGui, QtWidgets
+from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
+
+import nerve as ner
+import neuron_sim as ns
+
+Ui_NerveWidget, QWidget_Nerve = uic.loadUiType("ui_nerve_property_widget.ui")
+
+default_e_field_path = 'Z:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/biovoxel.pkl'
+from matplotlib.backend_bases import key_press_handler
+
+rmg_diameter_list = ["16.0", "15.0", "14.0", "12.8", "11.5", "10.0", "8.7", "7.3", "5.7"]
+scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
+# This class does:
+
+class nerveWidget(QWidget_Nerve, Ui_NerveWidget):
+    e_field_changed = pyqtSignal()
+
+    def __init__(self, parent = None):
+        super(nerveWidget, self).__init__(parent)
+
+        self.setupUi(self)
+
+        self.nerve_dict = {}
+        self.axon_list_item_model = QtGui.QStandardItemModel(self.axon_list_view)
+        self.nerve_list_item_model = QtGui.QStandardItemModel(self.nerve_combo_box)
+
+        self.properties_groupBox.setEnabled(False)
+        self.axon_diam_combo_box.setVisible(False)
+        self.axon_diam_combo_box.addItems(rmg_diameter_list)
+
+        self.add_nerve_button.clicked.connect(self.add_nerve)
+        self.delete_nerve_button.clicked.connect(self.delete_nerve)
+        self.nerve_combo_box.currentTextChanged.connect(self.change_nerve_property_box)
+        self.add_axon_button.clicked.connect(self.add_axon_to_nerve)
+        self.delete_axon_button.clicked.connect(self.delete_axon)
+
+        self.axon_type_combo_box.currentTextChanged.connect(self.set_axon_diam_widget)
+
+        self.x_spin_box.valueChanged.connect(self.set_nerve_x)
+        self.y_spin_box.valueChanged.connect(self.set_nerve_y)
+        self.z_spin_box.valueChanged.connect(self.set_nerve_z)
+        self.angle_spin_box.valueChanged.connect(self.set_nerve_angle)
+        self.length_spin_box.valueChanged.connect(self.set_nerve_length)
+        self.diam_spin_box.valueChanged.connect(self.set_nerve_diam)
+
+    def add_nerve(self):
+        if self.nerve_name_line_edit.text() and self.nerve_name_line_edit.text() not in self.nerve_dict:
+            test = self.length_spin_box.value()
+            self.nerve_dict[self.nerve_name_line_edit.text()] = ner.Nerve(
+                x=self.x_spin_box.value() * scaling,
+                y=self.y_spin_box.value() * scaling,
+                z=self.z_spin_box.value() * scaling,
+                angle=self.angle_spin_box.value(),
+                length=self.length_spin_box.value() * scaling,
+                nerv_diam=self.diam_spin_box.value(), name=self.nerve_name_line_edit.text())
+            item = QtGui.QStandardItem(self.nerve_name_line_edit.text())
+            self.nerve_list_item_model.appendRow(item)
+            self.nerve_combo_box.setModel(self.nerve_list_item_model)
+            self.nerve_name_line_edit.setText("")
+            self.e_field_changed.emit()
+
+    def delete_nerve(self):
+        if not self.nerve_dict:
+            return
+        self.nerve_dict.pop(self.nerve_combo_box.currentText())
+        self.nerve_list_item_model.removeRow(self.nerve_combo_box.currentIndex())
+        self.nerve_combo_box.setModel(self.nerve_list_item_model)
+        self.e_field_changed.emit()
+
+    def add_axon_to_nerve(self):
+        if not self.nerve_dict:
+            return
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        axon_type = self.axon_type_combo_box.currentText()
+        if self.axon_type_combo_box.currentText() == "RMG":
+            diameter = float(self.axon_diam_combo_box.currentText())
+        else:
+            diameter = self.axon_diam_spin_box.value()
+        model_info = ns.AxonInformation(selected_nerve.x, selected_nerve.y, selected_nerve.z, selected_nerve.angle,
+                                        selected_nerve.length, diameter, axon_type)
+        selected_nerve.axon_infos_list.append(model_info)
+        self.update_axon_list()
+
+    def update_axon_list(self):
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        self.axon_list_item_model.clear()
+        for axon_info in selected_nerve.axon_infos_list:
+            item = QtGui.QStandardItem(axon_info.axon_type + "_" + str(axon_info.diameter))
+            self.axon_list_item_model.appendRow(item)
+        self.axon_list_view.setModel(self.axon_list_item_model)
+
+    def update_axons(self):
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        for axon_info in selected_nerve.axon_infos_list:
+            axon_info.x = selected_nerve.x
+            axon_info.y = selected_nerve.y
+            axon_info.z = selected_nerve.z
+            axon_info.angle = selected_nerve.angle
+            axon_info.length = selected_nerve.length
+
+    def delete_axon(self):
+        if not self.nerve_dict:
+            return
+        if not self.axon_list_view.currentIndex().isValid():
+            return
+        selected_index = self.axon_list_view.currentIndex()
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        del selected_nerve.axon_infos_list[selected_index.row()]
+        self.update_axon_list()
+
+    def set_axon_diam_widget(self):
+        if self.axon_type_combo_box.currentText() == "RMG":
+            self.axon_diam_combo_box.setVisible(True)
+            self.axon_diam_spin_box.setVisible(False)
+        else:
+            self.axon_diam_combo_box.setVisible(False)
+            self.axon_diam_spin_box.setVisible(True)
+
+    def change_nerve_property_box(self):
+        if not self.nerve_dict:
+            self.properties_groupBox.setEnabled(False)
+            return
+        self.properties_groupBox.setEnabled(True)
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        self.update_axon_list()
+        self.name_label.setText(self.nerve_combo_box.currentText())
+        self.x_spin_box.setValue(selected_nerve.x / scaling)
+        self.y_spin_box.setValue(selected_nerve.y / scaling)
+        self.z_spin_box.setValue(selected_nerve.z / scaling)
+        self.angle_spin_box.setValue(selected_nerve.angle)
+        self.length_spin_box.setValue(selected_nerve.length / scaling)
+        self.diam_spin_box.setValue(selected_nerve.nerve_diameter)
+        self.e_field_changed.emit()
+
+    def set_nerve_x(self, value):
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        selected_nerve.x = value * scaling  # convert from mm to um
+        self.update_axons()
+        self.e_field_changed.emit()
+
+    def set_nerve_y(self, value):
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        selected_nerve.y = value * scaling  # convert from mm to um
+        self.update_axons()
+        self.e_field_changed.emit()
+
+    def set_nerve_z(self, value):
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        selected_nerve.z = value * scaling  # convert from mm to um
+        self.update_axons()
+        self.e_field_changed.emit()
+
+    def set_nerve_angle(self, value):
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        selected_nerve.angle = value
+        self.update_axons()
+        self.e_field_changed.emit()
+
+    def set_nerve_length(self, value):
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        selected_nerve.length = value * scaling  # convert from mm to um
+        self.update_axons()
+        self.e_field_changed.emit()
+
+    def set_nerve_diam(self, value):
+        selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
+        selected_nerve.nerve_diameter = value
+        self.e_field_changed.emit()

@@ -14,6 +14,13 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="1" column="0">
+    <widget class="QPushButton" name="load_cst_button">
+     <property name="text">
+      <string>Load CST E-Field</string>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="1">
     <widget class="QPushButton" name="load_e_field_button">
      <property name="text">
@@ -21,17 +28,17 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QPushButton" name="load_cst_button">
-     <property name="text">
-      <string>Load CST File</string>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="2">
     <widget class="QPushButton" name="save_e_field_button">
      <property name="text">
       <string>Save 3d E-Field matrix</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QPushButton" name="confirm_button">
+     <property name="text">
+      <string>Confirm changes</string>
      </property>
     </widget>
    </item>
@@ -47,9 +54,23 @@
     </widget>
    </item>
    <item row="2" column="0">
-    <widget class="QPushButton" name="confirm_button">
+    <widget class="QPushButton" name="load_nerve_shape_button">
      <property name="text">
-      <string>Confirm changes</string>
+      <string>Load CST Nerve Shape</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QPushButton" name="load_saved_nerve_shape_button">
+     <property name="text">
+      <string>Load Nerve Shape</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2">
+    <widget class="QPushButton" name="save_nerve_shape_button">
+     <property name="text">
+      <string>Save Nerve Shape</string>
      </property>
     </widget>
    </item>

@@ -18,6 +18,19 @@ class DataBase(dict):
             self.get("y ")[i] = factor * self.get("y ")[i]
             self.get("z ")[i] = factor * self.get("z ")[i]
 
+    def generate_nerve_shape(self):
+        x = np.asarray(self.get("x "))
+        y = np.asarray(self.get("y "))
+        z = np.asarray(self.get("z "))
+        xRe = np.asarray(self.get("xRe "))
+        yRe = np.asarray(self.get("yRe "))
+        zRe = np.asarray(self.get("zRe "))
+        xIm = np.asarray(self.get("xIm "))
+        yIm = np.asarray(self.get("yIm "))
+        zIm = np.asarray(self.get("zIm "))
+        nerve_shape = NerveShape(x, y, z, xRe, yRe, zRe, xIm, yIm, zIm)
+        return nerve_shape
+
     def generate_e_field_matrix(self):
         # x_dimensions and y_dimensions of e_field must be the same
         z_control = self.get("z ")
@@ -57,6 +70,30 @@ class DataBase(dict):
         e_modified.e_y = rotated_e_y
 
         return e_modified
+
+
+class NerveShape():
+
+    def __init__(self, x, y, z, xRe, yRe, zRe, xIm, yIm, zIm):
+        self.x = x
+        self.y = y
+        self.z = z
+
+        phase_x = []
+        phase_y = []
+        phase_z = []
+
+        for i in range(len(x)):
+            phase_x.append(np.arccos(xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)) if xIm[i] >= 0 else - np.arccos(
+                xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)))
+            phase_y.append(np.arccos(yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)) if yIm[i] >= 0 else - np.arccos(
+                yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)))
+            phase_z.append(np.arccos(zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)) if zIm[i] >= 0 else - np.arccos(
+                zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)))
+
+        self.e_x = np.true_divide(phase_x, np.absolute(phase_x)) * np.sqrt(xRe ** 2 + xIm ** 2)
+        self.e_y = np.true_divide(phase_y, np.absolute(phase_y)) * np.sqrt(yRe ** 2 + yIm ** 2)
+        self.e_z = np.true_divide(phase_z, np.absolute(phase_z)) * np.sqrt(zRe ** 2 + zIm ** 2)
 
 
 class EField():

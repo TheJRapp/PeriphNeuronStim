@@ -31,7 +31,6 @@ class NeuronSim:
     def generate_axon(self, mp):
         # mp = model parameters
 
-
         if mp.axon_type == 'HH':
             axon = self.hh(mp.diameter, mp.x, mp.y, mp.z, mp.angle, mp.length)
         elif mp.axon_type == 'RMG':

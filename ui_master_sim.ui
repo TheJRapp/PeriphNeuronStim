@@ -15,75 +15,21 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0" colspan="6">
-     <widget class="QLabel" name="label_2">
+    <item row="4" column="3">
+     <widget class="QPushButton" name="stimulus_button">
       <property name="text">
-       <string>Nerves</string>
+       <string>Configure stimulus</string>
       </property>
      </widget>
     </item>
-    <item row="5" column="4">
-     <widget class="QDoubleSpinBox" name="axon_diam_spin_box">
-      <property name="minimum">
-       <double>1.000000000000000</double>
-      </property>
-      <property name="maximum">
-       <double>20.000000000000000</double>
-      </property>
-      <property name="value">
-       <double>16.000000000000000</double>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="5">
-     <widget class="QPushButton" name="add_axon_button">
+    <item row="3" column="3">
+     <widget class="QPushButton" name="e_field_along_axon_button">
       <property name="text">
-       <string>Add axon</string>
+       <string>Show E-Field along axon</string>
       </property>
      </widget>
     </item>
-    <item row="5" column="1">
-     <widget class="QComboBox" name="axon_type_combo_box">
-      <item>
-       <property name="text">
-        <string>MHH</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>RMG</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>HH</string>
-       </property>
-      </item>
-     </widget>
-    </item>
-    <item row="7" column="0" colspan="5">
-     <widget class="QGroupBox" name="groupBox">
-      <property name="title">
-       <string>Properties</string>
-      </property>
-      <layout class="QVBoxLayout" name="property_layout"/>
-     </widget>
-    </item>
-    <item row="6" column="5">
-     <widget class="QPushButton" name="delete_axon_button">
-      <property name="text">
-       <string>Delete axon</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="5">
-     <widget class="QPushButton" name="delete_nerve_button">
-      <property name="text">
-       <string>Delete nerve</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="8" rowspan="5" colspan="2">
+    <item row="0" column="4" rowspan="3" colspan="2">
      <widget class="QWidget" name="e_field_widget" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -94,71 +40,28 @@
       <layout class="QVBoxLayout" name="e_field_layout"/>
      </widget>
     </item>
-    <item row="2" column="0" colspan="5">
-     <widget class="QComboBox" name="nerve_combo_box"/>
-    </item>
-    <item row="5" column="0">
-     <widget class="QLabel" name="label_3">
-      <property name="text">
-       <string>Type:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="5">
-     <widget class="QPushButton" name="add_nerve_button">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <property name="text">
-       <string>Add nerve</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="0" colspan="6">
-     <widget class="QListView" name="axon_list_view"/>
-    </item>
-    <item row="1" column="0" colspan="5">
-     <widget class="QLineEdit" name="nerve_name_line_edit"/>
-    </item>
-    <item row="3" column="0" colspan="6">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Axon list</string>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="3">
-     <widget class="QComboBox" name="axon_diam_combo_box"/>
-    </item>
-    <item row="5" column="2">
-     <widget class="QLabel" name="label_4">
-      <property name="text">
-       <string>Diam.:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="6" rowspan="7">
+    <item row="1" column="2" rowspan="5">
      <widget class="Line" name="line">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
      </widget>
     </item>
-    <item row="5" column="7">
-     <widget class="QPushButton" name="e_field_along_axon_button">
+    <item row="2" column="3">
+     <widget class="QPushButton" name="conf_efield_button">
       <property name="text">
-       <string>Show E-Field along axon</string>
+       <string>Configure E-Field</string>
       </property>
      </widget>
     </item>
-    <item row="6" column="7">
-     <widget class="QPushButton" name="stimulus_button">
+    <item row="5" column="3">
+     <widget class="QPushButton" name="simulation_button">
       <property name="text">
-       <string>Configure stimulus</string>
+       <string>Start simulation</string>
       </property>
      </widget>
     </item>
-    <item row="5" column="8" rowspan="3" colspan="2">
+    <item row="3" column="4" rowspan="3" colspan="2">
      <widget class="QWidget" name="axon_potential_widget" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -169,18 +72,18 @@
       <layout class="QVBoxLayout" name="potential_layout"/>
      </widget>
     </item>
-    <item row="4" column="7">
-     <widget class="QPushButton" name="conf_efield_button">
-      <property name="text">
-       <string>Configure E-Field</string>
+    <item row="0" column="0" rowspan="6" colspan="2">
+     <widget class="QGroupBox" name="groupBox">
+      <property name="title">
+       <string>Nerve</string>
       </property>
-     </widget>
-    </item>
-    <item row="7" column="7">
-     <widget class="QPushButton" name="simulation_button">
-      <property name="text">
-       <string>Start simulation</string>
-      </property>
+      <layout class="QVBoxLayout" name="property_layout">
+       <item>
+        <widget class="QWidget" name="nerve_widget" native="true">
+         <layout class="QGridLayout" name="nerve_layout"/>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
    </layout>
