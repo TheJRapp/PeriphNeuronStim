@@ -22,7 +22,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFil
 
 Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_manipulation_widget.ui")
 
-default_e_field_path = 'Z:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/biovoxel.pkl'
+# default_e_field_path = 'Z:/Doktorarbeit/Phrenicus/PeriphNeuronStim_gitHub/biovoxel.pkl'
+default_e_field_path = 'biovoxel.pkl'
 from matplotlib.backend_bases import key_press_handler
 
 # This class does:
@@ -129,7 +130,7 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
             # TODO: warning
             return
         with open(filename, 'rb') as e:
-            self.e_field_list = pickle.load(e)
+            self.nerve_shape = pickle.load(e)
         self.update_e_field()
 
     def save_nerve_shape(self):
@@ -215,7 +216,7 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.set_zlabel('z')
-        plt.show()
+        # plt.show()
 
         return fig1
 

@@ -27,6 +27,7 @@ import time
 import pandas as pd
 import e_field_manipulation_widget as em
 import neuron_sim as ns
+import neuron_sim_nerve_shape as ns_ns
 import field_plot as fp
 
 
@@ -86,13 +87,16 @@ class Main(QMainWindow, Ui_MainWindow):
         # TODO: update field_plot_manager
 
     def update_e_field(self):
-        self.e_field_list = self.e_field_widget.e_field_list
-        if not self.nerve_widget.nerve_dict:
-            self.remove_plot()
-            self.add_plot(self.e_field_widget.plot_e_field(self.e_field_list[0]))
-            return
-        selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        fig = self.e_field_widget.plot_2d_field_with_cable(self.e_field_list[0], selected_nerve, scaling)
+        if self.e_field_widget.mode == 1:
+            self.e_field_list = self.e_field_widget.e_field_list
+            if not self.nerve_widget.nerve_dict:
+                self.remove_plot()
+                self.add_plot(self.e_field_widget.plot_e_field(self.e_field_list[0]))
+                return
+            selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
+            fig = self.e_field_widget.plot_2d_field_with_cable(self.e_field_list[0], selected_nerve, scaling)
+        else:
+            fig = self.e_field_widget.plot_nerve_shape(self.e_field_widget.nerve_shape)
         self.remove_plot()
         self.add_plot(fig)
 
@@ -129,7 +133,10 @@ class Main(QMainWindow, Ui_MainWindow):
         if hasattr(self, 'field_axon_canvas'):
             self.potential_layout.removeWidget(self.field_axon_canvas)
             self.field_axon_canvas.close()
-        neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_list, self.time_axis, self.stimulus, self.total_time)
+        if self.e_field_widget.mode == 1:
+            neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_list, self.time_axis, self.stimulus, self.total_time)
+        else:
+            neuron_sim = ns_ns.NeuronSimNerveShape(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_widget.nerve_shape, self.time_axis, self.stimulus, self.total_time)
         neuron_sim.quasipot(interpolation_radius_index)
         e_field_along_axon = neuron_sim.axon.e_field_along_axon
         fig1 = Figure()

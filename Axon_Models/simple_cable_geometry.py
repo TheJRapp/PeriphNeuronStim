@@ -32,19 +32,19 @@ class TiltedAxon(simple_axon.Axon):
 
 class BendedAxon(simple_axon.Axon):
     # create BendedAxon by combining TiltedAxons together
-    def __init__(self, theta, phi, axons_number=2, x=500, y=500, z=500, segments=1, inter_node_diameter=10, node_diameter=10, node_length=1, internode_length=1e3, node_internode_pairs=10):
-        super(BendedAxon, self).__init__(x, y, z, segments, inter_node_diameter, node_diameter, node_length, internode_length, node_internode_pairs)
+    def __init__(self, theta, phi, axons_number=2, x=500, y=500, z=500, segments=1, inter_node_diameter=10, node_diameter=10, node_length=1, internode_length=1e3, node_internode_pairs=None):
+        super(BendedAxon, self).__init__(x, y, z, segments, inter_node_diameter, node_diameter, node_length, internode_length, node_internode_pairs[0])
 
         self.axons_number=axons_number
         self.node_internode_pairs=node_internode_pairs
-        self.total_length = (node_length + internode_length) * node_internode_pairs * axons_number + node_length
+        self.total_length = (node_length + internode_length) * sum(node_internode_pairs) + node_length
         self.name = "Simple_Axon_noded_" + "{:.2f}".format(node_diameter) + "_intNoded_" + str(
-            inter_node_diameter) + '_nnode_' + str(node_internode_pairs * axons_number)
+            inter_node_diameter) + '_nnode_' + str(sum(node_internode_pairs) * axons_number)
 
 
         self.axon_list = []
-        axon = TiltedAxon(theta[0], phi[0], x, y, z, segments, inter_node_diameter, node_diameter, node_length, internode_length, node_internode_pairs)
-        self.sections = axon.sections
+        axon = TiltedAxon(theta[0], phi[0], x, y, z, segments, inter_node_diameter, node_diameter, node_length, internode_length, node_internode_pairs[0])
+        self.sections = axon.sections.copy()
         self.x = axon.x.copy()
         self.x = self.x.tolist()
         self.y = axon.y.copy()
@@ -53,13 +53,17 @@ class BendedAxon(simple_axon.Axon):
         self.z = self.z.tolist()
         self.axon_list.append(axon)
         for i in range(axons_number-1):
-            axon = TiltedAxon(theta[i+1], phi[i+1], self.axon_list[-1].x_final + internode_length/(internode_length+node_length)*(self.x[-1]-self.x[-2]), self.axon_list[-1].y_final+ internode_length/(internode_length+node_length)*(self.y[-1]-self.y[-2]), self.axon_list[-1].z_final + internode_length/(internode_length+node_length)*(self.z[-1]-self.z[-2]), segments, inter_node_diameter, node_diameter, node_length, internode_length, node_internode_pairs)
-            axon.sections[0].connect(self.axon_list[-1].sections[-1], 1)
-            self.sections.extend(axon.sections)
-            self.x.extend(axon.x.tolist())
-            self.y.extend(axon.y.tolist())
-            self.z.extend(axon.z.tolist())
-            self.axon_list.append(axon)
+            axon_c = TiltedAxon(theta[i+1], phi[i+1],
+                              self.axon_list[-1].x_final + internode_length/(internode_length+node_length)*(self.x[-1]-self.x[-2]),
+                              self.axon_list[-1].y_final+ internode_length/(internode_length+node_length)*(self.y[-1]-self.y[-2]),
+                              self.axon_list[-1].z_final + internode_length/(internode_length+node_length)*(self.z[-1]-self.z[-2]),
+                              segments, inter_node_diameter, node_diameter, node_length, internode_length, node_internode_pairs[i+1])
+            axon_c.sections[0].connect(self.axon_list[-1].sections[-1], 1)
+            self.sections.extend(axon_c.sections)
+            self.x.extend(axon_c.x.tolist())
+            self.y.extend(axon_c.y.tolist())
+            self.z.extend(axon_c.z.tolist())
+            self.axon_list.append(axon_c)
 
         del self.x[-1]
         del self.y[-1]
@@ -98,7 +102,7 @@ class BendedAxon(simple_axon.Axon):
         step_vector = np.zeros(len(self.get_segments()))    # to create indices/step vector for unitvector: step_vector over number of segments
         s = 1                                               # iterate so that step_vector=(0, 0, 0, ..., 1, 1, 1, ...., 2, 2, 2, ...); length of each sequence of numbers corresponds to length of axon node_internode_pairs*2
         while s < self.axons_number:                        # -> vector shows index (=corresponding axon) for every segment
-            step_vector[self.node_internode_pairs * 2 * s:] +=  1
+            step_vector[self.node_internode_pairs[s-1] * 2 * s:] += 1
             s = s + 1
         return step_vector
 
