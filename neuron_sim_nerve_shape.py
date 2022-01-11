@@ -46,6 +46,14 @@ class NeuronSimNerveShape:
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = self.quasi_potentials(self.stimulus, self.nerve_shape, self.axon)
         mf.play_stimulus_matrix(self.axon, self.time_axis)
 
+    def simple_simulation(self):
+
+        h.finitialize(-80)
+        h.continuerun(self.total_time)
+
+        ax1, ax2 = pt.plot_traces_and_field('Nodes: ' + self.axon.name, self.time_axis, self.stimulus, self.axon)
+        return ax1, ax2
+
     def simple(self, diameter, nerve_shape):
         segments = 1
         node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis
@@ -63,14 +71,14 @@ class NeuronSimNerveShape:
         phi = []
         node_internode_pairs = []
         axons_number = 0
-        step_size = 5
+        step_size = 1
         for i in range(len(nerve_shape.x)-step_size)[::step_size]:
             length = np.sqrt((nerve_shape.x[i+step_size] - nerve_shape.x[i]) ** 2 + (nerve_shape.y[i+step_size] - nerve_shape.y[i]) ** 2
                              + (nerve_shape.z[i+step_size] - nerve_shape.z[i]) ** 2)
-            # phi_c = np.arctan((nerve_shape.y[i+step_size] - nerve_shape.y[i]) / (nerve_shape.x[i+step_size] - nerve_shape.x[i]))
             phi_c = np.arctan2(
                 (nerve_shape.y[i + step_size] - nerve_shape.y[i]), (nerve_shape.x[i + step_size] - nerve_shape.x[i]))
-            theta_c = np.arctan(length / nerve_shape.z[i])
+            theta_c = np.arccos(((nerve_shape.z[i + step_size] - nerve_shape.z[i]) / length))
+            test = nerve_shape.z[i] / length
             node_internode_pairs_c = int(round(length / (node_length + internode_length)))
             if node_internode_pairs_c > 0:
                 phi.append(phi_c)
@@ -121,11 +129,13 @@ class NeuronSimNerveShape:
         quasi_pot_prev = 0
         step_vector = cable.get_segment_indices()
         segment_counter = 0
+
+        e_field_count = int(round(len(nerve_shape.e_y) / len(cable.axon_list)))
         for i, axon in zip(range(len(cable.axon_list)), cable.axon_list):
             for section in axon.sections:
-                e_field_current = cable.get_unitvector()[int(step_vector[segment_counter])][0] * nerve_shape.e_x[i] + \
-                                    cable.get_unitvector()[int(step_vector[segment_counter])][1] * nerve_shape.e_y[i] + \
-                                    cable.get_unitvector()[int(step_vector[segment_counter])][2] * nerve_shape.e_z[i]
+                e_field_current = cable.get_unitvector()[int(step_vector[segment_counter])][0] * nerve_shape.e_x[i* e_field_count] + \
+                                    cable.get_unitvector()[int(step_vector[segment_counter])][1] * nerve_shape.e_y[i* e_field_count] + \
+                                    cable.get_unitvector()[int(step_vector[segment_counter])][2] * nerve_shape.e_z[i* e_field_count]
 
                 if segment_counter == 0:
                     k = 1

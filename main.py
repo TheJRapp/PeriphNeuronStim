@@ -137,6 +137,13 @@ class Main(QMainWindow, Ui_MainWindow):
             neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_list, self.time_axis, self.stimulus, self.total_time)
         else:
             neuron_sim = ns_ns.NeuronSimNerveShape(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_widget.nerve_shape, self.time_axis, self.stimulus, self.total_time)
+            fig2 = Figure()
+            ax = plt.gca(projection='3d')
+            ax.scatter3D(neuron_sim.axon.x, neuron_sim.axon.y, neuron_sim.axon.z)
+            ax.set_xlabel('x')
+            ax.set_ylabel('y')
+            ax.set_zlabel('z')
+            plt.show()
         neuron_sim.quasipot(interpolation_radius_index)
         e_field_along_axon = neuron_sim.axon.e_field_along_axon
         fig1 = Figure()
@@ -153,8 +160,13 @@ class Main(QMainWindow, Ui_MainWindow):
         if not selected_nerve.axon_infos_list:
             return
         for axon in selected_nerve.axon_infos_list:
-            neuron_sim = ns.NeuronSim(axon, self.e_field_list,
-                                      self.time_axis, self.stimulus, self.total_time)
+            if self.e_field_widget.mode == 1:
+                neuron_sim = ns.NeuronSim(axon, self.e_field_list,
+                                          self.time_axis, self.stimulus, self.total_time)
+            else:
+                neuron_sim = ns_ns.NeuronSimNerveShape(axon,
+                                                       self.e_field_widget.nerve_shape, self.time_axis, self.stimulus,
+                                                       self.total_time)
             neuron_sim.quasipot(interpolation_radius_index)
             neuron_sim.simple_simulation()
         plt.show()
