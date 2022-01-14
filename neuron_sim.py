@@ -80,7 +80,7 @@ class NeuronSim:
 
     def simple(self, diameter, x, y, z, angle, length):
         segments = 1
-
+        node_internode_pairs_per_unit_vector = []
         node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis
         internode_diameter = diameter
         node_length = 1
@@ -90,7 +90,7 @@ class NeuronSim:
             internode_length = 100 * diameter
         axons_number = 1
         amount = int((length / (node_length + internode_length)) / axons_number)
-        node_internode_pairs_per_unit_vector = amount
+        node_internode_pairs_per_unit_vector.append(amount)
         phi = [angle / 360 * 2 * np.pi]
         theta = [90 / 360 * 2 * np.pi, 90 / 360 * 2 * np.pi]
         # phi = [np.pi / 2, np.pi / 2]

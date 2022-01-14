@@ -34,6 +34,7 @@ import field_plot as fp
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
 interpolation_radius_index = 2
+nerve_shape_step_size = 10
 
 class Main(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
@@ -57,12 +58,14 @@ class Main(QMainWindow, Ui_MainWindow):
 
         self.conf_efield_button.clicked.connect(self.configure_efield)
         self.e_field_widget.e_field_changed.connect(self.update_e_field)
+        self.e_field_widget.e_field_changed.connect(self.set_mode)
 
         self.nerve_widget.e_field_changed.connect(self.update_e_field)
 
         self.stimulus_widget.stim_combo_box.currentTextChanged.connect(self.update_stimulus)
         self.stimulus_widget.total_time_spin_box.valueChanged.connect(self.update_stimulus)
         self.stimulus_widget.start_time_spin_box.valueChanged.connect(self.update_stimulus)
+        self.stimulus_widget.stimulus_intensity_spin_box.valueChanged.connect(self.update_stimulus)
         self.stimulus_widget.stimulus_duration_spin_box.valueChanged.connect(self.update_stimulus)
         self.stimulus_button.clicked.connect(self.open_stimulus_widget)
         self.e_field_along_axon_button.clicked.connect(self.checkin_nerve)
@@ -100,6 +103,15 @@ class Main(QMainWindow, Ui_MainWindow):
         self.remove_plot()
         self.add_plot(fig)
 
+    def set_mode(self):
+        if self.e_field_widget.mode == 1:
+            if not self.nerve_widget.nerve_dict:
+                self.nerve_widget.properties_groupBox.setEnabled(False)
+            else:
+                self.nerve_widget.properties_groupBox.setEnabled(True)
+        else:
+            self.nerve_widget.properties_groupBox.setEnabled(False)
+
     def open_stimulus_widget(self):
         self.stimulus_widget.show()
         self.update_stimulus()
@@ -112,6 +124,7 @@ class Main(QMainWindow, Ui_MainWindow):
                                                                    self.stimulus_widget.total_time_spin_box.value(),
                                                                    self.stimulus_widget.start_time_spin_box.value(),
                                                                    self.stimulus_widget.stimulus_duration_spin_box.value())
+        self.stimulus = self.stimulus * self.stimulus_widget.stimulus_intensity_spin_box.value()
         self.total_time = self.stimulus_widget.total_time_spin_box.value()
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111)
@@ -136,7 +149,7 @@ class Main(QMainWindow, Ui_MainWindow):
         if self.e_field_widget.mode == 1:
             neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_list, self.time_axis, self.stimulus, self.total_time)
         else:
-            neuron_sim = ns_ns.NeuronSimNerveShape(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_widget.nerve_shape, self.time_axis, self.stimulus, self.total_time)
+            neuron_sim = ns_ns.NeuronSimNerveShape(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_widget.nerve_shape, self.time_axis, self.stimulus, self.total_time, nerve_shape_step_size)
             fig2 = Figure()
             ax = plt.gca(projection='3d')
             ax.scatter3D(neuron_sim.axon.x, neuron_sim.axon.y, neuron_sim.axon.z)
@@ -166,7 +179,7 @@ class Main(QMainWindow, Ui_MainWindow):
             else:
                 neuron_sim = ns_ns.NeuronSimNerveShape(axon,
                                                        self.e_field_widget.nerve_shape, self.time_axis, self.stimulus,
-                                                       self.total_time)
+                                                       self.total_time, nerve_shape_step_size)
             neuron_sim.quasipot(interpolation_radius_index)
             neuron_sim.simple_simulation()
         plt.show()
@@ -177,6 +190,9 @@ if __name__ == '__main__':
     from PyQt5 import QtWidgets, QtCore
 
     app = QtWidgets.QApplication(sys.argv)
+    pixmap = QtGui.QPixmap("splash.png")
+    splash = QtWidgets.QSplashScreen(pixmap)
+    splash.show()
     main = Main()
 
     main.show()

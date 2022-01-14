@@ -83,6 +83,7 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         parser.parse_file(storage)
         storage.convert_units(1e3)  # convert mm from CST to um used for cable
         self.e_field_list = storage.generate_e_field_matrix()
+        self.mode = 1
         self.update_e_field()
 
     def load_e_field(self):
@@ -97,6 +98,7 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
         # with open(path + "20210325_biovoxel_e_field_matrix_list", 'rb') as e:
         with open(filename, 'rb') as e:
             self.e_field_list = pickle.load(e)
+        self.mode = 1
         self.update_e_field()
 
     def save_e_field(self):
@@ -131,6 +133,7 @@ class eFieldWidget(QWidget_EField, Ui_EFieldWidget):
             return
         with open(filename, 'rb') as e:
             self.nerve_shape = pickle.load(e)
+        self.mode = 0
         self.update_e_field()
 
     def save_nerve_shape(self):

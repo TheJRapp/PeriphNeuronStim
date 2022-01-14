@@ -15,13 +15,14 @@ from matplotlib import pyplot as plt
 
 class NeuronSimNerveShape:
 
-    def __init__(self, axon_model_parameter, nerve_shape, time_axis, stimulus, total_time):
+    def __init__(self, axon_model_parameter, nerve_shape, time_axis, stimulus, total_time, nerve_shape_step_size):
         super(NeuronSimNerveShape, self).__init__()
 
         h.load_file('stdrun.hoc')
         h.celsius = 37
         h.dt = 0.001  # ms
 
+        self.step_size = nerve_shape_step_size
         self.axon = self.generate_axon(axon_model_parameter, nerve_shape)
         self.nerve_shape = nerve_shape
         self.time_axis = time_axis
@@ -71,7 +72,7 @@ class NeuronSimNerveShape:
         phi = []
         node_internode_pairs = []
         axons_number = 0
-        step_size = 1
+        step_size = self.step_size
         for i in range(len(nerve_shape.x)-step_size)[::step_size]:
             length = np.sqrt((nerve_shape.x[i+step_size] - nerve_shape.x[i]) ** 2 + (nerve_shape.y[i+step_size] - nerve_shape.y[i]) ** 2
                              + (nerve_shape.z[i+step_size] - nerve_shape.z[i]) ** 2)
@@ -129,16 +130,26 @@ class NeuronSimNerveShape:
         quasi_pot_prev = 0
         step_vector = cable.get_segment_indices()
         segment_counter = 0
-
-        e_field_count = int(round(len(nerve_shape.e_y) / len(cable.axon_list)))
+        offset = 0
         for i, axon in zip(range(len(cable.axon_list)), cable.axon_list):
             for section in axon.sections:
-                e_field_current = cable.get_unitvector()[int(step_vector[segment_counter])][0] * nerve_shape.e_x[i* e_field_count] + \
-                                    cable.get_unitvector()[int(step_vector[segment_counter])][1] * nerve_shape.e_y[i* e_field_count] + \
-                                    cable.get_unitvector()[int(step_vector[segment_counter])][2] * nerve_shape.e_z[i* e_field_count]
 
+                min_dist = np.argmin(np.sqrt( (nerve_shape.x - cable.x[segment_counter]) ** 2 +
+                                        (nerve_shape.y - cable.y[segment_counter]) ** 2 +
+                                        (nerve_shape.z - cable.z[segment_counter]) ** 2 ))
+
+                # e_field_current = cable.get_unitvector()[int(step_vector[segment_counter])][0] * nerve_shape.e_x[i* self.step_size] + \
+                #                     cable.get_unitvector()[int(step_vector[segment_counter])][1] * nerve_shape.e_y[i* self.step_size] + \
+                #                     cable.get_unitvector()[int(step_vector[segment_counter])][2] * nerve_shape.e_z[i* self.step_size]
+
+                e_field_current = cable.get_unitvector()[int(step_vector[segment_counter])][0] * nerve_shape.e_x[min_dist] + \
+                                    cable.get_unitvector()[int(step_vector[segment_counter])][1] * nerve_shape.e_y[min_dist] + \
+                                    cable.get_unitvector()[int(step_vector[segment_counter])][2] * nerve_shape.e_z[min_dist]
+
+                e_field_current = e_field_current - offset
                 if segment_counter == 0:
                     k = 1
+                    offset = e_field_current
                 else:
                     k = segment_counter
                 e_field_integral = (1 / 2) * (e_field_current + e_average_prev)
