@@ -22,17 +22,17 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="3">
-     <widget class="QPushButton" name="e_field_along_axon_button">
-      <property name="text">
-       <string>Show E-Field along axon</string>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="2" rowspan="5">
      <widget class="Line" name="line">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="3">
+     <widget class="QPushButton" name="e_field_along_axon_button">
+      <property name="text">
+       <string>Show E-Field along axon</string>
       </property>
      </widget>
     </item>
@@ -75,7 +75,14 @@
       <layout class="QVBoxLayout" name="e_field_layout"/>
      </widget>
     </item>
-    <item row="1" column="4" rowspan="5" colspan="2">
+    <item row="6" column="3">
+     <widget class="QPushButton" name="threshold_config_button">
+      <property name="text">
+       <string>Configure threshold search</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="4" rowspan="6" colspan="2">
      <widget class="QWidget" name="axon_potential_widget" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">

@@ -1,6 +1,6 @@
 import misc_functions as mf
 import plot as pt
-import threshold as th
+import threshold_widget as th
 from neuron import h
 import numpy as np
 from Axon_Models import hh_cable_geometry

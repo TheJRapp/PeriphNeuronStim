@@ -1,6 +1,6 @@
 import misc_functions as mf
 import plot as pt
-import threshold as th
+import threshold_widget as th
 from neuron import h
 import numpy as np
 from Axon_Models import hh_cable_geometry
@@ -91,25 +91,6 @@ class NeuronSimNerveShape:
                                                         internode_diameter,
                                                         node_diameter, node_length, internode_length,
                                                         node_internode_pairs)
-        # plt.figure()
-        # plt.plot(simple_model.x)
-        # plt.show()
-        # plt.figure()
-        # plt.plot(nerve_shape.x)
-        # plt.show()
-        # plt.figure()
-        # plt.plot(simple_model.y)
-        # plt.show()
-        # plt.figure()
-        # plt.plot(nerve_shape.y)
-        # plt.show()
-        # plt.figure()
-        # plt.plot(simple_model.z)
-        # plt.show()
-        # plt.figure()
-        # plt.plot(nerve_shape.z)
-        # plt.show()
-
         return simple_model
 
     def quasi_potentials(self, stimulus, nerve_shape, cable):

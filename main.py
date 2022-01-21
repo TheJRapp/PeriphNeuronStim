@@ -13,22 +13,17 @@ from matplotlib.backends.backend_qt5agg import (
     NavigationToolbar2QT as NavigationToolbar)
 from matplotlib import pyplot as plt
 
-from config_widgets import stimulusWidget
+from stimulus_widget import stimulusWidget
 from e_field_manipulation_widget import eFieldWidget
 from nerve_widget import nerveWidget
+from threshold_widget import thresholdWidget
 
 import numpy as np
 import sys
 sys.path.insert(0, "C:/nrn/lib/python")
 
-import nerve as ner
-import stimulus as stim
-import time
-import pandas as pd
-import e_field_manipulation_widget as em
 import neuron_sim as ns
 import neuron_sim_nerve_shape as ns_ns
-import field_plot as fp
 
 
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
@@ -41,33 +36,37 @@ class Main(QMainWindow, Ui_MainWindow):
         super(Main, self).__init__()
 
         self.setupUi(self)
+        self.setWindowIcon(QtGui.QIcon('icon.png'))
+        self.setWindowTitle("MFE Neuro Simulation")
 
+        # E-Field widget
         self.e_field_widget = eFieldWidget()
         e_field_name = 'halsmodell'
         self.e_field_list = self.e_field_widget.get_e_field(e_field_name)
-
         self.add_plot(self.e_field_widget.plot_e_field(self.e_field_list[0]))
+
+        # Nerve widget
         self.nerve_widget = nerveWidget()
         self.nerve_layout.addWidget(self.nerve_widget)
 
+        # Stimulus widget
         self.stimulus_widget = stimulusWidget()
-        self.stimulus_widget.stim_combo_box.addItems(stim.stimulus_string_list())
-        self.update_stimulus()
+
+        # Threshold search widget
+        self.threshold_widget = thresholdWidget()
 
         # signal connections
-
         self.conf_efield_button.clicked.connect(self.configure_efield)
         self.e_field_widget.e_field_changed.connect(self.update_e_field)
         self.e_field_widget.e_field_changed.connect(self.set_mode)
 
         self.nerve_widget.e_field_changed.connect(self.update_e_field)
 
-        self.stimulus_widget.stim_combo_box.currentTextChanged.connect(self.update_stimulus)
-        self.stimulus_widget.total_time_spin_box.valueChanged.connect(self.update_stimulus)
-        self.stimulus_widget.start_time_spin_box.valueChanged.connect(self.update_stimulus)
-        self.stimulus_widget.stimulus_intensity_spin_box.valueChanged.connect(self.update_stimulus)
-        self.stimulus_widget.stimulus_duration_spin_box.valueChanged.connect(self.update_stimulus)
         self.stimulus_button.clicked.connect(self.open_stimulus_widget)
+        self.stimulus_widget.stimulus_changed.connect(self.update_e_field)
+
+        self.threshold_config_button.clicked.connect(self.open_threshold_widget)
+
         self.e_field_along_axon_button.clicked.connect(self.checkin_nerve)
         self.simulation_button.clicked.connect(self.start_simulation)
 
@@ -114,24 +113,12 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def open_stimulus_widget(self):
         self.stimulus_widget.show()
-        self.update_stimulus()
+        self.stimulus_widget.update_stimulus()
 
-    def update_stimulus(self):
-        if hasattr(self, 'stim_canvas'):
-            self.stimulus_widget.stimulus_layout.removeWidget(self.stim_canvas)
-            self.stim_canvas.close()
-        self.time_axis, self.stimulus, self.stim_name = stim.get_stim_from_string(self.stimulus_widget.stim_combo_box.currentText(),
-                                                                   self.stimulus_widget.total_time_spin_box.value(),
-                                                                   self.stimulus_widget.start_time_spin_box.value(),
-                                                                   self.stimulus_widget.stimulus_duration_spin_box.value())
-        self.stimulus = self.stimulus * self.stimulus_widget.stimulus_intensity_spin_box.value()
-        self.total_time = self.stimulus_widget.total_time_spin_box.value()
-        fig1 = Figure()
-        ax1f1 = fig1.add_subplot(111)
-        ax1f1.plot(self.time_axis, self.stimulus)
-        self.stim_canvas = FigureCanvas(fig1)
-        self.stimulus_widget.stimulus_layout.addWidget(self.stim_canvas)
-        self.stim_canvas.draw()
+    def stimulus_changed(self):
+        self.stimulus = self.stimulus_widget.stimulus
+        self.time_axis = self.stimulus_widget.time_axis
+        self.total_time = self.stimulus_widget.total_time
 
     def checkin_nerve(self):
         if not self.nerve_widget.nerve_dict:
@@ -184,6 +171,15 @@ class Main(QMainWindow, Ui_MainWindow):
             neuron_sim.simple_simulation()
         plt.show()
 
+    def threshold_search(self):
+        if not self.nerve_widget.nerve_dict:
+            return
+        selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
+        if not selected_nerve.axon_infos_list:
+            return
+
+    def open_threshold_widget(self):
+        self.threshold_widget.show()
 
 if __name__ == '__main__':
     import sys
