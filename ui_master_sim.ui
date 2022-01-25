@@ -15,10 +15,24 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="4" column="3">
-     <widget class="QPushButton" name="stimulus_button">
+    <item row="3" column="3">
+     <widget class="QPushButton" name="e_field_along_axon_button">
       <property name="text">
-       <string>Configure stimulus</string>
+       <string>Show E-Field along axon</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="5">
+     <widget class="QPushButton" name="threshold_search_button">
+      <property name="text">
+       <string>Sarch threshold</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="4">
+     <widget class="QPushButton" name="threshold_config_button">
+      <property name="text">
+       <string>Configure threshold search</string>
       </property>
      </widget>
     </item>
@@ -29,28 +43,14 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="3">
-     <widget class="QPushButton" name="e_field_along_axon_button">
+    <item row="4" column="3">
+     <widget class="QPushButton" name="stimulus_button">
       <property name="text">
-       <string>Show E-Field along axon</string>
+       <string>Configure stimulus</string>
       </property>
      </widget>
     </item>
-    <item row="2" column="3">
-     <widget class="QPushButton" name="conf_efield_button">
-      <property name="text">
-       <string>Configure E-Field</string>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="3">
-     <widget class="QPushButton" name="simulation_button">
-      <property name="text">
-       <string>Start simulation</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0" rowspan="6" colspan="2">
+    <item row="0" column="0" rowspan="7" colspan="2">
      <widget class="QGroupBox" name="groupBox">
       <property name="title">
        <string>Nerve</string>
@@ -64,25 +64,28 @@
       </layout>
      </widget>
     </item>
-    <item row="0" column="4" colspan="2">
-     <widget class="QWidget" name="e_field_widget" native="true">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <layout class="QVBoxLayout" name="e_field_layout"/>
-     </widget>
-    </item>
-    <item row="6" column="3">
-     <widget class="QPushButton" name="threshold_config_button">
+    <item row="5" column="3">
+     <widget class="QPushButton" name="simulation_button">
       <property name="text">
-       <string>Configure threshold search</string>
+       <string>Start simulation</string>
       </property>
      </widget>
     </item>
-    <item row="1" column="4" rowspan="6" colspan="2">
+    <item row="2" column="3">
+     <widget class="QPushButton" name="conf_efield_button">
+      <property name="text">
+       <string>Configure E-Field</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="6">
+     <widget class="QLabel" name="threshold_label">
+      <property name="text">
+       <string>--</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="4" rowspan="5" colspan="3">
      <widget class="QWidget" name="axon_potential_widget" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -91,6 +94,17 @@
        </sizepolicy>
       </property>
       <layout class="QVBoxLayout" name="potential_layout"/>
+     </widget>
+    </item>
+    <item row="0" column="4" colspan="3">
+     <widget class="QWidget" name="e_field_widget" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <layout class="QVBoxLayout" name="e_field_layout"/>
      </widget>
     </item>
    </layout>

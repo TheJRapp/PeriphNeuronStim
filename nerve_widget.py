@@ -135,7 +135,7 @@ class nerveWidget(QWidget_Nerve, Ui_NerveWidget):
         self.angle_spin_box.setValue(selected_nerve.angle)
         self.length_spin_box.setValue(selected_nerve.length / scaling)
         self.diam_spin_box.setValue(selected_nerve.nerve_diameter)
-        self.e_field_changed.emit()
+        # self.e_field_changed.emit()
 
     def set_nerve_x(self, value):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]

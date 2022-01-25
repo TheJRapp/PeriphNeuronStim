@@ -39,6 +39,7 @@ class stimulusWidget(QWidget_Stim, Ui_StimulusWidget):
             self.total_time_spin_box.value(),
             self.start_time_spin_box.value(),
             self.stimulus_duration_spin_box.value())
+        self.uni_stimulus = self.stimulus
         self.stimulus = self.stimulus * self.stimulus_intensity_spin_box.value()
         self.total_time = self.total_time_spin_box.value()
         figStim = Figure()

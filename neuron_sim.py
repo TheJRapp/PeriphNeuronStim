@@ -56,8 +56,8 @@ class NeuronSim:
         ax1, ax2 = pt.plot_traces_and_field('Nodes: ' + self.axon.name, self.time_axis, self.stimulus, self.axon)
         return ax1, ax2
 
-    def threshold_simulation(self, uni_stimulus):
-        threshold = th.rough_to_fine_search(self.axon, self.total_time, self.time_axis, uni_stimulus)
+    def threshold_simulation(self, uni_stimulus, threshold_widget):
+        threshold = threshold_widget.rough_to_fine_search(self.axon, self.total_time, self.time_axis, uni_stimulus)
         return threshold
 
     def hh(self, diameter, x, y, z, angle, length):

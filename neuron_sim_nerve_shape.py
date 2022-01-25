@@ -55,6 +55,10 @@ class NeuronSimNerveShape:
         ax1, ax2 = pt.plot_traces_and_field('Nodes: ' + self.axon.name, self.time_axis, self.stimulus, self.axon)
         return ax1, ax2
 
+    def threshold_simulation(self, uni_stimulus, threshold_widget):
+        threshold = threshold_widget.rough_to_fine_search(self.axon, self.total_time, self.time_axis, uni_stimulus)
+        return threshold
+
     def simple(self, diameter, nerve_shape):
         segments = 1
         node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis

@@ -51,6 +51,7 @@ class Main(QMainWindow, Ui_MainWindow):
 
         # Stimulus widget
         self.stimulus_widget = stimulusWidget()
+        self.update_stimulus()
 
         # Threshold search widget
         self.threshold_widget = thresholdWidget()
@@ -63,9 +64,10 @@ class Main(QMainWindow, Ui_MainWindow):
         self.nerve_widget.e_field_changed.connect(self.update_e_field)
 
         self.stimulus_button.clicked.connect(self.open_stimulus_widget)
-        self.stimulus_widget.stimulus_changed.connect(self.update_e_field)
+        self.stimulus_widget.stimulus_changed.connect(self.update_stimulus)
 
         self.threshold_config_button.clicked.connect(self.open_threshold_widget)
+        self.threshold_search_button.clicked.connect(self.threshold_search)
 
         self.e_field_along_axon_button.clicked.connect(self.checkin_nerve)
         self.simulation_button.clicked.connect(self.start_simulation)
@@ -115,7 +117,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.stimulus_widget.show()
         self.stimulus_widget.update_stimulus()
 
-    def stimulus_changed(self):
+    def update_stimulus(self):
         self.stimulus = self.stimulus_widget.stimulus
         self.time_axis = self.stimulus_widget.time_axis
         self.total_time = self.stimulus_widget.total_time
@@ -177,6 +179,19 @@ class Main(QMainWindow, Ui_MainWindow):
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
         if not selected_nerve.axon_infos_list:
             return
+        for axon in selected_nerve.axon_infos_list:
+            if self.e_field_widget.mode == 1:
+                neuron_sim = ns.NeuronSim(axon, self.e_field_list,
+                                          self.time_axis, self.stimulus, self.total_time)
+            else:
+                neuron_sim = ns_ns.NeuronSimNerveShape(axon,
+                                                       self.e_field_widget.nerve_shape, self.time_axis, self.stimulus,
+                                                       self.total_time, nerve_shape_step_size)
+            neuron_sim.quasipot(interpolation_radius_index)
+            threshold = neuron_sim.threshold_simulation(self.stimulus_widget.uni_stimulus, self.threshold_widget)
+            self.threshold_label.setText(str(threshold))
+            neuron_sim.simple_simulation()
+        plt.show()
 
     def open_threshold_widget(self):
         self.threshold_widget.show()

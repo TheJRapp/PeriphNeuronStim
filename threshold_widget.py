@@ -18,7 +18,7 @@ class thresholdWidget(QWidget_Threshold, Ui_ThresholdWidget):
         super(thresholdWidget, self).__init__(parent)
 
         self.setupUi(self)
-        self.ap_threhold = self.ap_threshold_spin_box.value()
+        self.ap_threshold = self.ap_threshold_spin_box.value()
         self.start_amp = self.start_amp_spin_box.value()
         self.rough_step_size = self.steps_rough_spin_box.value()
         self.fine_step_size = self.steps_fine_spin_box.value()
@@ -35,7 +35,7 @@ class thresholdWidget(QWidget_Threshold, Ui_ThresholdWidget):
         self.time_interval_max_spin_box.valueChanged.connect(self.set_max_time)
 
     def set_ap_threshold(self):
-        self.ap_threhold = self.ap_threshold_spin_box.value()
+        self.ap_threshold = self.ap_threshold_spin_box.value()
 
     def set_start_amp(self):
         self.start_amp = self.start_amp_spin_box.value()
