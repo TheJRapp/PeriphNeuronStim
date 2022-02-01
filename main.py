@@ -59,7 +59,6 @@ class Main(QMainWindow, Ui_MainWindow):
         # signal connections
         self.conf_efield_button.clicked.connect(self.configure_efield)
         self.e_field_widget.e_field_changed.connect(self.update_e_field)
-        self.e_field_widget.e_field_changed.connect(self.set_mode)
 
         self.nerve_widget.e_field_changed.connect(self.update_e_field)
 
@@ -103,15 +102,6 @@ class Main(QMainWindow, Ui_MainWindow):
             fig = self.e_field_widget.plot_nerve_shape(self.e_field_widget.nerve_shape)
         self.remove_plot()
         self.add_plot(fig)
-
-    def set_mode(self):
-        if self.e_field_widget.mode == 1:
-            if not self.nerve_widget.nerve_dict:
-                self.nerve_widget.properties_groupBox.setEnabled(False)
-            else:
-                self.nerve_widget.properties_groupBox.setEnabled(True)
-        else:
-            self.nerve_widget.properties_groupBox.setEnabled(False)
 
     def open_stimulus_widget(self):
         self.stimulus_widget.show()
@@ -195,6 +185,18 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def open_threshold_widget(self):
         self.threshold_widget.show()
+
+    def monte_carlo_axon_diam_sweep(self):
+        # gather information about interval for value selection and further parameters
+        axon_info = ns.AxonInformation(selected_nerve.x, selected_nerve.y, selected_nerve.z, selected_nerve.angle,
+                                        selected_nerve.length, diameter, axon_type)
+        if self.e_field_widget.mode == 1:
+            neuron_sim = ns.NeuronSim(axon_info, self.e_field_list,
+                                      self.time_axis, self.stimulus, self.total_time)
+        else:
+            neuron_sim = ns_ns.NeuronSimNerveShape(axon_info,
+                                                   self.e_field_widget.nerve_shape, self.time_axis, self.stimulus,
+                                                   self.total_time, nerve_shape_step_size)
 
 if __name__ == '__main__':
     import sys
