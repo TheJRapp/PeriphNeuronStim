@@ -12,6 +12,13 @@ Ui_NerveWidget, QWidget_Nerve = uic.loadUiType("ui_nerve_widget.ui")
 Ui_NerveDimensionWidget, QWidget_NerveDimensions = uic.loadUiType("ui_nerve_dimension_widget.ui")
 
 
+
+rmg_diameter_list = ["16.0", "15.0", "14.0", "12.8", "11.5", "10.0", "8.7", "7.3", "5.7"]
+scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
+
+# This class does:
+
+
 class nerveWidget(QWidget_Nerve, Ui_NerveWidget):
     e_field_changed = pyqtSignal()
 
