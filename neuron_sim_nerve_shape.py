@@ -11,7 +11,6 @@ import sys
 sys.path.insert(0, "C:/nrn/lib/python")
 import neuron
 
-from matplotlib import pyplot as plt
 
 class NeuronSimNerveShape:
 
@@ -26,7 +25,8 @@ class NeuronSimNerveShape:
         self.axon = self.generate_axon(axon_model_parameter, nerve_shape)
         self.nerve_shape = nerve_shape
         self.time_axis = time_axis
-        self.stimulus = stimulus
+        self.stimulus = stimulus[0]
+        self.uni_stimulus = stimulus[1]
         self.total_time = total_time
         self.e_field_along_axon = []
         self.potential_along_axon = []
@@ -55,9 +55,19 @@ class NeuronSimNerveShape:
         ax1, ax2 = pt.plot_traces_and_field('Nodes: ' + self.axon.name, self.time_axis, self.stimulus, self.axon)
         return ax1, ax2
 
-    def threshold_simulation(self, uni_stimulus, threshold_widget):
-        threshold = threshold_widget.rough_to_fine_search(self.axon, self.total_time, self.time_axis, uni_stimulus)
+    def threshold_simulation(self, threshold_widget):
+        threshold = threshold_widget.rough_to_fine_search(self.axon, self.total_time, self.time_axis, self.uni_stimulus)
         return threshold
+
+    def is_axon_stimulated(self, threshold_widget):
+        if not self.axon.potential_vector_list:
+            print('No potential list in model')
+            return False
+        event = threshold_widget.event_detector(self.axon.potential_vector_list)
+        if event == 2:
+            return True
+        else:
+            return False
 
     def simple(self, diameter, nerve_shape):
         segments = 1

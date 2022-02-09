@@ -2,6 +2,8 @@
 @author: Rapp & Braun
 '''
 
+# https://miro.com/app/board/uXjVOQDTWvQ=/
+
 from PyQt5.uic import loadUiType
 from PyQt5 import uic, QtGui, QtWidgets
 
@@ -17,6 +19,7 @@ from stimulus_widget import stimulusWidget
 from e_field_manipulation_widget import eFieldWidget
 from nerve_widget import nerveWidget
 from threshold_widget import thresholdWidget
+from monte_carlo_widget import monteCarloWidget
 
 import numpy as np
 import sys
@@ -71,6 +74,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.e_field_along_axon_button.clicked.connect(self.checkin_nerve)
         self.simulation_button.clicked.connect(self.start_simulation)
 
+        self.mc_diameter_button.clicked.connect(self.monte_carlo_axon_diam_sweep)
+
     def add_plot(self, fig):
         self.canvas = FigureCanvas(fig)
         self.e_field_layout.addWidget(self.canvas)
@@ -108,7 +113,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.stimulus_widget.update_stimulus()
 
     def update_stimulus(self):
-        self.stimulus = self.stimulus_widget.stimulus
+        self.stimulus = [self.stimulus_widget.stimulus, self.stimulus_widget.uni_stimulus]
         self.time_axis = self.stimulus_widget.time_axis
         self.total_time = self.stimulus_widget.total_time
 
@@ -126,9 +131,12 @@ class Main(QMainWindow, Ui_MainWindow):
             self.potential_layout.removeWidget(self.field_axon_canvas)
             self.field_axon_canvas.close()
         if self.e_field_widget.mode == 1:
-            neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_list, self.time_axis, self.stimulus, self.total_time)
+            neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_list,
+                                      self.time_axis, self.stimulus, self.total_time)
         else:
-            neuron_sim = ns_ns.NeuronSimNerveShape(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_widget.nerve_shape, self.time_axis, self.stimulus, self.total_time, nerve_shape_step_size)
+            neuron_sim = ns_ns.NeuronSimNerveShape(selected_nerve.axon_infos_list[selected_index.row()],
+                                                   self.e_field_widget.nerve_shape, self.time_axis, self.stimulus,
+                                                   self.total_time, nerve_shape_step_size)
             fig2 = Figure()
             ax = plt.gca(projection='3d')
             ax.scatter3D(neuron_sim.axon.x, neuron_sim.axon.y, neuron_sim.axon.z)
@@ -178,7 +186,7 @@ class Main(QMainWindow, Ui_MainWindow):
                                                        self.e_field_widget.nerve_shape, self.time_axis, self.stimulus,
                                                        self.total_time, nerve_shape_step_size)
             neuron_sim.quasipot(interpolation_radius_index)
-            threshold = neuron_sim.threshold_simulation(self.stimulus_widget.uni_stimulus, self.threshold_widget)
+            threshold = neuron_sim.threshold_simulation(self.threshold_widget)
             self.threshold_label.setText(str(threshold))
             neuron_sim.simple_simulation()
         plt.show()
@@ -187,16 +195,17 @@ class Main(QMainWindow, Ui_MainWindow):
         self.threshold_widget.show()
 
     def monte_carlo_axon_diam_sweep(self):
-        # gather information about interval for value selection and further parameters
-        axon_info = ns.AxonInformation(selected_nerve.x, selected_nerve.y, selected_nerve.z, selected_nerve.angle,
-                                        selected_nerve.length, diameter, axon_type)
-        if self.e_field_widget.mode == 1:
-            neuron_sim = ns.NeuronSim(axon_info, self.e_field_list,
-                                      self.time_axis, self.stimulus, self.total_time)
+        if not self.nerve_widget.nerve_dict:
+            return
+        selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
+        if self.e_field_widget.mode == 0:
+            return
         else:
-            neuron_sim = ns_ns.NeuronSimNerveShape(axon_info,
-                                                   self.e_field_widget.nerve_shape, self.time_axis, self.stimulus,
-                                                   self.total_time, nerve_shape_step_size)
+            self.monte_carlo_widget = monteCarloWidget(self.e_field_list, interpolation_radius_index, selected_nerve,
+                                                       self.stimulus, self.time_axis, self.total_time, self.threshold_widget)
+
+            self.monte_carlo_widget.show()
+
 
 if __name__ == '__main__':
     import sys
