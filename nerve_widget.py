@@ -19,11 +19,11 @@ scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field ar
 # This class does:
 
 
-class nerveWidget(QWidget_Nerve, Ui_NerveWidget):
+class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
     e_field_changed = pyqtSignal()
 
     def __init__(self, parent = None):
-        super(nerveWidget, self).__init__(parent)
+        super(NerveWidget, self).__init__(parent)
 
         self.setupUi(self)
 

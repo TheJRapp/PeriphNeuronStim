@@ -54,6 +54,7 @@ class NeuronSim:
         h.finitialize(-80)
         h.continuerun(self.total_time)
 
+    def plot_simulation(self):
         ax1, ax2 = pt.plot_traces_and_field('Nodes: ' + self.axon.name, self.time_axis, self.stimulus, self.axon)
         return ax1, ax2
 

@@ -17,9 +17,9 @@ from matplotlib import pyplot as plt
 
 from stimulus_widget import stimulusWidget
 from e_field_manipulation_widget import eFieldWidget
-from nerve_widget import nerveWidget
-from threshold_widget import thresholdWidget
-from monte_carlo_widget import monteCarloWidget
+from nerve_widget import NerveWidget
+from threshold_widget import ThresholdWidget
+from monte_carlo_widget import MonteCarloWidgetEField, MonteCarloWidgetNerveShape
 
 import numpy as np
 import sys
@@ -49,7 +49,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.add_plot(self.e_field_widget.plot_e_field(self.e_field_list[0]))
 
         # Nerve widget
-        self.nerve_widget = nerveWidget()
+        self.nerve_widget = NerveWidget()
         self.nerve_layout.addWidget(self.nerve_widget)
 
         # Stimulus widget
@@ -57,7 +57,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.update_stimulus()
 
         # Threshold search widget
-        self.threshold_widget = thresholdWidget()
+        self.threshold_widget = ThresholdWidget()
 
         # signal connections
         self.conf_efield_button.clicked.connect(self.configure_efield)
@@ -169,6 +169,7 @@ class Main(QMainWindow, Ui_MainWindow):
                                                        self.total_time, nerve_shape_step_size)
             neuron_sim.quasipot(interpolation_radius_index)
             neuron_sim.simple_simulation()
+            neuron_sim.plot_simulation()
         plt.show()
 
     def threshold_search(self):
@@ -199,9 +200,12 @@ class Main(QMainWindow, Ui_MainWindow):
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
         if self.e_field_widget.mode == 0:
-            return
+            self.monte_carlo_widget = MonteCarloWidgetNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                       self.stimulus, self.time_axis, self.total_time, self.threshold_widget)
+
+            self.monte_carlo_widget.show()
         else:
-            self.monte_carlo_widget = monteCarloWidget(self.e_field_list, interpolation_radius_index, selected_nerve,
+            self.monte_carlo_widget = MonteCarloWidgetEField(self.e_field_list, interpolation_radius_index, selected_nerve,
                                                        self.stimulus, self.time_axis, self.total_time, self.threshold_widget)
 
             self.monte_carlo_widget.show()

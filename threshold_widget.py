@@ -12,10 +12,10 @@ import copy
 import misc_functions as mf
 
 
-class thresholdWidget(QWidget_Threshold, Ui_ThresholdWidget):
+class ThresholdWidget(QWidget_Threshold, Ui_ThresholdWidget):
 
     def __init__(self, parent = None):
-        super(thresholdWidget, self).__init__(parent)
+        super(ThresholdWidget, self).__init__(parent)
 
         self.setupUi(self)
         self.ap_threshold = self.ap_threshold_spin_box.value()
