@@ -145,10 +145,10 @@ class NeuronSimEField(NeuronSim):
 class NeuronSimNerveShape(NeuronSim):
 
     def __init__(self, nerve_shape, nerve_step_size, axon_model_parameter, time_axis, stimulus, total_time):
-        super(NeuronSimNerveShape, self).__init__(axon_model_parameter, time_axis, stimulus, total_time)
-
         self.nerve_shape = nerve_shape
         self.step_size = nerve_step_size
+
+        super(NeuronSimNerveShape, self).__init__(axon_model_parameter, time_axis, stimulus, total_time)
 
     def generate_axon(self, mp):
         if mp.axon_type == 'HH':
@@ -156,7 +156,7 @@ class NeuronSimNerveShape(NeuronSim):
         elif mp.axon_type == 'RMG':
             axon = self.mrg(mp.diameter, self.nerve_shape)
         else:
-            axon = self.simple(mp.diameter, self.nerve_shape)
+            axon = simple_from_nerve_shape(mp.diameter, self.nerve_shape, self.step_size)
 
         mf.record_membrane_potentials(axon, 0.5)
 
@@ -165,46 +165,6 @@ class NeuronSimNerveShape(NeuronSim):
     def quasipot(self, x):  # x not used here
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = self.quasi_potentials(self.stimulus, self.nerve_shape, self.axon)
         mf.play_stimulus_matrix(self.axon, self.time_axis)
-
-    def simple(self, diameter, nerve_shape):
-        segments = 1
-        node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis
-        internode_diameter = diameter
-        node_length = 1
-        if diameter > 4:
-            internode_length = 969.3 * np.log(diameter) - 1144.6
-        else:
-            internode_length = 100 * diameter
-
-        x = nerve_shape.x[0]
-        y = nerve_shape.y[0]
-        z = nerve_shape.z[0]
-        theta = []
-        phi = []
-        node_internode_pairs = []
-        axons_number = 0
-        step_size = self.step_size
-        for i in range(len(nerve_shape.x) - step_size)[::step_size]:
-            length = np.sqrt((nerve_shape.x[i + step_size] - nerve_shape.x[i]) ** 2 + (
-                        nerve_shape.y[i + step_size] - nerve_shape.y[i]) ** 2
-                             + (nerve_shape.z[i + step_size] - nerve_shape.z[i]) ** 2)
-            phi_c = np.arctan2(
-                (nerve_shape.y[i + step_size] - nerve_shape.y[i]),
-                (nerve_shape.x[i + step_size] - nerve_shape.x[i]))
-            theta_c = np.arccos(((nerve_shape.z[i + step_size] - nerve_shape.z[i]) / length))
-            test = nerve_shape.z[i] / length
-            node_internode_pairs_c = int(round(length / (node_length + internode_length)))
-            if node_internode_pairs_c > 0:
-                phi.append(phi_c)
-                theta.append(theta_c)
-                node_internode_pairs.append(node_internode_pairs_c)
-                axons_number += 1
-
-        simple_model = simple_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, segments,
-                                                        internode_diameter,
-                                                        node_diameter, node_length, internode_length,
-                                                        node_internode_pairs)
-        return simple_model
 
     def quasi_potentials(self, stimulus, nerve_shape, cable):
         # quasi potential described by Aberra 2019
@@ -231,10 +191,6 @@ class NeuronSimNerveShape(NeuronSim):
                 min_dist = np.argmin(np.sqrt((nerve_shape.x - cable.x[segment_counter]) ** 2 +
                                              (nerve_shape.y - cable.y[segment_counter]) ** 2 +
                                              (nerve_shape.z - cable.z[segment_counter]) ** 2))
-
-                # e_field_current = cable.get_unitvector()[int(step_vector[segment_counter])][0] * nerve_shape.e_x[i* self.step_size] + \
-                #                     cable.get_unitvector()[int(step_vector[segment_counter])][1] * nerve_shape.e_y[i* self.step_size] + \
-                #                     cable.get_unitvector()[int(step_vector[segment_counter])][2] * nerve_shape.e_z[i* self.step_size]
 
                 e_field_current = cable.get_unitvector()[int(step_vector[segment_counter])][0] * nerve_shape.e_x[
                     min_dist] + \
@@ -268,6 +224,33 @@ class NeuronSimNerveShape(NeuronSim):
         return stim_matrix, e_field_along_axon, quasi_pot_along_axon
 
 
+class NeuronSimEFieldWithNerveShape(NeuronSim):
+
+    def __init__(self, static_e_field_list, nerve_shape, nerve_step_size, axon_model_parameter, time_axis, stimulus, total_time):
+        self.nerve_shape = nerve_shape
+        self.step_size = nerve_step_size
+
+        super(NeuronSimEFieldWithNerveShape, self).__init__(axon_model_parameter, time_axis, stimulus, total_time)
+
+        self.e_field_list = static_e_field_list
+
+    def generate_axon(self, mp):
+        if mp.axon_type == 'HH':
+            axon = self.hh(mp.diameter, self.nerve_shape)
+        elif mp.axon_type == 'RMG':
+            axon = self.mrg(mp.diameter, self.nerve_shape)
+        else:
+            axon = simple_from_nerve_shape(mp.diameter, self.nerve_shape, self.step_size)
+
+        mf.record_membrane_potentials(axon, 0.5)
+
+        return axon
+
+    def quasipot(self, interpolation_radius_index):
+        self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(self.stimulus, self.e_field_list, self.axon, interpolation_radius_index)
+        mf.play_stimulus_matrix(self.axon, self.time_axis)
+
+
 class AxonInformation:
     def __init__(self, start_x, start_y, start_z, angle, length, diameter, axon_type):
         super(AxonInformation, self).__init__()
@@ -278,3 +261,44 @@ class AxonInformation:
         self.length = length
         self.diameter = diameter
         self.axon_type = axon_type
+
+
+def simple_from_nerve_shape(diameter, nerve_shape, step_size):
+    segments = 1
+    node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis
+    internode_diameter = diameter
+    node_length = 1
+    if diameter > 4:
+        internode_length = 969.3 * np.log(diameter) - 1144.6
+    else:
+        internode_length = 100 * diameter
+
+    x = nerve_shape.x[0]
+    y = nerve_shape.y[0]
+    z = nerve_shape.z[0]
+    theta = []
+    phi = []
+    node_internode_pairs = []
+    axons_number = 0
+    step_size = step_size
+    for i in range(len(nerve_shape.x) - step_size)[::step_size]:
+        length = np.sqrt((nerve_shape.x[i + step_size] - nerve_shape.x[i]) ** 2 + (
+                    nerve_shape.y[i + step_size] - nerve_shape.y[i]) ** 2
+                         + (nerve_shape.z[i + step_size] - nerve_shape.z[i]) ** 2)
+        phi_c = np.arctan2(
+            (nerve_shape.y[i + step_size] - nerve_shape.y[i]),
+            (nerve_shape.x[i + step_size] - nerve_shape.x[i]))
+        theta_c = np.arccos(((nerve_shape.z[i + step_size] - nerve_shape.z[i]) / length))
+        test = nerve_shape.z[i] / length
+        node_internode_pairs_c = int(round(length / (node_length + internode_length)))
+        if node_internode_pairs_c > 0:
+            phi.append(phi_c)
+            theta.append(theta_c)
+            node_internode_pairs.append(node_internode_pairs_c)
+            axons_number += 1
+
+    simple_model = simple_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, segments,
+                                                    internode_diameter,
+                                                    node_diameter, node_length, internode_length,
+                                                    node_internode_pairs)
+    return simple_model

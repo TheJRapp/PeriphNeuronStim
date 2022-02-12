@@ -52,6 +52,7 @@ class DataBase(dict):
             e_field = EField(x, y, z, xRe, yRe, zRe, xIm, yIm, zIm, layer)
             e_field_list.append(e_field)
             print('...')
+            e_field_list.sort(key=lambda x: x.layer, reverse=False)
         return e_field_list
 
     def rotate_e_field(self, e_field, angle):
@@ -125,7 +126,7 @@ class EField():
         for i in range(x.shape[0]):
             phase_x.append(np.arccos(xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)) if xIm[i] >= 0 else - np.arccos(
                 xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)))
-        for i in range(y.shape[0]):
+        # for i in range(y.shape[0]):
             phase_y.append(np.arccos(yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)) if yIm[i] >= 0 else - np.arccos(
                 yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)))
             phase_z.append(np.arccos(zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)) if zIm[i] >= 0 else - np.arccos(
@@ -139,12 +140,12 @@ class EField():
             self.e_x = np.reshape(self.e_x, (self.yshape, self.xshape))
             self.e_y = np.reshape(self.e_y, (self.yshape, self.xshape))
             self.e_z = np.reshape(self.e_z, (self.yshape, self.xshape))
-            self.e_x = np.reshape(self.e_x, (self.yshape, self.xshape))
-            self.e_y = np.reshape(self.e_y, (self.yshape, self.xshape))
-            self.e_z = np.reshape(self.e_z, (self.yshape, self.xshape))
+            # self.e_x = np.reshape(self.e_x, (self.xshape, self.yshape))
+            # self.e_y = np.reshape(self.e_y, (self.xshape, self.yshape))
+            # self.e_z = np.reshape(self.e_z, (self.xshape, self.yshape))
             # TODO: Braucht man nicht mehr oder?
             # self.x_Re = np.reshape(self.xRe, (shape, shape))
-            # self.x_Im = np.reshape(self.xIm, (shape, shape))
+            # self.x_Im = np.reshape(xIm, (self.yshape, self.xshape))
             # self.y_Re = np.reshape(self.yRe, (shape, shape))
             # self.y_Im = np.reshape(self.yIm, (shape, shape))
 

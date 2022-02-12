@@ -41,6 +41,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.updated_xlims = ()
         self.updated_ylims = ()
         self.e_field_list = self.load_default_field()
+        self.configure_layer_slider()
         self.nerve_shape = None
         self.custom_nerve = None
         self.scaling = None
@@ -49,10 +50,6 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.NERVE_SHAPE_ONLY = 2
         self.E_FIELD_WITH_NERVE_SHAPE = 3
         self.state = self.E_FIELD_ONLY
-
-        # ToDo: Do I need those? Delete
-        self.mode = 1  # 1 = e_field_matrix, 2 = nerve_shape
-        self.has_nerve_shape = False
 
         self.load_cst_button.clicked.connect(self.load_cst_file)
         self.load_e_field_button.clicked.connect(self.load_e_field)
@@ -65,6 +62,8 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.e_field_wtih_nerve_shape_radio_button.clicked.connect(self.state_changed)
         self.nerve_shape_only_radio_button.clicked.connect(self.state_changed)
         self.e_field_only_radio_button.clicked.connect(self.state_changed)
+
+        self.e_field_layer_slider.valueChanged.connect(self.update_e_field_plot)
 
     # ------------------------------------------------------------------------------------------------------------------
     # File operations
@@ -95,7 +94,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         parser.parse_file(storage)
         storage.convert_units(1e3)  # convert mm from CST to um used for cable
         self.e_field_list = storage.generate_e_field_matrix()
-        self.mode = 1
+        self.state = self.E_FIELD_ONLY
         self.update_e_field_plot()
 
     def load_e_field(self):
@@ -107,7 +106,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             return
         with open(filename, 'rb') as e:
             self.e_field_list = pickle.load(e)
-        self.mode = 1
+        self.state = self.E_FIELD_ONLY
         self.update_e_field_plot()
 
     def save_e_field(self):
@@ -132,7 +131,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         parser.parse_file(storage)
         storage.convert_units(1e3)  # convert mm from CST to um used for cable
         self.nerve_shape = storage.generate_nerve_shape()
-        self.mode = 0
+        self.state = self.NERVE_SHAPE_ONLY
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
         self.nerve_shape_only_radio_button.setEnabled(True)
         self.update_e_field_plot()
@@ -144,7 +143,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             return
         with open(filename, 'rb') as e:
             self.nerve_shape = pickle.load(e)
-        self.mode = 0
+        self.state = self.NERVE_SHAPE_ONLY
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
         self.nerve_shape_only_radio_button.setEnabled(True)
         self.update_e_field_plot()
@@ -175,13 +174,13 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         if self.state == self.NERVE_SHAPE_ONLY:
             return self.plot_nerve_shape(self.nerve_shape)
         elif self.state == self.E_FIELD_WITH_NERVE_SHAPE:
-            return self.e_field_plot_with_nerve_shape(self.e_field_list[0], self.nerve_shape)
+            return self.e_field_plot_with_nerve_shape(self.e_field_list[15], self.nerve_shape)
         else:
             # ToDo: Select layer of e_field_box
             if self.custom_nerve and self.scaling:
-                return self.plot_2d_field_with_cable(self.e_field_list[0], self.custom_nerve, self.scaling)
+                return self.plot_2d_field_with_cable(self.e_field_list[15], self.custom_nerve, self.scaling)
             else:
-                return self.plot_e_field(self.e_field_list[0])
+                return self.plot_e_field(self.e_field_list[15])
 
     def change_e_field(self):
         if hasattr(self, 'e_field_list_mod'):
@@ -201,10 +200,14 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
     # ------------------------------------------------------------------------------------------------------------------
 
     def update_e_field_plot(self):
-        if self.mode:
-            fig = self.plot_e_field(self.e_field_list[0])
-        else:
+        if self.state == self.NERVE_SHAPE_ONLY:
             fig = self.plot_nerve_shape(self.nerve_shape)
+            self.e_field_layer_slider.setEnabled(False)
+        else:
+            self.configure_layer_slider()
+            self.layer_label.setText(str(self.e_field_list[self.e_field_layer_slider.value()].layer))
+            fig = self.plot_e_field(self.e_field_list[self.e_field_layer_slider.value()])
+            self.e_field_layer_slider.setEnabled(True)
         self.remove_plot()
         self.add_plot(fig)
 
@@ -232,7 +235,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
     def plot_e_field(self, e_field):
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111)
-        ax1f1.imshow(e_field.e_y, extent=[min(e_field.y)/1e3, max(e_field.y)/1e3, min(e_field.x)/1e3, max(e_field.x)/1e3])
+        ax1f1.imshow(e_field.e_y, extent=[min(e_field.x)/1e3, max(e_field.x)/1e3, max(e_field.y)/1e3, min(e_field.y)/1e3])
         # self.e_field_fig = fig1
         # fig1.colorbar(pos)
 
@@ -284,6 +287,8 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.updated_ylims = event_ax.get_ylim()
         # self.cut_e_field()
 
+    def configure_layer_slider(self):
+        self.e_field_layer_slider.setRange(0, len(self.e_field_list)-1)
 
 class State(QObject):
     e_field_changed = pyqtSignal()
