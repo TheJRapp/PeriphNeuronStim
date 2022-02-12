@@ -124,13 +124,15 @@ class Main(QMainWindow, Ui_MainWindow):
         if hasattr(self, 'field_axon_canvas'):
             self.potential_layout.removeWidget(self.field_axon_canvas)
             self.field_axon_canvas.close()
-        if self.e_field_widget.mode == 1:
-            neuron_sim = ns.NeuronSim(selected_nerve.axon_infos_list[selected_index.row()], self.e_field_list,
-                                      self.time_axis, self.stimulus, self.total_time)
-        else:
-            neuron_sim = ns_ns.NeuronSimNerveShape(selected_nerve.axon_infos_list[selected_index.row()],
-                                                   self.e_field_widget.nerve_shape, self.time_axis, self.stimulus,
-                                                   self.total_time, nerve_shape_step_size)
+        if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
+            neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list,
+                                            selected_nerve.axon_infos_list[selected_index.row()], self.time_axis,
+                                            self.stimulus, self.total_time)
+        elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
+            neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                selected_nerve.axon_infos_list[selected_index.row()],
+                                                self.time_axis, self.stimulus,
+                                                self.total_time)
             fig2 = Figure()
             ax = plt.gca(projection='3d')
             ax.scatter3D(neuron_sim.axon.x, neuron_sim.axon.y, neuron_sim.axon.z)
@@ -154,13 +156,12 @@ class Main(QMainWindow, Ui_MainWindow):
         if not selected_nerve.axon_infos_list:
             return
         for axon in selected_nerve.axon_infos_list:
-            if self.e_field_widget.mode == 1:
-                neuron_sim = ns.NeuronSim(axon, self.e_field_list,
-                                          self.time_axis, self.stimulus, self.total_time)
-            else:
-                neuron_sim = ns_ns.NeuronSimNerveShape(axon,
-                                                       self.e_field_widget.nerve_shape, self.time_axis, self.stimulus,
-                                                       self.total_time, nerve_shape_step_size)
+            if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
+                neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list,
+                                                axon, self.time_axis, self.stimulus, self.total_time)
+            elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
+                neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                    axon, self.time_axis, self.stimulus, self.total_time)
             neuron_sim.quasipot(interpolation_radius_index)
             neuron_sim.simple_simulation()
             neuron_sim.plot_simulation()
@@ -173,13 +174,12 @@ class Main(QMainWindow, Ui_MainWindow):
         if not selected_nerve.axon_infos_list:
             return
         for axon in selected_nerve.axon_infos_list:
-            if self.e_field_widget.mode == 1:
-                neuron_sim = ns.NeuronSim(axon, self.e_field_list,
-                                          self.time_axis, self.stimulus, self.total_time)
-            else:
-                neuron_sim = ns_ns.NeuronSimNerveShape(axon,
-                                                       self.e_field_widget.nerve_shape, self.time_axis, self.stimulus,
-                                                       self.total_time, nerve_shape_step_size)
+            if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
+                neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list,
+                                                axon, self.time_axis, self.stimulus, self.total_time)
+            elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
+                neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                    axon, self.time_axis, self.stimulus, self.total_time)
             neuron_sim.quasipot(interpolation_radius_index)
             threshold = neuron_sim.threshold_simulation(self.threshold_widget)
             self.threshold_label.setText(str(threshold))

@@ -23,9 +23,6 @@ from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFil
 Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_widget.ui")
 
 default_e_field_path = 'biovoxel.pkl'
-E_FIELD_ONLY = 1
-NERVE_SHAPE_ONLY = 2
-E_FIELD_WITH_NERVE_SHAPE = 3
 
 # This class does:
 # - load field (from CST or E-Field-Matrix python file)
@@ -47,7 +44,11 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.nerve_shape = None
         self.custom_nerve = None
         self.scaling = None
-        self.state = E_FIELD_ONLY
+
+        self.E_FIELD_ONLY = 1
+        self.NERVE_SHAPE_ONLY = 2
+        self.E_FIELD_WITH_NERVE_SHAPE = 3
+        self.state = self.E_FIELD_ONLY
 
         # ToDo: Do I need those? Delete
         self.mode = 1  # 1 = e_field_matrix, 2 = nerve_shape
@@ -171,9 +172,9 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
     # Update main.py
     # ------------------------------------------------------------------------------------------------------------------
     def get_current_field_plot(self):
-        if self.state == NERVE_SHAPE_ONLY:
+        if self.state == self.NERVE_SHAPE_ONLY:
             return self.plot_nerve_shape(self.nerve_shape)
-        elif self.state == E_FIELD_WITH_NERVE_SHAPE:
+        elif self.state == self.E_FIELD_WITH_NERVE_SHAPE:
             return self.e_field_plot_with_nerve_shape(self.e_field_list[0], self.nerve_shape)
         else:
             # ToDo: Select layer of e_field_box
@@ -189,11 +190,11 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
 
     def state_changed(self):
         if self.e_field_wtih_nerve_shape_radio_button.isChecked() and self.nerve_shape:
-            self.state = E_FIELD_WITH_NERVE_SHAPE
+            self.state = self.E_FIELD_WITH_NERVE_SHAPE
         elif self.nerve_shape_only_radio_button.isChecked():
-            self.state = NERVE_SHAPE_ONLY
+            self.state = self.NERVE_SHAPE_ONLY
         else:
-            self.state = E_FIELD_ONLY
+            self.state = self.E_FIELD_ONLY
 
     # ------------------------------------------------------------------------------------------------------------------
     # Internal plot
