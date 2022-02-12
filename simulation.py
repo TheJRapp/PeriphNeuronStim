@@ -9,7 +9,7 @@ import nerve as ner
 import stimulus as stim
 import time
 import pandas as pd
-import e_field_manipulation_widget as em
+import e_field_widget as em
 import neuron_sim as ns
 from matplotlib import pyplot as plt
 

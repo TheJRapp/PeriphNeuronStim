@@ -37,6 +37,9 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
         self.axon_diam_combo_box.setVisible(False)
         self.axon_diam_combo_box.addItems(rmg_diameter_list)
 
+        # self.nerve_name_line_edit.setText('Default')
+        # self.add_nerve()
+
         self.add_nerve_button.clicked.connect(self.add_nerve)
         self.delete_nerve_button.clicked.connect(self.delete_nerve)
         self.nerve_combo_box.currentTextChanged.connect(self.change_nerve_property_box)

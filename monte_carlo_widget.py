@@ -105,7 +105,7 @@ class MonteCarloWidgetNerveShape(MonteCarloWidget):
         neuron_sim = ns_ns.NeuronSimNerveShape(axon_info, self.nerve_shape, self.time_axis, self.stimulus, self.total_time, self.nerve_step_size)
 
         # check if stimulation was successfull (eventdetector threshold widget)
-        neuron_sim.quasipot(self.interpolation_radius_index)
+        neuron_sim.quasipot(0)
         neuron_sim.simple_simulation()
         if neuron_sim.is_axon_stimulated(self.threshold_widget):
             return 1

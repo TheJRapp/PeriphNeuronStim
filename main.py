@@ -16,7 +16,7 @@ from matplotlib.backends.backend_qt5agg import (
 from matplotlib import pyplot as plt
 
 from stimulus_widget import stimulusWidget
-from e_field_manipulation_widget import eFieldWidget
+from e_field_widget import EFieldWidget
 from nerve_widget import NerveWidget
 from threshold_widget import ThresholdWidget
 from monte_carlo_widget import MonteCarloWidgetEField, MonteCarloWidgetNerveShape
@@ -34,6 +34,7 @@ scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field ar
 interpolation_radius_index = 2
 nerve_shape_step_size = 10
 
+
 class Main(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
         super(Main, self).__init__()
@@ -43,10 +44,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("MFE Neuro Simulation")
 
         # E-Field widget
-        self.e_field_widget = eFieldWidget()
-        e_field_name = 'halsmodell'
-        self.e_field_list = self.e_field_widget.get_e_field(e_field_name)
-        self.add_plot(self.e_field_widget.plot_e_field(self.e_field_list[0]))
+        self.e_field_widget = EFieldWidget()
+        self.add_plot(self.e_field_widget.plot_e_field(self.e_field_widget.e_field_list[0]))
 
         # Nerve widget
         self.nerve_widget = NerveWidget()
@@ -92,21 +91,16 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def configure_efield(self):
         self.e_field_widget.show()
-        # TODO: update field_plot_manager
 
     def update_e_field(self):
-        if self.e_field_widget.mode == 1:
-            self.e_field_list = self.e_field_widget.e_field_list
-            if not self.nerve_widget.nerve_dict:
-                self.remove_plot()
-                self.add_plot(self.e_field_widget.plot_e_field(self.e_field_list[0]))
-                return
+        if self.nerve_widget.nerve_dict:
             selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-            fig = self.e_field_widget.plot_2d_field_with_cable(self.e_field_list[0], selected_nerve, scaling)
+            self.e_field_widget.custom_nerve = selected_nerve
+            self.e_field_widget.scaling = scaling
         else:
-            fig = self.e_field_widget.plot_nerve_shape(self.e_field_widget.nerve_shape)
+            self.e_field_widget.custom_nerve = None
         self.remove_plot()
-        self.add_plot(fig)
+        self.add_plot(self.e_field_widget.get_current_field_plot())
 
     def open_stimulus_widget(self):
         self.stimulus_widget.show()
