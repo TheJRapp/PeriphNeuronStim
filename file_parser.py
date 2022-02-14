@@ -30,6 +30,7 @@ class CSTFileParser(SuperParser):
                 for component in database.captions:
                     database[component].append(float(digit_match[database.captions.index(component)]))
 
+
 class NewCSTFileParser(SuperParser):
 
     def __init__(self, path, filename):

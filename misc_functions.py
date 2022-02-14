@@ -109,13 +109,17 @@ def quasi_potentials(stimulus, e_field_list, cable, interpolation_radius_index):
     cable_y_min = round(min(cable.y))
     cable_y_max = round(max(cable.y))
 
-    axis = e_field_list[0].x[:e_field_list[0].e_x.shape[1]]  # indexes of e_field, e.g. -200,...,0,...200
-    axis = np.asarray(axis)
+    # old version, to be deleted
+    # x_axis = e_field_list[0].x[:e_field_list[0].e_x.shape[1]]  # indexes of e_field, e.g. -200,...,0,...200
+    # x_axis = np.asarray(x_axis)
 
-    x_min_ind = np.argmin(abs(axis - cable_x_min)) # x-index of e_field where cable starts
-    x_max_ind = np.argmin(abs(axis - cable_x_max))
-    y_min_ind = np.argmin(abs(axis - cable_y_min))
-    y_max_ind = np.argmin(abs(axis - cable_y_max))
+    x_axis = np.unique(e_field_list[0].x)  # indexes of e_field, e.g. -200,...,0,...200
+    y_axis = np.unique(e_field_list[0].y)
+
+    x_min_ind = np.argmin(abs(x_axis - cable_x_min)) # x-index of e_field where cable starts
+    x_max_ind = np.argmin(abs(x_axis - cable_x_max))
+    y_min_ind = np.argmin(abs(y_axis - cable_y_min))
+    y_max_ind = np.argmin(abs(y_axis - cable_y_max))
 
     e_average_prev = 0
     quasi_pot_prev = 0
@@ -130,20 +134,20 @@ def quasi_potentials(stimulus, e_field_list, cable, interpolation_radius_index):
             x_position_relative = (cable.x[j] - cable_x_min) / (cable_x_max - cable_x_min)  # number between 0 and 1
         else:
             x_position_relative = 0
-        e_field_index_x = x_position_relative * (len(axis[x_min_ind:x_max_ind]))  # e_field_index_x in small e-field
+        e_field_index_x = x_position_relative * (len(x_axis[x_min_ind:x_max_ind]))  # e_field_index_x in small e-field
         ix = x_min_ind + int(e_field_index_x)  # index in large e-field
 
         if cable_y_max - cable_y_min:
             y_position_relative = (cable.y[j] - cable_y_min) / (cable_y_max - cable_y_min)  # number between 0 and 1
         else:
             y_position_relative = 0
-        e_field_index_y = y_position_relative * (len(axis[y_min_ind:y_max_ind]))  # e_field_index_y in small e-field
+        e_field_index_y = y_position_relative * (len(y_axis[y_min_ind:y_max_ind]))  # e_field_index_y in small e-field
         iy = y_min_ind + int(e_field_index_y)  # index in large e-field
 
         step_vector = cable.get_segment_indices()
 
         # check if cable starts outside defined e_field
-        if cable.y[j] < min(axis) or cable.y[j] > max(axis) or cable.x[j] < min(axis) or cable.x[j] > max(axis):
+        if cable.y[j] < min(y_axis) or cable.y[j] > max(y_axis) or cable.x[j] < min(x_axis) or cable.x[j] > max(x_axis):
             e_average_current = 0
 
         else:

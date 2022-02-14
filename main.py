@@ -31,8 +31,8 @@ import neuron_sim_nerve_shape as ns_ns
 
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
-interpolation_radius_index = 2
-nerve_shape_step_size = 10
+interpolation_radius_index = 1
+nerve_shape_step_size = 1
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -133,6 +133,11 @@ class Main(QMainWindow, Ui_MainWindow):
                                                 selected_nerve.axon_infos_list[selected_index.row()],
                                                 self.time_axis, self.stimulus,
                                                 self.total_time)
+        elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
+            neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
+                                                          self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                          selected_nerve.axon_infos_list[selected_index.row()],
+                                                          self.time_axis, self.stimulus, self.total_time)
             fig2 = Figure()
             ax = plt.gca(projection='3d')
             ax.scatter3D(neuron_sim.axon.x, neuron_sim.axon.y, neuron_sim.axon.z)

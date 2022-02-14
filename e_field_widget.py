@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFil
 
 Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_widget.ui")
 
-default_e_field_path = 'biovoxel.pkl'
+default_e_field_path = 'volume_biovoxel.pkl'
 
 # This class does:
 # - load field (from CST or E-Field-Matrix python file)
@@ -132,6 +132,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         storage.convert_units(1e3)  # convert mm from CST to um used for cable
         self.nerve_shape = storage.generate_nerve_shape()
         self.state = self.NERVE_SHAPE_ONLY
+        self.nerve_shape_only_radio_button.setChecked(True)
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
         self.nerve_shape_only_radio_button.setEnabled(True)
         self.update_e_field_plot()
@@ -144,6 +145,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         with open(filename, 'rb') as e:
             self.nerve_shape = pickle.load(e)
         self.state = self.NERVE_SHAPE_ONLY
+        self.nerve_shape_only_radio_button.setChecked(True)
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
         self.nerve_shape_only_radio_button.setEnabled(True)
         self.update_e_field_plot()
@@ -155,10 +157,10 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             return
         if filename[-4:] == ".pkl":
             with open(filename, 'wb') as f:
-                pickle.dump(self.e_field_list, f)
+                pickle.dump(self.nerve_shape, f)
         else:
             with open(filename + ".pkl", 'wb') as f:
-                pickle.dump(self.e_field_list, f)
+                pickle.dump(self.nerve_shape, f)
 
     def load_default_field(self):
         with open(default_e_field_path, 'rb') as e:
@@ -174,9 +176,10 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         if self.state == self.NERVE_SHAPE_ONLY:
             return self.plot_nerve_shape(self.nerve_shape)
         elif self.state == self.E_FIELD_WITH_NERVE_SHAPE:
-            return self.e_field_plot_with_nerve_shape(self.e_field_list[15], self.nerve_shape)
+            # ToDo: return e_field with nerve shape
+            return self.plot_nerve_shape(self.nerve_shape)
+            # return self.e_field_plot_with_nerve_shape(self.e_field_list[15], self.nerve_shape)
         else:
-            # ToDo: Select layer of e_field_box
             if self.custom_nerve and self.scaling:
                 return self.plot_2d_field_with_cable(self.e_field_list[15], self.custom_nerve, self.scaling)
             else:
