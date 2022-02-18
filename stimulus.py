@@ -2,6 +2,7 @@ import numpy as np
 # from neuron import h
 import pandas as pd
 import matplotlib.pyplot as plt
+import pickle
 
 h_replacement = 0.001 # ms
 
@@ -911,6 +912,65 @@ def get_inverted_custom_spice_2200V_66u(total_time, start_time, duration, pulse_
 
     return time_axis, stim, 'inv_custom_spice_2200V_66u'
 
+def get_stefan_simulation(total_time, start_time, duration, pulse_amp=1):
+    # the pulse has a fixed length, the duration is not considered
+    stim = np.zeros(int(total_time / h_replacement))
+    time_axis = np.arange(0, total_time, h_replacement)
+    with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
+        data = pickle.load(e)
+
+    pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['simulation_duration']) / h_replacement)]
+    indexes = np.round(np.linspace(0, len(data['simulation_data']) - 1, len(pulse_indices))).astype(int)
+    pulse = data['simulation_data'][indexes.tolist()]
+
+    stim[int(start_time / h_replacement): int((start_time + data['simulation_duration']) / h_replacement)] = pulse.transpose()
+
+    return time_axis, stim, 'stefan_simulation'
+
+def get_stefan_sissy(total_time, start_time, duration, pulse_amp=1):
+    # the pulse has a fixed length, the duration is not considered
+    stim = np.zeros(int(total_time / h_replacement))
+    time_axis = np.arange(0, total_time, h_replacement)
+    with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
+        data = pickle.load(e)
+
+    pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['sissy_duration']) / h_replacement)]
+    indexes = np.round(np.linspace(0, len(data['sissy_data']) - 1, len(pulse_indices))).astype(int)
+    pulse = data['sissy_data'][indexes.tolist()]
+
+    stim[int(start_time / h_replacement): int((start_time + data['sissy_duration']) / h_replacement)] = pulse.transpose()
+
+    return time_axis, stim, 'sissy_simulation'
+
+def get_stefan_messung_11(total_time, start_time, duration, pulse_amp=1):
+    # the pulse has a fixed length, the duration is not considered
+    stim = np.zeros(int(total_time / h_replacement))
+    time_axis = np.arange(0, total_time, h_replacement)
+    with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
+        data = pickle.load(e)
+
+    pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['messung_11_duration']) / h_replacement)]
+    indexes = np.round(np.linspace(0, len(data['messung_11_data']) - 1, len(pulse_indices))).astype(int)
+    pulse = data['messung_11_data'][indexes.tolist()]
+
+    stim[int(start_time / h_replacement): int((start_time + data['messung_11_duration']) / h_replacement)] = pulse.transpose()
+
+    return time_axis, stim, 'stefan_messung_11'
+
+def get_stefan_messung_13(total_time, start_time, duration, pulse_amp=1):
+    # the pulse has a fixed length, the duration is not considered
+    stim = np.zeros(int(total_time / h_replacement))
+    time_axis = np.arange(0, total_time, h_replacement)
+    with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
+        data = pickle.load(e)
+
+    pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['messung_13_duration']) / h_replacement)]
+    indexes = np.round(np.linspace(0, len(data['messung_13_data']) - 1, len(pulse_indices))).astype(int)
+    pulse = data['messung_13_data'][indexes.tolist()]
+
+    stim[int(start_time / h_replacement): int((start_time + data['messung_13_duration']) / h_replacement)] = pulse.transpose()
+
+    return time_axis, stim, 'stefan_messung_13'
 
 def moving_average(curve, window=4):
     curve_averaged = []
@@ -959,7 +1019,11 @@ def stimulus_string_list():
         'real_rect_b',
         'real_rect_c',
         'triangle',
-        'decreasing_triangle'
+        'decreasing_triangle',
+        'stefan_simulation',
+        'stefan_sissy',
+        'stefan_messung_11',
+        'stefan_messung_13'
     ]
     return stim_list
 
@@ -988,4 +1052,12 @@ def get_stim_from_string(stim_name, total_time, start_time, duration):
     if stim_name == 'triangle':
         return get_triangle(total_time, start_time, duration)
     if stim_name == 'decreasing_triangle':
-        get_decreasing_triangle(total_time, start_time, duration)
+        return get_decreasing_triangle(total_time, start_time, duration)
+    if stim_name == 'stefan_simulation':
+        return get_stefan_simulation(total_time, start_time, duration)
+    if stim_name == 'stefan_sissy':
+        return get_stefan_sissy(total_time, start_time, duration)
+    if stim_name == 'stefan_messung_11':
+        return get_stefan_messung_11(total_time, start_time, duration)
+    if stim_name == 'stefan_messung_13':
+        return get_stefan_messung_13(total_time, start_time, duration)

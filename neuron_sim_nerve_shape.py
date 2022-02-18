@@ -43,7 +43,7 @@ class NeuronSimNerveShape:
 
         return axon
 
-    def quasipot(self, x):  # x not used here
+    def quasipot(self):  # x not used here
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = self.quasi_potentials(self.stimulus, self.nerve_shape, self.axon)
         mf.play_stimulus_matrix(self.axon, self.time_axis)
 

@@ -19,7 +19,7 @@ from stimulus_widget import stimulusWidget
 from e_field_widget import EFieldWidget
 from nerve_widget import NerveWidget
 from threshold_widget import ThresholdWidget
-from monte_carlo_widget import MonteCarloWidgetEField, MonteCarloWidgetNerveShape
+from monte_carlo_widget import MonteCarloWidgetEField, MonteCarloWidgetNerveShape, MonteCarloWidgetEFieldWithNerveShape
 
 import numpy as np
 import sys
@@ -31,8 +31,8 @@ import neuron_sim_nerve_shape as ns_ns
 
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
-interpolation_radius_index = 1
-nerve_shape_step_size = 1
+interpolation_radius_index = 2
+nerve_shape_step_size = 2
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -125,7 +125,7 @@ class Main(QMainWindow, Ui_MainWindow):
             self.potential_layout.removeWidget(self.field_axon_canvas)
             self.field_axon_canvas.close()
         if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-            neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list,
+            neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
                                             selected_nerve.axon_infos_list[selected_index.row()], self.time_axis,
                                             self.stimulus, self.total_time)
         elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
@@ -134,18 +134,26 @@ class Main(QMainWindow, Ui_MainWindow):
                                                 self.time_axis, self.stimulus,
                                                 self.total_time)
         elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-            neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
+            # self.e_field_widget.nerve_shape.y = self.e_field_widget.nerve_shape.y + 50000
+            neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list, interpolation_radius_index,
                                                           self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                           selected_nerve.axon_infos_list[selected_index.row()],
                                                           self.time_axis, self.stimulus, self.total_time)
+            # fig20 = plt.figure(2)
+            # ax20 = fig20.gca()
+            # ax20 = plt.plot(neuron_sim.mdf())
             fig2 = Figure()
             ax = plt.gca(projection='3d')
-            ax.scatter3D(neuron_sim.axon.x, neuron_sim.axon.y, neuron_sim.axon.z)
-            ax.set_xlabel('x')
-            ax.set_ylabel('y')
-            ax.set_zlabel('z')
+            ax.scatter3D(neuron_sim.axon.x/1000, neuron_sim.axon.y/1000, neuron_sim.axon.z/1000)
+            ax.set_xlabel('x in mm')
+            ax.set_ylabel('y in mm')
+            ax.set_zlabel('z in mm')
             plt.show()
-        neuron_sim.quasipot(interpolation_radius_index)
+        neuron_sim.quasipot()
+        # fig20 = plt.figure(2)
+        # ax20 = fig20.gca()
+        # ax20 = plt.plot(neuron_sim.mdf())
+        # plt.show()
         e_field_along_axon = neuron_sim.axon.e_field_along_axon
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111)
@@ -162,12 +170,12 @@ class Main(QMainWindow, Ui_MainWindow):
             return
         for axon in selected_nerve.axon_infos_list:
             if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-                neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list,
+                neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
                                                 axon, self.time_axis, self.stimulus, self.total_time)
             elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
                 neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                     axon, self.time_axis, self.stimulus, self.total_time)
-            neuron_sim.quasipot(interpolation_radius_index)
+            neuron_sim.quasipot()
             neuron_sim.simple_simulation()
             neuron_sim.plot_simulation()
         plt.show()
@@ -185,7 +193,7 @@ class Main(QMainWindow, Ui_MainWindow):
             elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
                 neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                     axon, self.time_axis, self.stimulus, self.total_time)
-            neuron_sim.quasipot(interpolation_radius_index)
+            neuron_sim.quasipot()
             threshold = neuron_sim.threshold_simulation(self.threshold_widget)
             self.threshold_label.setText(str(threshold))
             neuron_sim.simple_simulation()
@@ -198,15 +206,23 @@ class Main(QMainWindow, Ui_MainWindow):
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if self.e_field_widget.mode == 0:
-            self.monte_carlo_widget = MonteCarloWidgetNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                       self.stimulus, self.time_axis, self.total_time, self.threshold_widget)
-
+        if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
+            self.monte_carlo_widget = MonteCarloWidgetEField(self.e_field_widget.e_field_list,
+                                                             interpolation_radius_index, selected_nerve, self.stimulus,
+                                                             self.time_axis, self.total_time, self.threshold_widget)
             self.monte_carlo_widget.show()
-        else:
-            self.monte_carlo_widget = MonteCarloWidgetEField(self.e_field_list, interpolation_radius_index, selected_nerve,
-                                                       self.stimulus, self.time_axis, self.total_time, self.threshold_widget)
-
+        elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
+            self.monte_carlo_widget = MonteCarloWidgetNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                                 self.stimulus, self.time_axis, self.total_time,
+                                                                 self.threshold_widget)
+            self.monte_carlo_widget.show()
+        elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
+            self.monte_carlo_widget = MonteCarloWidgetEFieldWithNerveShape(self.e_field_widget.e_field_list,
+                                                                           interpolation_radius_index,
+                                                                           self.e_field_widget.nerve_shape,
+                                                                           nerve_shape_step_size,
+                                                                           self.stimulus, self.time_axis,
+                                                                           self.total_time, self.threshold_widget)
             self.monte_carlo_widget.show()
 
 

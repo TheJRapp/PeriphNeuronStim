@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFil
 
 Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_widget.ui")
 
-default_e_field_path = 'volume_biovoxel.pkl'
+default_e_field_path = 'volume_box_phrenic_tilted_coil.pkl'
 
 # This class does:
 # - load field (from CST or E-Field-Matrix python file)
@@ -252,10 +252,10 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         ax1f1 = fig1.add_subplot(111, projection='3d')
         ax1f1.scatter3D(nerve_shape.x, nerve_shape.y, nerve_shape.z, c=nerve_shape.e_y)
         ax = plt.gca(projection='3d')
-        ax.scatter3D(nerve_shape.x, nerve_shape.y, nerve_shape.z, c=nerve_shape.e_y)
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-        ax.set_zlabel('z')
+        ax.scatter3D(nerve_shape.x/1000, nerve_shape.y/1000, nerve_shape.z/1000, c=nerve_shape.e_y)
+        ax.set_xlabel('x in mm')
+        ax.set_ylabel('y in mm')
+        ax.set_zlabel('z in mm')
         # plt.show()
 
         return fig1

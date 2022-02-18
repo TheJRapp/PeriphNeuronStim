@@ -32,7 +32,7 @@ class NeuronSim:
     def generate_axon(self, mp):
         raise NotImplementedError()
 
-    def quasipot(self, interpolation_radius_index):
+    def quasipot(self):
         raise NotImplementedError()
 
     def simple_simulation(self):
@@ -61,10 +61,11 @@ class NeuronSim:
 
 class NeuronSimEField(NeuronSim):
 
-    def __init__(self, static_e_field_list, axon_model_parameter, time_axis, stimulus, total_time):
+    def __init__(self, static_e_field_list, radius, axon_model_parameter, time_axis, stimulus, total_time):
         super(NeuronSimEField, self).__init__(axon_model_parameter, time_axis, stimulus, total_time)
 
         self.e_field_list = static_e_field_list
+        self.interpolation_radius_index = radius
 
     def generate_axon(self, mp):
         if mp.axon_type == 'HH':
@@ -78,8 +79,9 @@ class NeuronSimEField(NeuronSim):
 
         return axon
 
-    def quasipot(self, interpolation_radius_index):
-        self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(self.stimulus, self.e_field_list, self.axon, interpolation_radius_index)
+    def quasipot(self):
+        self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(
+            self.stimulus, self.e_field_list, self.axon, self.interpolation_radius_index)
         mf.play_stimulus_matrix(self.axon, self.time_axis)
 
     def hh(self, diameter, x, y, z, angle, length):
@@ -162,7 +164,7 @@ class NeuronSimNerveShape(NeuronSim):
 
         return axon
 
-    def quasipot(self, x):  # x not used here
+    def quasipot(self):  # x not used here
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = self.quasi_potentials(self.stimulus, self.nerve_shape, self.axon)
         mf.play_stimulus_matrix(self.axon, self.time_axis)
 
@@ -226,13 +228,14 @@ class NeuronSimNerveShape(NeuronSim):
 
 class NeuronSimEFieldWithNerveShape(NeuronSim):
 
-    def __init__(self, static_e_field_list, nerve_shape, nerve_step_size, axon_model_parameter, time_axis, stimulus, total_time):
+    def __init__(self, static_e_field_list, radius, nerve_shape, nerve_step_size, axon_model_parameter, time_axis, stimulus, total_time):
         self.nerve_shape = nerve_shape
         self.step_size = nerve_step_size
 
         super(NeuronSimEFieldWithNerveShape, self).__init__(axon_model_parameter, time_axis, stimulus, total_time)
 
         self.e_field_list = static_e_field_list
+        self.interpolation_radius_index = radius
 
     def generate_axon(self, mp):
         if mp.axon_type == 'HH':
@@ -246,9 +249,12 @@ class NeuronSimEFieldWithNerveShape(NeuronSim):
 
         return axon
 
-    def quasipot(self, interpolation_radius_index):
-        self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(self.stimulus, self.e_field_list, self.axon, interpolation_radius_index)
+    def quasipot(self):
+        self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(self.stimulus, self.e_field_list, self.axon, self.interpolation_radius_index)
         mf.play_stimulus_matrix(self.axon, self.time_axis)
+
+    def mdf(self):
+        return mf.driving_function(self.axon, self.stimulus)
 
 
 class AxonInformation:
@@ -263,7 +269,7 @@ class AxonInformation:
         self.axon_type = axon_type
 
 
-def simple_from_nerve_shape(diameter, nerve_shape, step_size):
+def simple_from_nerve_shape_old(diameter, nerve_shape, step_size):
     segments = 1
     node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis
     internode_diameter = diameter
@@ -296,6 +302,61 @@ def simple_from_nerve_shape(diameter, nerve_shape, step_size):
             theta.append(theta_c)
             node_internode_pairs.append(node_internode_pairs_c)
             axons_number += 1
+
+    simple_model = simple_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, segments,
+                                                    internode_diameter,
+                                                    node_diameter, node_length, internode_length,
+                                                    node_internode_pairs)
+    return simple_model
+
+
+def simple_from_nerve_shape(diameter, nerve_shape, step_size):
+    segments = 1
+    node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis
+    internode_diameter = diameter
+    node_length = 1
+    if diameter > 4:
+        internode_length = 969.3 * np.log(diameter) - 1144.6
+    else:
+        internode_length = 100 * diameter
+
+    x = nerve_shape.x[0]
+    y = nerve_shape.y[0]
+    z = nerve_shape.z[0]
+    theta = []
+    phi = []
+    node_internode_pairs = []
+    axons_number = 0
+    step_size = step_size
+    for i in range(len(nerve_shape.x) - step_size)[::step_size]:
+        if i == 0:
+            last_x = nerve_shape.x[i]
+            last_y = nerve_shape.y[i]
+            last_z = nerve_shape.z[i]
+
+        length = np.sqrt((nerve_shape.x[i + step_size] - last_x) ** 2 + (
+                    nerve_shape.y[i + step_size] - last_y) ** 2
+                         + (nerve_shape.z[i + step_size] - last_z) ** 2)
+        phi_c = np.arctan2(
+            (nerve_shape.y[i + step_size] - last_y),
+            (nerve_shape.x[i + step_size] - last_x))
+        theta_c = np.arccos(((nerve_shape.z[i + step_size] - last_z) / length))
+        test = nerve_shape.z[i] / length
+        node_internode_pairs_c = int(round(length / (node_length + internode_length)))
+        if node_internode_pairs_c > 0:
+            phi.append(phi_c)
+            theta.append(theta_c)
+            node_internode_pairs.append(node_internode_pairs_c)
+            axons_number += 1
+            # for pair in range(node_internode_pairs_c):
+            #     phi.append(phi_c/node_internode_pairs_c)
+            #     theta.append(theta_c/node_internode_pairs_c)
+            #     axons_number += 1
+            #     node_internode_pairs.append(1)
+
+            last_x = nerve_shape.x[i+step_size]
+            last_y = nerve_shape.y[i+step_size]
+            last_z = nerve_shape.z[i+step_size]
 
     simple_model = simple_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, segments,
                                                     internode_diameter,

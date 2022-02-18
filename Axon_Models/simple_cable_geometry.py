@@ -94,8 +94,14 @@ class BendedAxon(simple_axon.Axon):
     def get_unitvector(self):
         unitvector=[]
         for i in range(len(self.axon_list)):
-            unitvector.append(1 / np.sqrt((self.axon_list[i].x_final - self.axon_list[i].x_initial) ** 2 + (self.axon_list[i].y_final - self.axon_list[i].y_initial) ** 2 + (self.axon_list[i].z_final - self.axon_list[i].z_initial) ** 2) * \
-                              np.array([self.axon_list[i].x_final - self.axon_list[i].x_initial, self.axon_list[i].y_final - self.axon_list[i].y_initial , self.axon_list[i].z_final - self.axon_list[i].z_initial]))
+            vector = np.array([self.axon_list[i].x_final - self.axon_list[i].x_initial,
+                                                 self.axon_list[i].y_final - self.axon_list[i].y_initial,
+                                                 self.axon_list[i].z_final - self.axon_list[i].z_initial])
+
+            absolute = np.sqrt((self.axon_list[i].x_final - self.axon_list[i].x_initial) ** 2 + (
+                    self.axon_list[i].y_final - self.axon_list[i].y_initial) ** 2 + (
+                    self.axon_list[i].z_final - self.axon_list[i].z_initial) ** 2)
+            unitvector.append(vector / absolute)
         return unitvector
 
     def get_segment_indices(self):

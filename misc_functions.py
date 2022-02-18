@@ -295,7 +295,7 @@ def driving_function(model, stimulus, location=None):
     quasi_pot_matrix_node_only=[]
     MDF=[]
 
-    quasi_pot_matrix_node_only = get_nodes_only(model.sections, model.quasi_pot_list)
+    quasi_pot_matrix_node_only = get_nodes_only(model.sections, model.potential_along_axon)
     quasi_pot_matrix_node_only = [qp * np.amax(stimulus) for qp in quasi_pot_matrix_node_only]  # quasi_pot_list has not yet been multiplied with stimulus
     for i in range(1, len(quasi_pot_matrix_node_only)-1, 1):            #ignore calculation for first and last element to allow iteration (should be changed)
         MDF.append((quasi_pot_matrix_node_only[int(i-1)]-2*quasi_pot_matrix_node_only[i]+quasi_pot_matrix_node_only[int(i+1)])/(model.internode_length + model.node_length)**2)
