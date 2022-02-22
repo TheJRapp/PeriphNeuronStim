@@ -60,7 +60,7 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         start_pos_offset_mean = 0
         start_pos_offset_stdev = 3000
 
-        runs = 5
+        runs = 30
 
         diameters_1 = []
         diameters_2 = []
@@ -85,7 +85,8 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         #     threading.Thread(target=self.run_diam_simulation).start()
         # q.join()
         # print("Elapsed time:  %s " % (time.time() - start))
-
+        diameters_1.sort()
+        start_pos_offset_z.sort()
         start = time.time()
         stimulation_success_1 = []
         for diam, i in zip(diameters_1, range(len(diameters_1))):
@@ -96,13 +97,14 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
 
         results = np.asarray(stimulation_success_1)
         results = np.reshape(results, (runs, runs))
+        print(diameters_1)
+        print(start_pos_offset_z)
+        print(results)
         fig8 = pt.figure(2)
         ax8 = fig8.gca()
-        ax8 = pt.imshow(results)
-        ax8.set_xticks(start_pos_offset_z)
-        ax8.set_yticks(diameters_1)
-        ax8.set_xlabel('Offset in um')
-        ax8.set_ylabel('Diameter')
+        ax8 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_1[-1], diameters_1[0]])
+        # ax8.set_xlabel('Offset in um')
+        # ax8.set_ylabel('Diameter')
         pt.show()
 
         # stimulation_success_1 = []
