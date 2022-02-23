@@ -13,6 +13,7 @@ from numpy import random
 from matplotlib import pyplot as pt
 import threading, queue
 import time
+import copy
 Ui_MonteCarloWidget, QWidget_MonteCarlo = uic.loadUiType("ui_monte_carlo_widget.ui")
 Ui_AxonDiamSweepWidget, QWidget_AxonDiamSweep = uic.loadUiType("ui_nerve_dimension_widget.ui")
 
@@ -60,7 +61,7 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         start_pos_offset_mean = 0
         start_pos_offset_stdev = 3000
 
-        runs = 30
+        runs = 10
 
         diameters_1 = []
         diameters_2 = []
@@ -90,21 +91,25 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         start = time.time()
         stimulation_success_1 = []
         for diam, i in zip(diameters_1, range(len(diameters_1))):
-            for j in range(len(start_pos_offset_x)):
-                print('Run, ', i*j, '/', runs*runs)
-                stimulation_success_1.append(self.run_diam_position_simulation(diam, start_pos_offset_z[j]))
+            stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
+            print('Diam: ', diam, ', ', stimulation_success_1)
+
+            # for j in range(len(start_pos_offset_x)):
+            #     print('Run, ', i*j, '/', runs*runs)
+            #     stimulation_success_1.append(self.run_diam_position_simulation(diam, start_pos_offset_z[j]))
         print("Elapsed time:  %s " % (time.time() - start))
 
-        results = np.asarray(stimulation_success_1)
-        results = np.reshape(results, (runs, runs))
-        print(diameters_1)
-        print(start_pos_offset_z)
-        print(results)
+        # results = np.asarray(stimulation_success_1)
+        # results = np.reshape(results, (runs, runs))
+        # print(diameters_1)
+        # print(start_pos_offset_z)
+        # print(results)
         fig8 = pt.figure(2)
-        ax8 = fig8.gca()
-        ax8 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_1[-1], diameters_1[0]])
+        # ax8 = fig8.gca()
+        # ax8 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_1[-1], diameters_1[0]])
         # ax8.set_xlabel('Offset in um')
         # ax8.set_ylabel('Diameter')
+        pt.plot(stimulation_success_1)
         pt.show()
 
         # stimulation_success_1 = []
@@ -205,14 +210,18 @@ class MonteCarloWidgetEFieldWithNerveShape(MonteCarloWidget):
         axon_info = ns.AxonInformation(0, 0, 0, 0, 0, diam, 'MHH')
         # self.nerve_shape.x = self.nerve_shape.x + start_pos_offset_x
         # self.nerve_shape.y = self.nerve_shape.y + start_pos_offset_y
-        self.nerve_shape.z = self.nerve_shape.z + start_pos_offset_z
+        internal_nerve_shape = copy.copy(self.nerve_shape)
+        internal_nerve_shape.z = internal_nerve_shape.z + start_pos_offset_z
         neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_list, self.interpolation_radius_index,
-                                                      self.nerve_shape, self.nerve_step_size, axon_info, self.time_axis,
+                                                      internal_nerve_shape, self.nerve_step_size, axon_info, self.time_axis,
                                                       self.stimulus, self.total_time)
 
         # check if stimulation was successfull (eventdetector threshold widget)
         neuron_sim.quasipot()
         neuron_sim.simple_simulation()
+        # fig3 = pt.figure(3)
+        # neuron_sim.plot_simulation()
+        # pt.show()
         if neuron_sim.is_axon_stimulated(self.threshold_widget):
             return 1
         else:
