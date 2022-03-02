@@ -4,7 +4,7 @@ matplotlib.use('Qt5Agg')
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5 import uic, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
-
+import pandas as pd
 import neuron_sim as ns
 import neuron_sim_nerve_shape as ns_ns
 
@@ -59,9 +59,9 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         stdev_2 = 2.133  # micrometer
 
         start_pos_offset_mean = 0
-        start_pos_offset_stdev = 3000
+        start_pos_offset_stdev = 15000
 
-        runs = 10
+        runs = 100
 
         diameters_1 = []
         diameters_2 = []
@@ -90,26 +90,37 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         start_pos_offset_z.sort()
         start = time.time()
         stimulation_success_1 = []
+        result_dict = {}
+        result_dict['Offset'] = start_pos_offset_z
         for diam, i in zip(diameters_1, range(len(diameters_1))):
-            stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
+            # stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
             print('Diam: ', diam, ', ', stimulation_success_1)
+            if str(diam) in result_dict:
+                a = 0
+            else:
+                result_dict[str(diam)] = []
 
-            # for j in range(len(start_pos_offset_x)):
-            #     print('Run, ', i*j, '/', runs*runs)
-            #     stimulation_success_1.append(self.run_diam_position_simulation(diam, start_pos_offset_z[j]))
+                for j in range(len(start_pos_offset_x)):
+                    print('Run, ', j, '/', runs)
+                    is_stimulated = self.run_diam_position_simulation(diam, start_pos_offset_z[j])
+                    stimulation_success_1.append(is_stimulated)
+                    result_dict[str(diam)].append(is_stimulated)
         print("Elapsed time:  %s " % (time.time() - start))
 
-        # results = np.asarray(stimulation_success_1)
-        # results = np.reshape(results, (runs, runs))
+        df = pd.DataFrame(result_dict)
+        df.to_csv('monte_carlo_test.csv', index=False, header=True)
+        results = np.asarray(stimulation_success_1)
+        results = np.reshape(results, (runs, runs))
         # print(diameters_1)
         # print(start_pos_offset_z)
         # print(results)
         fig8 = pt.figure(2)
-        # ax8 = fig8.gca()
-        # ax8 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_1[-1], diameters_1[0]])
+        ax8 = fig8.gca()
+        ax8 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_1[-1], diameters_1[0]])
         # ax8.set_xlabel('Offset in um')
         # ax8.set_ylabel('Diameter')
-        pt.plot(stimulation_success_1)
+        # pt.plot(stimulation_success_1)
+
         pt.show()
 
         # stimulation_success_1 = []
@@ -127,7 +138,7 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
 
         # print(stimulation_success_1)
         # print(stimulation_success_2)
-        # return stimulation_success_1
+        return stimulation_success_1
 
     def run_diam_simulation(self, diam):
         raise NotImplementedError()
