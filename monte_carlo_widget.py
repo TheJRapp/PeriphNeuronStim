@@ -61,7 +61,7 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         start_pos_offset_mean = 0
         start_pos_offset_stdev = 15000
 
-        runs = 100
+        runs = 5
 
         diameters_1 = []
         diameters_2 = []
@@ -69,16 +69,26 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         start_pos_offset_y = []
         start_pos_offset_z = []
         for i in range(runs):
-            normal_distribution_1 = random.normal(mean_1, stdev_1)
-            diameters_1.append(normal_distribution_1)
-            normal_distribution_2 = random.normal(mean_2, stdev_2)
-            diameters_2.append(normal_distribution_2)
-            normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
-            start_pos_offset_x.append(normal_distribution_3)
-            normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
-            start_pos_offset_y.append(normal_distribution_3)
-            normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
-            start_pos_offset_z.append(normal_distribution_3)
+            helper = False
+            while not helper:
+                normal_distribution_1 = random.normal(mean_1, stdev_1)
+                if (mean_1 + 2*stdev_1) > normal_distribution_1 > (mean_1 - 2*stdev_1):
+                    helper = True
+                    diameters_1.append(normal_distribution_1)
+
+            # normal_distribution_2 = random.normal(mean_2, stdev_2)
+            # diameters_2.append(normal_distribution_2)
+            # normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
+            # start_pos_offset_x.append(normal_distribution_3)
+            # normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
+            # start_pos_offset_y.append(normal_distribution_3)
+            helper = False
+            while not helper:
+                normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
+                if (start_pos_offset_mean + 2*start_pos_offset_stdev) > normal_distribution_3 > (start_pos_offset_mean - 2*start_pos_offset_stdev):
+                    helper = True
+                    start_pos_offset_z.append(normal_distribution_3)
+
 
         # start = time.time()
         # q = queue.Queue()
@@ -95,16 +105,13 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         for diam, i in zip(diameters_1, range(len(diameters_1))):
             # stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
             print('Diam: ', diam, ', ', stimulation_success_1)
-            if str(diam) in result_dict:
-                a = 0
-            else:
-                result_dict[str(diam)] = []
+            result_dict[str(diam)] = []
 
-                for j in range(len(start_pos_offset_x)):
-                    print('Run, ', j, '/', runs)
-                    is_stimulated = self.run_diam_position_simulation(diam, start_pos_offset_z[j])
-                    stimulation_success_1.append(is_stimulated)
-                    result_dict[str(diam)].append(is_stimulated)
+            for j in range(len(start_pos_offset_z)):
+                print('Run, ', j, '/', runs)
+                is_stimulated = self.run_diam_position_simulation(diam, start_pos_offset_z[j])
+                stimulation_success_1.append(is_stimulated)
+                result_dict[str(diam)].append(is_stimulated)
         print("Elapsed time:  %s " % (time.time() - start))
 
         df = pd.DataFrame(result_dict)
