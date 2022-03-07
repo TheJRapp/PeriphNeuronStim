@@ -73,7 +73,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.e_field_along_axon_button.clicked.connect(self.checkin_nerve)
         self.simulation_button.clicked.connect(self.start_simulation)
 
-        self.mc_diameter_button.clicked.connect(self.monte_carlo_axon_diam_sweep)
+        self.mc_button.clicked.connect(self.monte_carlo_axon_diam_sweep)
 
     def add_plot(self, fig):
         self.canvas = FigureCanvas(fig)

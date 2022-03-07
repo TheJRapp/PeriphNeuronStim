@@ -14,32 +14,12 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>Min:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="1">
-    <widget class="QDoubleSpinBox" name="min_val_spinbox"/>
-   </item>
-   <item row="0" column="2">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>um</string>
-     </property>
-    </widget>
-   </item>
    <item row="1" column="0">
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Max:</string>
+      <string>StDev:</string>
      </property>
     </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QDoubleSpinBox" name="max_val_spinbox"/>
    </item>
    <item row="1" column="2">
     <widget class="QLabel" name="label_4">
@@ -48,15 +28,36 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label_5">
-     <property name="text">
-      <string>Samples:</string>
+   <item row="0" column="1">
+    <widget class="QDoubleSpinBox" name="min_val_spinbox">
+     <property name="value">
+      <double>15.289999999999999</double>
      </property>
     </widget>
    </item>
-   <item row="2" column="1">
-    <widget class="QSpinBox" name="spinBox"/>
+   <item row="1" column="1">
+    <widget class="QDoubleSpinBox" name="max_val_spinbox">
+     <property name="decimals">
+      <number>4</number>
+     </property>
+     <property name="value">
+      <double>2.133000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Mean:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="2">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>um</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

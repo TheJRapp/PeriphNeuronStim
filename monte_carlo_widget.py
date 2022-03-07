@@ -15,7 +15,7 @@ import threading, queue
 import time
 import copy
 Ui_MonteCarloWidget, QWidget_MonteCarlo = uic.loadUiType("ui_monte_carlo_widget.ui")
-Ui_AxonDiamSweepWidget, QWidget_AxonDiamSweep = uic.loadUiType("ui_nerve_dimension_widget.ui")
+Ui_AxonDiamSweepWidget, QWidget_AxonDiamSweep = uic.loadUiType("ui_parameter_widget.ui")
 
 parameter_list = ['Axon Diam', 'Axon Position']
 
@@ -30,21 +30,41 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         self.time_axis = time_axis
         self.total_time = total_time
         self.threshold_widget = threshold_widget
+        self.parameter_list = []
+        self.parameter_list_item_model = QtGui.QStandardItemModel(self.parameter_list_view)
 
         self.parameter_combobox.addItems(parameter_list)
 
-        self.axon_diam_widget = AxonDiamSweepWidget()
-        self.parameter_layout.addWidget(self.axon_diam_widget)
-        self.axon_diam_widget.setVisible(False)
+        self.parameter_widget_list = []
 
-        self.parameter_combobox.currentTextChanged.connect(self.set_parameter_widget)
+        self.parameter_push_button.clicked.connect(self.add_parameter)
+        self.parameter_list_view.clicked.connect(self.set_parameter_widget)
+        self.delete_all_pushbutton.clicked.connect(self.delete_parameters)
         self.start_mc_button.clicked.connect(self.start_monte_carlo)
 
+    def add_parameter(self):
+        item = QtGui.QStandardItem(self.parameter_combobox.currentText())
+        self.parameter_list.append(self.parameter_combobox.currentText())
+        paramter_widget = ParameterWidget()
+        paramter_widget.type = self.parameter_combobox.currentText()
+        self.parameter_widget_list.append(paramter_widget)
+        self.parameter_layout.addWidget(paramter_widget)
+        self.parameter_list_item_model.appendRow(item)
+        self.parameter_list_view.setModel(self.parameter_list_item_model)
+        self.set_parameter_widget()
+
     def set_parameter_widget(self):
-        if self.parameter_combobox.currentText() == "Axon Diam":
-            self.axon_diam_widget.setVisible(True)
-        else:
-            self.axon_diam_widget.setVisible(False)
+        for i, widget in zip(range(len(self.parameter_widget_list)), self.parameter_widget_list):
+            if widget:
+                self.parameter_widget_list[i].setVisible(False)
+                if i == self.parameter_list_view.currentIndex().row():
+                    self.parameter_widget_list[i].setVisible(True)
+
+    def delete_parameters(self):
+        self.parameter_list_item_model.clear()
+        self.parameter_list_view.setModel(self.parameter_list_item_model)
+        self.set_parameter_widget()
+        self.parameter_list = []
 
     def start_monte_carlo(self):
         if self.parameter_combobox.currentText() == 'Axon Diam':
@@ -52,32 +72,44 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
 
     def start_mc_diam_pos_sweep(self):
 
-        mean_1 = 9.33  # micrometer
-        stdev_1 = 2.1  # micrometer
+        mean_gamma = 9.33  # micrometer
+        stdev_gamma = 2.1  # micrometer
 
-        mean_2 = 15.287  # micrometer
-        stdev_2 = 2.133  # micrometer
+        mean_alpha = 15.287  # micrometer
+        stdev_alpha = 2.133  # micrometer
 
         start_pos_offset_mean = 0
         start_pos_offset_stdev = 15000
 
-        runs = 5
+        mean_stim_gamma = 1
+        stdev_stim_gamma = 0.1
 
-        diameters_1 = []
-        diameters_2 = []
+        mean_stim_alpha = 0.5
+        stdev_stim_alpha = 0.05
+
+        runs = 100
+
+        diameters_gamma = []
+        diameters_alpha = []
         start_pos_offset_x = []
         start_pos_offset_y = []
         start_pos_offset_z = []
+        stimulus_gamma = []
+        stimulus_alpha = []
         for i in range(runs):
             helper = False
             while not helper:
-                normal_distribution_1 = random.normal(mean_1, stdev_1)
-                if (mean_1 + 2*stdev_1) > normal_distribution_1 > (mean_1 - 2*stdev_1):
+                normal_distribution_1 = random.normal(mean_gamma, stdev_gamma)
+                if (mean_gamma + 2*stdev_gamma) > normal_distribution_1 > (mean_gamma - 2*stdev_gamma):
                     helper = True
-                    diameters_1.append(normal_distribution_1)
+                    diameters_gamma.append(normal_distribution_1)
+            helper = False
+            while not helper:
+                normal_distribution_2 = random.normal(mean_alpha, stdev_alpha)
+                if (mean_alpha + 2*stdev_alpha) > normal_distribution_2 > (mean_alpha - 2*stdev_alpha):
+                    helper = True
+                    diameters_alpha.append(normal_distribution_2)
 
-            # normal_distribution_2 = random.normal(mean_2, stdev_2)
-            # diameters_2.append(normal_distribution_2)
             # normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
             # start_pos_offset_x.append(normal_distribution_3)
             # normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
@@ -88,21 +120,27 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
                 if (start_pos_offset_mean + 2*start_pos_offset_stdev) > normal_distribution_3 > (start_pos_offset_mean - 2*start_pos_offset_stdev):
                     helper = True
                     start_pos_offset_z.append(normal_distribution_3)
+            helper = False
+            while not helper:
+                normal_distribution = random.normal(mean_stim_gamma, stdev_stim_gamma)
+                if (mean_stim_gamma + 2*stdev_stim_gamma) > normal_distribution > (mean_stim_gamma - 2*stdev_stim_gamma):
+                    helper = True
+                    stimulus_gamma.append(normal_distribution)
+            helper = False
+            while not helper:
+                normal_distribution = random.normal(mean_stim_alpha, stdev_stim_alpha)
+                if (mean_stim_alpha + 2*stdev_stim_alpha) > normal_distribution > (mean_stim_alpha - 2*stdev_stim_alpha):
+                    helper = True
+                    stimulus_alpha.append(normal_distribution)
 
-
-        # start = time.time()
-        # q = queue.Queue()
-        # for diam in range(11):
-        #     threading.Thread(target=self.run_diam_simulation).start()
-        # q.join()
-        # print("Elapsed time:  %s " % (time.time() - start))
-        diameters_1.sort()
+        # ----- diameter / coil distance -------------------------------------------------------------------------------
+        diameters_gamma.sort()
         start_pos_offset_z.sort()
         start = time.time()
         stimulation_success_1 = []
         result_dict = {}
         result_dict['Offset'] = start_pos_offset_z
-        for diam, i in zip(diameters_1, range(len(diameters_1))):
+        for diam, i in zip(diameters_gamma, range(len(diameters_gamma))):
             # stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
             print('Diam: ', diam, ', ', stimulation_success_1)
             result_dict[str(diam)] = []
@@ -115,36 +153,109 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         print("Elapsed time:  %s " % (time.time() - start))
 
         df = pd.DataFrame(result_dict)
-        df.to_csv('monte_carlo_test.csv', index=False, header=True)
+        df.to_csv('20220304_mc_diam_vs_coil_distance_gamma_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
         results = np.asarray(stimulation_success_1)
         results = np.reshape(results, (runs, runs))
-        # print(diameters_1)
-        # print(start_pos_offset_z)
-        # print(results)
+
         fig8 = pt.figure(2)
         ax8 = fig8.gca()
-        ax8 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_1[-1], diameters_1[0]])
-        # ax8.set_xlabel('Offset in um')
-        # ax8.set_ylabel('Diameter')
-        # pt.plot(stimulation_success_1)
+        ax8 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_gamma[-1], diameters_gamma[0]])
+
+        original_stimulus = self.stimulus
+        self.stimulus = [number / 2 for number in self.stimulus]
+        diameters_alpha.sort()
+        start_pos_offset_z.sort()
+        start = time.time()
+        stimulation_success_2 = []
+        result_dict = {}
+        result_dict['Offset'] = start_pos_offset_z
+        for diam, i in zip(diameters_alpha, range(len(diameters_alpha))):
+            # stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
+            print('Diam: ', diam, ', ', stimulation_success_2)
+            result_dict[str(diam)] = []
+
+            for j in range(len(start_pos_offset_z)):
+                print('Run, ', j, '/', runs)
+                is_stimulated = self.run_diam_position_simulation(diam, start_pos_offset_z[j])
+                stimulation_success_2.append(is_stimulated)
+                result_dict[str(diam)].append(is_stimulated)
+        print("Elapsed time:  %s " % (time.time() - start))
+
+        df = pd.DataFrame(result_dict)
+        df.to_csv('20220304_mc_diam_vs_coil_distance_alpha_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
+        results = np.asarray(stimulation_success_2)
+        results = np.reshape(results, (runs, runs))
+
+        fig3 = pt.figure(3)
+        ax3 = fig3.gca()
+        ax3 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_gamma[-1], diameters_gamma[0]])
+
+        self.stimulus = original_stimulus
+
+        # ----- diameter / coil current --------------------------------------------------------------------------------
+        stimulus_gamma.sort()
+        start = time.time()
+        stimulation_success_3 = []
+        result_dict = {}
+        result_dict['Stimulus'] = stimulus_gamma
+        for diam, i in zip(diameters_gamma, range(len(diameters_gamma))):
+            # stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
+            print('Diam: ', diam, ', ', stimulation_success_3)
+            print('Run, ', i, '/', runs)
+            result_dict[str(diam)] = []
+
+            for j in range(len(stimulus_gamma)):
+                print('Run, ', j, '/', runs)
+
+                self.stimulus = [number * stimulus_gamma[j] for number in self.stimulus]
+                is_stimulated = self.run_diam_position_simulation(diam, 0)
+                stimulation_success_3.append(is_stimulated)
+                result_dict[str(diam)].append(is_stimulated)
+                self.stimulus = original_stimulus
+        print("Elapsed time:  %s " % (time.time() - start))
+
+        df = pd.DataFrame(result_dict)
+        df.to_csv('20220304_mc_diam_vs_coil_current_gamma_half_cosine_200us_volume_300mm.csv', index=False, header=True)
+        results = np.asarray(stimulation_success_3)
+        results = np.reshape(results, (runs, runs))
+
+        fig4 = pt.figure(4)
+        ax4 = fig4.gca()
+        ax4 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_gamma[-1], diameters_gamma[0]])
+
+        stimulus_alpha.sort()
+        start = time.time()
+        stimulation_success_4 = []
+        result_dict = {}
+        result_dict['Stimulus'] = stimulus_alpha
+        for diam, i in zip(diameters_alpha, range(len(diameters_alpha))):
+            # stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
+            print('Diam: ', diam, ', ', stimulation_success_4)
+            print('Run, ', i, '/', runs)
+            result_dict[str(diam)] = []
+
+            for j in range(len(stimulus_alpha)):
+                print('Run, ', j, '/', runs)
+
+                self.stimulus = [number * stimulus_alpha[j] for number in self.stimulus]
+                is_stimulated = self.run_diam_position_simulation(diam, 0)
+                stimulation_success_4.append(is_stimulated)
+                result_dict[str(diam)].append(is_stimulated)
+                self.stimulus = original_stimulus
+        print("Elapsed time:  %s " % (time.time() - start))
+
+        df = pd.DataFrame(result_dict)
+        df.to_csv('20220304_mc_diam_vs_coil_current_alpha_half_cosine_200us_volume_300mm.csv', index=False, header=True)
+        results = np.asarray(stimulation_success_3)
+        results = np.reshape(results, (runs, runs))
+
+        fig5 = pt.figure(5)
+        ax5 = fig5.gca()
+        ax5 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_gamma[-1], diameters_gamma[0]])
+
 
         pt.show()
 
-        # stimulation_success_1 = []
-        # for diam, i in zip(diameters_1, range(len(diameters_1))):
-        #     print('Diam1, ', i, '/', runs)
-        #     stimulation_success_1.append(self.run_diam_simulation(diam))
-        # print("Elapsed time:  %s " % (time.time() - start))
-        #
-        # start = time.time()
-        # stimulation_success_2 = []
-        # for diam, i in zip(diameters_2, range(len(diameters_2))):
-        #     print('Diam2, ', i, '/', runs)
-        #     stimulation_success_2.append(self.run_diam_simulation(diam))
-        # print("Elapsed time:  %s " % (time.time() - start))
-
-        # print(stimulation_success_1)
-        # print(stimulation_success_2)
         return stimulation_success_1
 
     def run_diam_simulation(self, diam):
@@ -246,9 +357,12 @@ class MonteCarloWidgetEFieldWithNerveShape(MonteCarloWidget):
             return 0
 
 
-class AxonDiamSweepWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
+class ParameterWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
 
     def __init__(self, parent = None):
-        super(AxonDiamSweepWidget, self).__init__(parent)
+        super(ParameterWidget, self).__init__(parent)
 
         self.setupUi(self)
+        self.type = None
+
+

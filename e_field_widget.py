@@ -22,8 +22,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFil
 
 Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_widget.ui")
 
-# default_e_field_path = 'volume_box_phrenic_tilted_coil.pkl'
 default_e_field_path = 'volume_box_300mm.pkl'
+default_nerve_shape_path = 'volume_shape_300mm.pkl'
 # This class does:
 # - load field (from CST or E-Field-Matrix python file)
 # - save field (E-Field-Matrix python file)
@@ -42,14 +42,14 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.updated_ylims = ()
         self.e_field_list = self.load_default_field()
         self.configure_layer_slider()
-        self.nerve_shape = None
+        self.nerve_shape = self.load_default_nerve_shape()
         self.custom_nerve = None
         self.scaling = None
 
         self.E_FIELD_ONLY = 1
         self.NERVE_SHAPE_ONLY = 2
         self.E_FIELD_WITH_NERVE_SHAPE = 3
-        self.state = self.E_FIELD_ONLY
+        self.state = self.E_FIELD_WITH_NERVE_SHAPE
 
         self.load_cst_button.clicked.connect(self.load_cst_file)
         self.load_e_field_button.clicked.connect(self.load_e_field)
@@ -169,6 +169,10 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.add_plot(fig)
         return self.e_field_list
 
+    def load_default_nerve_shape(self):
+        with open(default_nerve_shape_path, 'rb') as e:
+            self.nerve_shape = pickle.load(e)
+        return self.nerve_shape
     # ------------------------------------------------------------------------------------------------------------------
     # Update main.py
     # ------------------------------------------------------------------------------------------------------------------
