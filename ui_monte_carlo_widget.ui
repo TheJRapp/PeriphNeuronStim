@@ -6,27 +6,33 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>300</width>
-    <height>204</height>
+    <width>976</width>
+    <height>123</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="1" column="0">
+   <item row="0" column="0">
     <widget class="QPushButton" name="parameter_push_button">
      <property name="text">
-      <string>Add parameter</string>
+      <string>+</string>
      </property>
     </widget>
    </item>
-   <item row="4" column="0">
+   <item row="0" column="2">
+    <widget class="QComboBox" name="parameter_2_combobox"/>
+   </item>
+   <item row="3" column="0">
     <widget class="QPushButton" name="start_mc_button">
      <property name="text">
       <string>Start Monte Carlo</string>
      </property>
     </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="parameter_1_combobox"/>
    </item>
    <item row="2" column="0">
     <widget class="QPushButton" name="delete_all_pushbutton">
@@ -35,16 +41,8 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QComboBox" name="parameter_combobox"/>
-   </item>
-   <item row="0" column="1">
-    <widget class="QWidget" name="widget" native="true">
-     <layout class="QVBoxLayout" name="parameter_layout"/>
-    </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="QSpinBox" name="spinBox">
+   <item row="3" column="1">
+    <widget class="QSpinBox" name="runs_spinBox">
      <property name="maximum">
       <number>10000</number>
      </property>
@@ -53,8 +51,15 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0" colspan="2">
-    <widget class="QListView" name="parameter_list_view"/>
+   <item row="1" column="1">
+    <widget class="QWidget" name="widget" native="true">
+     <layout class="QVBoxLayout" name="parameter_1_layout"/>
+    </widget>
+   </item>
+   <item row="1" column="2">
+    <widget class="QWidget" name="widget_2" native="true">
+     <layout class="QGridLayout" name="parameter_2_layout"/>
+    </widget>
    </item>
   </layout>
  </widget>

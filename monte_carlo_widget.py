@@ -17,58 +17,72 @@ import copy
 Ui_MonteCarloWidget, QWidget_MonteCarlo = uic.loadUiType("ui_monte_carlo_widget.ui")
 Ui_AxonDiamSweepWidget, QWidget_AxonDiamSweep = uic.loadUiType("ui_parameter_widget.ui")
 
-parameter_list = ['Axon Diam', 'Axon Position']
+parameter_list = ['Axon Diam', 'Axon Position', 'Coil Current']
 
 
 class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
 
     def __init__(self, stimulus, time_axis, total_time, threshold_widget, parent=None):
         super(MonteCarloWidget, self).__init__(parent)
-
         self.setupUi(self)
         self.stimulus = stimulus
         self.time_axis = time_axis
         self.total_time = total_time
         self.threshold_widget = threshold_widget
-        self.parameter_list = []
-        self.parameter_list_item_model = QtGui.QStandardItemModel(self.parameter_list_view)
 
-        self.parameter_combobox.addItems(parameter_list)
+        self.parameter_1_combobox.addItems(parameter_list)
+        self.parameter_2_combobox.addItems(parameter_list)
 
         self.parameter_widget_list = []
-
         self.parameter_push_button.clicked.connect(self.add_parameter)
-        self.parameter_list_view.clicked.connect(self.set_parameter_widget)
         self.delete_all_pushbutton.clicked.connect(self.delete_parameters)
-        self.start_mc_button.clicked.connect(self.start_monte_carlo)
+        self.start_mc_button.clicked.connect(self.start_mc_from_parameter_list)
 
     def add_parameter(self):
-        item = QtGui.QStandardItem(self.parameter_combobox.currentText())
-        self.parameter_list.append(self.parameter_combobox.currentText())
-        paramter_widget = ParameterWidget()
-        paramter_widget.type = self.parameter_combobox.currentText()
-        self.parameter_widget_list.append(paramter_widget)
-        self.parameter_layout.addWidget(paramter_widget)
-        self.parameter_list_item_model.appendRow(item)
-        self.parameter_list_view.setModel(self.parameter_list_item_model)
-        self.set_parameter_widget()
-
-    def set_parameter_widget(self):
-        for i, widget in zip(range(len(self.parameter_widget_list)), self.parameter_widget_list):
-            if widget:
-                self.parameter_widget_list[i].setVisible(False)
-                if i == self.parameter_list_view.currentIndex().row():
-                    self.parameter_widget_list[i].setVisible(True)
+        if self.parameter_1_combobox.currentText() == self.parameter_2_combobox.currentText():
+            return
+        paramter_1_widget = ParameterWidget(self.parameter_1_combobox.currentText())
+        self.parameter_widget_list.append(paramter_1_widget)
+        self.parameter_1_layout.addWidget(paramter_1_widget)
+        paramter_2_widget = ParameterWidget(self.parameter_2_combobox.currentText())
+        self.parameter_widget_list.append(paramter_2_widget)
+        self.parameter_2_layout.addWidget(paramter_2_widget)
 
     def delete_parameters(self):
-        self.parameter_list_item_model.clear()
-        self.parameter_list_view.setModel(self.parameter_list_item_model)
-        self.set_parameter_widget()
-        self.parameter_list = []
+        self.parameter_widget_list = []
+        for i in range(self.parameter_1_layout.count()):
+            self.parameter_1_layout.itemAt(i).widget().setVisible(False)
+            self.parameter_1_layout.itemAt(i).widget().deleteLater()
+        for i in range(self.parameter_2_layout.count()):
+            self.parameter_2_layout.itemAt(i).widget().setVisible(False)
+            self.parameter_2_layout.itemAt(i).widget().deleteLater()
 
-    def start_monte_carlo(self):
-        if self.parameter_combobox.currentText() == 'Axon Diam':
-            self.start_mc_diam_pos_sweep()
+    def start_mc_from_parameter_list(self):
+        for widget in self.parameter_widget_list:
+            widget.parameter_distribution_list = []
+            for i in range(self.runs_spinBox.value()):
+                helper = False
+                while not helper:
+                    mean = widget.mean_spinbox.value()
+                    stdev = widget.stdev_spinbox.value()
+                    normal_distribution = random.normal(mean, stdev)
+                    if widget.max_double_spin_box.value() > normal_distribution > widget.min_double_spin_box.value():
+                        helper = True
+                        widget.parameter_distribution_list.append(normal_distribution)
+
+        fig4 = pt.figure(4)
+        ax4 = fig4.gca()
+        ax4 = pt.hist(self.parameter_widget_list[0].parameter_distribution_list, 50)
+        pt.show()
+
+        for i in range(self.parameter_1_layout.count()):
+            for j in range(self.parameter_2_layout.count()):
+                parameter_dist_1 = self.parameter_1_layout.itemAt(i).widget().parameter_distribution_list
+                parameter_dist_2 = self.parameter_2_layout.itemAt(j).widget().parameter_distribution_list
+                parameter_dist_1.sort()
+                parameter_dist_2.sort()
+
+
 
     def start_mc_diam_pos_sweep(self):
 
@@ -359,10 +373,23 @@ class MonteCarloWidgetEFieldWithNerveShape(MonteCarloWidget):
 
 class ParameterWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
 
-    def __init__(self, parent = None):
+    def __init__(self, name, parent = None):
         super(ParameterWidget, self).__init__(parent)
 
         self.setupUi(self)
-        self.type = None
-
+        self.type = name
+        self.type_label.setText(name)
+        if self.type == 'Axon Diam':
+            self.mean_spinbox.setValue(15.29)
+            self.stdev_spinbox.setValue(2.133)
+            self.min_double_spin_box.setValue(self.mean_spinbox.value() - 2*self.stdev_spinbox.value())
+            self.max_double_spin_box.setValue(self.mean_spinbox.value() + 2*self.stdev_spinbox.value())
+        elif self.type == 'Axon Position':
+            self.mean_spinbox.setValue(0)
+            self.stdev_spinbox.setValue(15000)
+            self.min_double_spin_box.setValue(self.mean_spinbox.value() - self.stdev_spinbox.value())
+            self.max_double_spin_box.setValue(self.mean_spinbox.value() + self.stdev_spinbox.value())
+        else:
+            self.min_double_spin_box.setValue(self.mean_spinbox.value() - self.stdev_spinbox.value())
+            self.max_double_spin_box.setValue(self.mean_spinbox.value() + self.stdev_spinbox.value())
 
