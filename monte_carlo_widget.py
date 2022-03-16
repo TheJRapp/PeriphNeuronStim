@@ -13,9 +13,10 @@ from numpy import random
 from matplotlib import pyplot as pt
 import threading, queue
 import time
+from datetime import date
 import copy
 Ui_MonteCarloWidget, QWidget_MonteCarlo = uic.loadUiType("ui_monte_carlo_widget.ui")
-Ui_AxonDiamSweepWidget, QWidget_AxonDiamSweep = uic.loadUiType("ui_parameter_widget.ui")
+Ui_AxonDiamSweepWidget, QWidget_AxonDiamSweep = uic.loadUiType("ui_mc_sim_widget.ui")
 
 parameter_list = ['Axon Diam', 'Axon Position', 'Coil Current']
 
@@ -30,255 +31,115 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         self.total_time = total_time
         self.threshold_widget = threshold_widget
 
-        self.parameter_1_combobox.addItems(parameter_list)
-        self.parameter_2_combobox.addItems(parameter_list)
-
-        self.parameter_widget_list = []
-        self.parameter_push_button.clicked.connect(self.add_parameter)
+        self.mc_sim_widget_list = []
+        self.add_simulation_push_button.clicked.connect(self.add_simulation)
         self.delete_all_pushbutton.clicked.connect(self.delete_parameters)
-        self.start_mc_button.clicked.connect(self.start_mc_from_parameter_list)
+        self.start_mc_button.clicked.connect(self.prepare_parameters_for_sim)
 
-    def add_parameter(self):
-        if self.parameter_1_combobox.currentText() == self.parameter_2_combobox.currentText():
-            return
-        paramter_1_widget = ParameterWidget(self.parameter_1_combobox.currentText())
-        self.parameter_widget_list.append(paramter_1_widget)
-        self.parameter_1_layout.addWidget(paramter_1_widget)
-        paramter_2_widget = ParameterWidget(self.parameter_2_combobox.currentText())
-        self.parameter_widget_list.append(paramter_2_widget)
-        self.parameter_2_layout.addWidget(paramter_2_widget)
+    def add_simulation(self):
+        mc_sim_widget = MCSimWidget()
+        self.mc_sim_widget_list.append(mc_sim_widget)
+        self.sim_layout.addWidget(mc_sim_widget)
 
     def delete_parameters(self):
-        self.parameter_widget_list = []
-        for i in range(self.parameter_1_layout.count()):
-            self.parameter_1_layout.itemAt(i).widget().setVisible(False)
-            self.parameter_1_layout.itemAt(i).widget().deleteLater()
-        for i in range(self.parameter_2_layout.count()):
-            self.parameter_2_layout.itemAt(i).widget().setVisible(False)
-            self.parameter_2_layout.itemAt(i).widget().deleteLater()
+        self.mc_sim_widget_list = []
+        for i in range(self.sim_layout.count()):
+            self.sim_layout.itemAt(i).widget().setVisible(False)
+            self.sim_layout.itemAt(i).widget().deleteLater()
 
-    def start_mc_from_parameter_list(self):
-        for widget in self.parameter_widget_list:
-            widget.parameter_distribution_list = []
-            for i in range(self.runs_spinBox.value()):
-                helper = False
-                while not helper:
-                    mean = widget.mean_spinbox.value()
-                    stdev = widget.stdev_spinbox.value()
-                    normal_distribution = random.normal(mean, stdev)
-                    if widget.max_double_spin_box.value() > normal_distribution > widget.min_double_spin_box.value():
-                        helper = True
-                        widget.parameter_distribution_list.append(normal_distribution)
+    def prepare_parameters_for_sim(self):
+        for widget in self.mc_sim_widget_list:
+            if widget.parameter_dict['Axon Diam'][4]:
+                diameter = widget.parameter_dict['Axon Diam'][0]
+            else:
+                diameter = self.get_parameter_distribution(widget.parameter_dict['Axon Diam'][0],
+                                                           widget.parameter_dict['Axon Diam'][1],
+                                                           widget.parameter_dict['Axon Diam'][2],
+                                                           widget.parameter_dict['Axon Diam'][3])
+            if widget.parameter_dict['Axon Position'][4]:
+                offset = widget.parameter_dict['Axon Position'][0]
+            else:
+                offset = self.get_parameter_distribution(widget.parameter_dict['Axon Position'][0],
+                                                           widget.parameter_dict['Axon Position'][1],
+                                                           widget.parameter_dict['Axon Position'][2],
+                                                           widget.parameter_dict['Axon Position'][3])
+            if widget.parameter_dict['Coil Current'][4]:
+                current = widget.parameter_dict['Coil Current'][0]
+            else:
+                current = self.get_parameter_distribution(widget.parameter_dict['Coil Current'][0],
+                                                           widget.parameter_dict['Coil Current'][1],
+                                                           widget.parameter_dict['Coil Current'][2],
+                                                           widget.parameter_dict['Coil Current'][3])
 
-        fig4 = pt.figure(4)
-        ax4 = fig4.gca()
-        ax4 = pt.hist(self.parameter_widget_list[0].parameter_distribution_list, 50)
-        pt.show()
+            self.start_mc_simulation(diameter, offset, current)
 
-        for i in range(self.parameter_1_layout.count()):
-            for j in range(self.parameter_2_layout.count()):
-                parameter_dist_1 = self.parameter_1_layout.itemAt(i).widget().parameter_distribution_list
-                parameter_dist_2 = self.parameter_2_layout.itemAt(j).widget().parameter_distribution_list
-                parameter_dist_1.sort()
-                parameter_dist_2.sort()
-
-
-
-    def start_mc_diam_pos_sweep(self):
-
-        mean_gamma = 9.33  # micrometer
-        stdev_gamma = 2.1  # micrometer
-
-        mean_alpha = 15.287  # micrometer
-        stdev_alpha = 2.133  # micrometer
-
-        start_pos_offset_mean = 0
-        start_pos_offset_stdev = 15000
-
-        mean_stim_gamma = 1
-        stdev_stim_gamma = 0.1
-
-        mean_stim_alpha = 0.5
-        stdev_stim_alpha = 0.05
-
-        runs = 100
-
-        diameters_gamma = []
-        diameters_alpha = []
-        start_pos_offset_x = []
-        start_pos_offset_y = []
-        start_pos_offset_z = []
-        stimulus_gamma = []
-        stimulus_alpha = []
-        for i in range(runs):
+    def get_parameter_distribution(self, mean, stdev, min, max):
+        distribution_list = []
+        for i in range(self.runs_spinBox.value()):
             helper = False
             while not helper:
-                normal_distribution_1 = random.normal(mean_gamma, stdev_gamma)
-                if (mean_gamma + 2*stdev_gamma) > normal_distribution_1 > (mean_gamma - 2*stdev_gamma):
+                normal_distribution = random.normal(mean, stdev)
+                if max > normal_distribution > min:
                     helper = True
-                    diameters_gamma.append(normal_distribution_1)
-            helper = False
-            while not helper:
-                normal_distribution_2 = random.normal(mean_alpha, stdev_alpha)
-                if (mean_alpha + 2*stdev_alpha) > normal_distribution_2 > (mean_alpha - 2*stdev_alpha):
-                    helper = True
-                    diameters_alpha.append(normal_distribution_2)
+                    distribution_list.append(normal_distribution)
+        return distribution_list
 
-            # normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
-            # start_pos_offset_x.append(normal_distribution_3)
-            # normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
-            # start_pos_offset_y.append(normal_distribution_3)
-            helper = False
-            while not helper:
-                normal_distribution_3 = random.normal(start_pos_offset_mean, start_pos_offset_stdev)
-                if (start_pos_offset_mean + 2*start_pos_offset_stdev) > normal_distribution_3 > (start_pos_offset_mean - 2*start_pos_offset_stdev):
-                    helper = True
-                    start_pos_offset_z.append(normal_distribution_3)
-            helper = False
-            while not helper:
-                normal_distribution = random.normal(mean_stim_gamma, stdev_stim_gamma)
-                if (mean_stim_gamma + 2*stdev_stim_gamma) > normal_distribution > (mean_stim_gamma - 2*stdev_stim_gamma):
-                    helper = True
-                    stimulus_gamma.append(normal_distribution)
-            helper = False
-            while not helper:
-                normal_distribution = random.normal(mean_stim_alpha, stdev_stim_alpha)
-                if (mean_stim_alpha + 2*stdev_stim_alpha) > normal_distribution > (mean_stim_alpha - 2*stdev_stim_alpha):
-                    helper = True
-                    stimulus_alpha.append(normal_distribution)
+    def start_mc_simulation(self, diameter, offset, current):
+        stimulation_success = []
+        i = 0
+        if isinstance(diameter, list) and isinstance(offset, list):
+            diameter.sort()
+            offset.sort()
+            result_dict = {'Diameter': diameter}
+            for pos in offset:
+                result_dict[str(pos)] = []
+                for diam in diameter:
+                    is_stimulated = self.run_diam_position_current_simulation(diam, pos, current)
+                    result_dict[str(pos)].append(is_stimulated)
+                    stimulation_success.append(is_stimulated)
+                    i += 1
+                    print('Run ', i, '/ ', self.runs_spinBox.value())
 
-        # ----- diameter / coil distance -------------------------------------------------------------------------------
-        diameters_gamma.sort()
-        start_pos_offset_z.sort()
-        start = time.time()
-        stimulation_success_1 = []
-        result_dict = {}
-        result_dict['Offset'] = start_pos_offset_z
-        for diam, i in zip(diameters_gamma, range(len(diameters_gamma))):
-            # stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
-            print('Diam: ', diam, ', ', stimulation_success_1)
-            result_dict[str(diam)] = []
+            df = pd.DataFrame(result_dict)
+            today = date.today()
+            df.to_csv(str(today) + '_mc_diam_vs_coil_distance_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
 
-            for j in range(len(start_pos_offset_z)):
-                print('Run, ', j, '/', runs)
-                is_stimulated = self.run_diam_position_simulation(diam, start_pos_offset_z[j])
-                stimulation_success_1.append(is_stimulated)
-                result_dict[str(diam)].append(is_stimulated)
-        print("Elapsed time:  %s " % (time.time() - start))
+            results = np.asarray(stimulation_success)
+            results = np.reshape(results, (self.runs_spinBox.value(), self.runs_spinBox.value()))
+            fig5 = pt.figure(5)
+            ax5 = fig5.gca()
+            ax5 = pt.imshow(results, extent=[offset[0]/1000, offset[-1]/1000, diameter[-1], diameter[0]])
+            pt.show()
 
-        df = pd.DataFrame(result_dict)
-        df.to_csv('20220304_mc_diam_vs_coil_distance_gamma_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
-        results = np.asarray(stimulation_success_1)
-        results = np.reshape(results, (runs, runs))
+        if isinstance(diameter, list) and isinstance(current, list):
+            diameter.sort()
+            current.sort()
+            result_dict = {'Diameter': diameter}
+            for cur in current:
+                result_dict[str(cur)] = []
+                for diam in diameter:
+                    is_stimulated = self.run_diam_position_current_simulation(diam, offset, cur)
+                    result_dict[str(cur)].append(is_stimulated)
 
-        fig8 = pt.figure(2)
-        ax8 = fig8.gca()
-        ax8 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_gamma[-1], diameters_gamma[0]])
+            df = pd.DataFrame(result_dict)
+            today = date.today()
+            df.to_csv(str(today) + '_mc_diam_vs_current_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
 
-        original_stimulus = self.stimulus
-        self.stimulus = [number / 2 for number in self.stimulus]
-        diameters_alpha.sort()
-        start_pos_offset_z.sort()
-        start = time.time()
-        stimulation_success_2 = []
-        result_dict = {}
-        result_dict['Offset'] = start_pos_offset_z
-        for diam, i in zip(diameters_alpha, range(len(diameters_alpha))):
-            # stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
-            print('Diam: ', diam, ', ', stimulation_success_2)
-            result_dict[str(diam)] = []
+        if isinstance(offset, list) and isinstance(current, list):
+            offset.sort()
+            current.sort()
+            result_dict = {'Diameter': offset}
+            for cur in current:
+                result_dict[str(cur)] = []
+                for pos in offset:
+                    is_stimulated = self.run_diam_position_current_simulation(diameter, pos, cur)
+                    result_dict[str(cur)].append(is_stimulated)
 
-            for j in range(len(start_pos_offset_z)):
-                print('Run, ', j, '/', runs)
-                is_stimulated = self.run_diam_position_simulation(diam, start_pos_offset_z[j])
-                stimulation_success_2.append(is_stimulated)
-                result_dict[str(diam)].append(is_stimulated)
-        print("Elapsed time:  %s " % (time.time() - start))
+            df = pd.DataFrame(result_dict)
+            today = date.today()
+            df.to_csv(str(today) + '_mc_offset_vs_current_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
 
-        df = pd.DataFrame(result_dict)
-        df.to_csv('20220304_mc_diam_vs_coil_distance_alpha_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
-        results = np.asarray(stimulation_success_2)
-        results = np.reshape(results, (runs, runs))
-
-        fig3 = pt.figure(3)
-        ax3 = fig3.gca()
-        ax3 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_gamma[-1], diameters_gamma[0]])
-
-        self.stimulus = original_stimulus
-
-        # ----- diameter / coil current --------------------------------------------------------------------------------
-        stimulus_gamma.sort()
-        start = time.time()
-        stimulation_success_3 = []
-        result_dict = {}
-        result_dict['Stimulus'] = stimulus_gamma
-        for diam, i in zip(diameters_gamma, range(len(diameters_gamma))):
-            # stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
-            print('Diam: ', diam, ', ', stimulation_success_3)
-            print('Run, ', i, '/', runs)
-            result_dict[str(diam)] = []
-
-            for j in range(len(stimulus_gamma)):
-                print('Run, ', j, '/', runs)
-
-                self.stimulus = [number * stimulus_gamma[j] for number in self.stimulus]
-                is_stimulated = self.run_diam_position_simulation(diam, 0)
-                stimulation_success_3.append(is_stimulated)
-                result_dict[str(diam)].append(is_stimulated)
-                self.stimulus = original_stimulus
-        print("Elapsed time:  %s " % (time.time() - start))
-
-        df = pd.DataFrame(result_dict)
-        df.to_csv('20220304_mc_diam_vs_coil_current_gamma_half_cosine_200us_volume_300mm.csv', index=False, header=True)
-        results = np.asarray(stimulation_success_3)
-        results = np.reshape(results, (runs, runs))
-
-        fig4 = pt.figure(4)
-        ax4 = fig4.gca()
-        ax4 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_gamma[-1], diameters_gamma[0]])
-
-        stimulus_alpha.sort()
-        start = time.time()
-        stimulation_success_4 = []
-        result_dict = {}
-        result_dict['Stimulus'] = stimulus_alpha
-        for diam, i in zip(diameters_alpha, range(len(diameters_alpha))):
-            # stimulation_success_1.append(self.run_diam_position_simulation(diam, -6000))
-            print('Diam: ', diam, ', ', stimulation_success_4)
-            print('Run, ', i, '/', runs)
-            result_dict[str(diam)] = []
-
-            for j in range(len(stimulus_alpha)):
-                print('Run, ', j, '/', runs)
-
-                self.stimulus = [number * stimulus_alpha[j] for number in self.stimulus]
-                is_stimulated = self.run_diam_position_simulation(diam, 0)
-                stimulation_success_4.append(is_stimulated)
-                result_dict[str(diam)].append(is_stimulated)
-                self.stimulus = original_stimulus
-        print("Elapsed time:  %s " % (time.time() - start))
-
-        df = pd.DataFrame(result_dict)
-        df.to_csv('20220304_mc_diam_vs_coil_current_alpha_half_cosine_200us_volume_300mm.csv', index=False, header=True)
-        results = np.asarray(stimulation_success_3)
-        results = np.reshape(results, (runs, runs))
-
-        fig5 = pt.figure(5)
-        ax5 = fig5.gca()
-        ax5 = pt.imshow(results, extent=[start_pos_offset_z[0]/1000, start_pos_offset_z[-1]/1000, diameters_gamma[-1], diameters_gamma[0]])
-
-
-        pt.show()
-
-        return stimulation_success_1
-
-    def run_diam_simulation(self, diam):
-        raise NotImplementedError()
-
-    # def run_diam_position_simulation(self, diam, start_pos_offset_x, start_pos_offset_y, start_pos_offset_z):
-    #     raise NotImplementedError()
-
-    def run_diam_position_simulation(self, diam, start_pos_offset_z):
+    def run_diam_position_current_simulation(self, diam, start_pos_offset_z, coil_current):
         raise NotImplementedError()
 
 
@@ -333,63 +194,98 @@ class MonteCarloWidgetEFieldWithNerveShape(MonteCarloWidget):
         self.nerve_shape = nerve_shape
         self.nerve_step_size = nerve_step_size
 
-    def run_diam_simulation(self, diam):
-        axon_info = ns.AxonInformation(0, 0, 0, self.nerve.angle, self.nerve.length,
-                                       diam, 'MHH')
-        neuron_sim = ns.NeuronSimEFieldWithNerveShape(axon_info, self.e_field_list, self.interpolation_radius_index,
-                                                      self.nerve_shape, self.nerve_step_size, self.time_axis,
-                                                      self.stimulus, self.total_time)
-
-        # check if stimulation was successfull (eventdetector threshold widget)
-        neuron_sim.quasipot()
-        neuron_sim.simple_simulation()
-        if neuron_sim.is_axon_stimulated(self.threshold_widget):
-            return 1
-        else:
-            return 0
-
     # def run_diam_position_simulation(self, diam, start_pos_offset_x, start_pos_offset_y, start_pos_offset_z):
-    def run_diam_position_simulation(self, diam, start_pos_offset_z):
+    def run_diam_position_current_simulation(self, diam, start_pos_offset_z, coil_current):
         axon_info = ns.AxonInformation(0, 0, 0, 0, 0, diam, 'MHH')
-        # self.nerve_shape.x = self.nerve_shape.x + start_pos_offset_x
-        # self.nerve_shape.y = self.nerve_shape.y + start_pos_offset_y
         internal_nerve_shape = copy.copy(self.nerve_shape)
         internal_nerve_shape.z = internal_nerve_shape.z + start_pos_offset_z
         neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_list, self.interpolation_radius_index,
                                                       internal_nerve_shape, self.nerve_step_size, axon_info, self.time_axis,
                                                       self.stimulus, self.total_time)
 
-        # check if stimulation was successfull (eventdetector threshold widget)
         neuron_sim.quasipot()
         neuron_sim.simple_simulation()
-        # fig3 = pt.figure(3)
-        # neuron_sim.plot_simulation()
-        # pt.show()
         if neuron_sim.is_axon_stimulated(self.threshold_widget):
             return 1
         else:
             return 0
 
 
-class ParameterWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
+class MCSimWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
 
-    def __init__(self, name, parent = None):
-        super(ParameterWidget, self).__init__(parent)
+    def __init__(self, parent = None):
+        super(MCSimWidget, self).__init__(parent)
 
         self.setupUi(self)
-        self.type = name
-        self.type_label.setText(name)
-        if self.type == 'Axon Diam':
-            self.mean_spinbox.setValue(15.29)
-            self.stdev_spinbox.setValue(2.133)
-            self.min_double_spin_box.setValue(self.mean_spinbox.value() - 2*self.stdev_spinbox.value())
-            self.max_double_spin_box.setValue(self.mean_spinbox.value() + 2*self.stdev_spinbox.value())
-        elif self.type == 'Axon Position':
-            self.mean_spinbox.setValue(0)
-            self.stdev_spinbox.setValue(15000)
-            self.min_double_spin_box.setValue(self.mean_spinbox.value() - self.stdev_spinbox.value())
-            self.max_double_spin_box.setValue(self.mean_spinbox.value() + self.stdev_spinbox.value())
-        else:
-            self.min_double_spin_box.setValue(self.mean_spinbox.value() - self.stdev_spinbox.value())
-            self.max_double_spin_box.setValue(self.mean_spinbox.value() + self.stdev_spinbox.value())
 
+        self.parameter_combobox.addItems(parameter_list)
+        self.parameter_dict = dict.fromkeys(parameter_list)
+
+        self.parameter_dict['Axon Diam'] = []
+        self.parameter_dict['Axon Diam'].append(15.29)
+        self.parameter_dict['Axon Diam'].append(2.133)
+        self.parameter_dict['Axon Diam'].append(self.parameter_dict['Axon Diam'][0] - 2*self.parameter_dict['Axon Diam'][1])
+        self.parameter_dict['Axon Diam'].append(self.parameter_dict['Axon Diam'][0] + 2*self.parameter_dict['Axon Diam'][1])
+        self.parameter_dict['Axon Diam'].append(0)
+
+        self.parameter_dict['Axon Position'] = []
+        self.parameter_dict['Axon Position'].append(0)
+        self.parameter_dict['Axon Position'].append(15000)
+        self.parameter_dict['Axon Position'].append(self.parameter_dict['Axon Position'][0] - self.parameter_dict['Axon Position'][1])
+        self.parameter_dict['Axon Position'].append(self.parameter_dict['Axon Position'][0] + self.parameter_dict['Axon Position'][1])
+        self.parameter_dict['Axon Position'].append(0)
+
+        self.parameter_dict['Coil Current'] = []
+        self.parameter_dict['Coil Current'].append(1)  # 0.5
+        self.parameter_dict['Coil Current'].append(0.1)  # 0.05
+        self.parameter_dict['Coil Current'].append(self.parameter_dict['Coil Current'][0] - self.parameter_dict['Coil Current'][1])
+        self.parameter_dict['Coil Current'].append(self.parameter_dict['Coil Current'][0] + self.parameter_dict['Coil Current'][1])
+        self.parameter_dict['Coil Current'].append(1)
+
+        self.update()
+
+        self.parameter_combobox.currentTextChanged.connect(self.update)
+
+        self.mean_spinbox.valueChanged.connect(self.set_mean)
+        self.stdev_spinbox.valueChanged.connect(self.set_stdev)
+        self.min_double_spin_box.valueChanged.connect(self.set_min)
+        self.max_double_spin_box.valueChanged.connect(self.set_max)
+
+        self.mc_radioButton.clicked.connect(self.state_changed)
+        self.fixed_radioButton.clicked.connect(self.state_changed)
+
+    def update(self):
+        key = self.parameter_combobox.currentText()
+        self.mean_spinbox.setValue(self.parameter_dict[key][0])
+        self.stdev_spinbox.setValue(self.parameter_dict[key][1])
+        self.min_double_spin_box.setValue(self.parameter_dict[key][2])
+        self.max_double_spin_box.setValue(self.parameter_dict[key][3])
+        if self.parameter_dict[key][4]:
+            self.fixed_radioButton.setChecked(True)
+            self.mc_radioButton.setChecked(False)
+        else:
+            self.fixed_radioButton.setChecked(False)
+            self.mc_radioButton.setChecked(True)
+
+    def set_mean(self):
+        key = self.parameter_combobox.currentText()
+        self.parameter_dict[key][0] = self.mean_spinbox.value()
+
+    def set_stdev(self):
+        key = self.parameter_combobox.currentText()
+        self.parameter_dict[key][1] = self.stdev_spinbox.value()
+        
+    def set_min(self):
+        key = self.parameter_combobox.currentText()
+        self.parameter_dict[key][2] = self.min_double_spin_box.value()
+        
+    def set_max(self):
+        key = self.parameter_combobox.currentText()
+        self.parameter_dict[key][3] = self.max_double_spin_box.value()
+
+    def state_changed(self):
+        key = self.parameter_combobox.currentText()
+        if self.mc_radioButton.isChecked():
+            self.parameter_dict[key][4] = 0
+        else:
+            self.parameter_dict[key][4] = 1
