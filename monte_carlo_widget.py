@@ -85,7 +85,7 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
         return distribution_list
 
     def start_mc_simulation(self, diameter, offset, current):
-        stimulation_success = []
+        # stimulation_success = []
         i = 0
         if isinstance(diameter, list) and isinstance(offset, list):
             diameter.sort()
@@ -96,7 +96,7 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
                 for diam in diameter:
                     is_stimulated = self.run_diam_position_current_simulation(diam, pos, current)
                     result_dict[str(pos)].append(is_stimulated)
-                    stimulation_success.append(is_stimulated)
+                    # stimulation_success.append(is_stimulated)
                     i += 1
                     print('Run ', i, '/ ', self.runs_spinBox.value())
 
@@ -104,13 +104,14 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
             today = date.today()
             df.to_csv(str(today) + '_mc_diam_vs_coil_distance_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
 
-            results = np.asarray(stimulation_success)
-            results = np.reshape(results, (self.runs_spinBox.value(), self.runs_spinBox.value()))
-            fig5 = pt.figure(5)
-            ax5 = fig5.gca()
-            ax5 = pt.imshow(results, extent=[offset[0]/1000, offset[-1]/1000, diameter[-1], diameter[0]])
-            pt.show()
+            # results = np.asarray(stimulation_success)
+            # results = np.reshape(results, (self.runs_spinBox.value(), self.runs_spinBox.value()))
+            # fig5 = pt.figure(5)
+            # ax5 = fig5.gca()
+            # ax5 = pt.imshow(results, extent=[offset[0]/1000, offset[-1]/1000, diameter[-1], diameter[0]])
+            # pt.show()
 
+        i = 0
         if isinstance(diameter, list) and isinstance(current, list):
             diameter.sort()
             current.sort()
@@ -120,11 +121,14 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
                 for diam in diameter:
                     is_stimulated = self.run_diam_position_current_simulation(diam, offset, cur)
                     result_dict[str(cur)].append(is_stimulated)
+                    i += 1
+                    print('Run ', i, '/ ', self.runs_spinBox.value())
 
             df = pd.DataFrame(result_dict)
             today = date.today()
             df.to_csv(str(today) + '_mc_diam_vs_current_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
 
+        i = 0
         if isinstance(offset, list) and isinstance(current, list):
             offset.sort()
             current.sort()
@@ -134,6 +138,8 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
                 for pos in offset:
                     is_stimulated = self.run_diam_position_current_simulation(diameter, pos, cur)
                     result_dict[str(cur)].append(is_stimulated)
+                    i += 1
+                    print('Run ', i, '/ ', self.runs_spinBox.value())
 
             df = pd.DataFrame(result_dict)
             today = date.today()
