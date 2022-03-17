@@ -198,6 +198,11 @@ class Main(QMainWindow, Ui_MainWindow):
             elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
                 neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                     axon, self.time_axis, self.stimulus, self.total_time)
+            elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
+                neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
+                                                              interpolation_radius_index,
+                                                              self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                              axon, self.time_axis, self.stimulus, self.total_time)
             neuron_sim.quasipot()
             threshold = neuron_sim.threshold_simulation(self.threshold_widget)
             self.threshold_label.setText(str(threshold))

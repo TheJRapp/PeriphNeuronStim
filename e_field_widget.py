@@ -22,8 +22,8 @@ from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFil
 
 Ui_EFieldWidget, QWidget_EField = uic.loadUiType("ui_e_field_widget.ui")
 
-default_e_field_path = 'volume_box_300mm.pkl'
-default_nerve_shape_path = 'volume_shape_300mm.pkl'
+default_e_field_path = 'volume_box_default.pkl'
+default_nerve_shape_path = 'volume_shape_default.pkl'
 # This class does:
 # - load field (from CST or E-Field-Matrix python file)
 # - save field (E-Field-Matrix python file)
