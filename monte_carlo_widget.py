@@ -52,28 +52,27 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
             if widget.parameter_dict['Axon Diam'][4]:
                 diameter = widget.parameter_dict['Axon Diam'][0]
             else:
-                diameter = self.get_parameter_distribution(widget.parameter_dict['Axon Diam'][0],
-                                                           widget.parameter_dict['Axon Diam'][1],
-                                                           widget.parameter_dict['Axon Diam'][2],
-                                                           widget.parameter_dict['Axon Diam'][3])
+                # diameter = self.get_normal_distribution(widget.parameter_dict['Axon Diam'][0],
+                #                                         widget.parameter_dict['Axon Diam'][1],
+                #                                         widget.parameter_dict['Axon Diam'][2],
+                #                                         widget.parameter_dict['Axon Diam'][3])
+                diameter = [11, 12, 13, 14, 15, 16, 17, 18, 19]
             if widget.parameter_dict['Axon Position'][4]:
                 offset = widget.parameter_dict['Axon Position'][0]
             else:
-                offset = self.get_parameter_distribution(widget.parameter_dict['Axon Position'][0],
-                                                           widget.parameter_dict['Axon Position'][1],
-                                                           widget.parameter_dict['Axon Position'][2],
-                                                           widget.parameter_dict['Axon Position'][3])
+                offset = self.get_normal_distribution(widget.parameter_dict['Axon Position'][0],
+                                                      widget.parameter_dict['Axon Position'][1],
+                                                      widget.parameter_dict['Axon Position'][2],
+                                                      widget.parameter_dict['Axon Position'][3])
             if widget.parameter_dict['Coil Current'][4]:
                 current = widget.parameter_dict['Coil Current'][0]
             else:
-                current = self.get_parameter_distribution(widget.parameter_dict['Coil Current'][0],
-                                                           widget.parameter_dict['Coil Current'][1],
-                                                           widget.parameter_dict['Coil Current'][2],
-                                                           widget.parameter_dict['Coil Current'][3])
+                current = self.get_uniform_distribution(widget.parameter_dict['Coil Current'][2],
+                                                        widget.parameter_dict['Coil Current'][3])
 
             self.start_mc_simulation(diameter, offset, current)
 
-    def get_parameter_distribution(self, mean, stdev, min, max):
+    def get_normal_distribution(self, mean, stdev, min, max):
         distribution_list = []
         for i in range(self.runs_spinBox.value()):
             helper = False
@@ -83,6 +82,11 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
                     helper = True
                     distribution_list.append(normal_distribution)
         return distribution_list
+
+    def get_uniform_distribution(self, min, max):
+        parameter_range = max-min
+        distribution = min + parameter_range * random.rand(self.runs_spinBox.value())
+        return distribution.tolist()
 
     def start_mc_simulation(self, diameter, offset, current):
         # stimulation_success = []
@@ -102,7 +106,7 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
 
             df = pd.DataFrame(result_dict)
             today = date.today()
-            df.to_csv(str(today) + '_mc_diam_vs_coil_distance_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
+            df.to_csv(str(today) + '_mc_diam_vs_coil_distance.csv', index=False, header=True)
 
             # results = np.asarray(stimulation_success)
             # results = np.reshape(results, (self.runs_spinBox.value(), self.runs_spinBox.value()))
@@ -126,7 +130,7 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
 
             df = pd.DataFrame(result_dict)
             today = date.today()
-            df.to_csv(str(today) + '_mc_diam_vs_current_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
+            df.to_csv(str(today) + '_mc_diam_vs_current.csv', index=False, header=True)
 
         i = 0
         if isinstance(offset, list) and isinstance(current, list):
@@ -143,7 +147,7 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
 
             df = pd.DataFrame(result_dict)
             today = date.today()
-            df.to_csv(str(today) + '_mc_offset_vs_current_half_cosine_200us_intensity1_volume_300mm.csv', index=False, header=True)
+            df.to_csv(str(today) + 'diam_' +str(diameter) + '_mc_offset_vs_current.csv', index=False, header=True)
 
     def run_diam_position_current_simulation(self, diam, start_pos_offset_z, coil_current):
         raise NotImplementedError()
@@ -232,21 +236,21 @@ class MCSimWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
         self.parameter_dict['Axon Diam'].append(2.133)
         self.parameter_dict['Axon Diam'].append(self.parameter_dict['Axon Diam'][0] - 2*self.parameter_dict['Axon Diam'][1])
         self.parameter_dict['Axon Diam'].append(self.parameter_dict['Axon Diam'][0] + 2*self.parameter_dict['Axon Diam'][1])
-        self.parameter_dict['Axon Diam'].append(0)
+        self.parameter_dict['Axon Diam'].append(1)
 
         self.parameter_dict['Axon Position'] = []
         self.parameter_dict['Axon Position'].append(0)
-        self.parameter_dict['Axon Position'].append(15000)
-        self.parameter_dict['Axon Position'].append(self.parameter_dict['Axon Position'][0] - self.parameter_dict['Axon Position'][1])
-        self.parameter_dict['Axon Position'].append(self.parameter_dict['Axon Position'][0] + self.parameter_dict['Axon Position'][1])
+        self.parameter_dict['Axon Position'].append(7500)
+        self.parameter_dict['Axon Position'].append(self.parameter_dict['Axon Position'][0] - 2*self.parameter_dict['Axon Position'][1])
+        self.parameter_dict['Axon Position'].append(self.parameter_dict['Axon Position'][0] + 2*self.parameter_dict['Axon Position'][1])
         self.parameter_dict['Axon Position'].append(0)
 
         self.parameter_dict['Coil Current'] = []
         self.parameter_dict['Coil Current'].append(1)  # 0.5
-        self.parameter_dict['Coil Current'].append(0.1)  # 0.05
+        self.parameter_dict['Coil Current'].append(0.7)  # 0.05
         self.parameter_dict['Coil Current'].append(self.parameter_dict['Coil Current'][0] - self.parameter_dict['Coil Current'][1])
         self.parameter_dict['Coil Current'].append(self.parameter_dict['Coil Current'][0] + self.parameter_dict['Coil Current'][1])
-        self.parameter_dict['Coil Current'].append(1)
+        self.parameter_dict['Coil Current'].append(0)
 
         self.update()
 
