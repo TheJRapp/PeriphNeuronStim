@@ -50,7 +50,7 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
     def prepare_parameters_for_sim(self):
         for widget in self.mc_sim_widget_list:
             if widget.parameter_dict['Axon Diam'][4]:
-                diameter = widget.parameter_dict['Axon Diam'][0]
+                diameter = widget.parameter_dict['Axon Diam'][5]
             else:
                 # diameter = self.get_normal_distribution(widget.parameter_dict['Axon Diam'][0],
                 #                                         widget.parameter_dict['Axon Diam'][1],
@@ -58,14 +58,14 @@ class MonteCarloWidget(QWidget_MonteCarlo, Ui_MonteCarloWidget):
                 #                                         widget.parameter_dict['Axon Diam'][3])
                 diameter = [11, 12, 13, 14, 15, 16, 17, 18, 19]
             if widget.parameter_dict['Axon Position'][4]:
-                offset = widget.parameter_dict['Axon Position'][0]
+                offset = widget.parameter_dict['Axon Position'][5]
             else:
                 offset = self.get_normal_distribution(widget.parameter_dict['Axon Position'][0],
                                                       widget.parameter_dict['Axon Position'][1],
                                                       widget.parameter_dict['Axon Position'][2],
                                                       widget.parameter_dict['Axon Position'][3])
             if widget.parameter_dict['Coil Current'][4]:
-                current = widget.parameter_dict['Coil Current'][0]
+                current = widget.parameter_dict['Coil Current'][5]
             else:
                 current = self.get_uniform_distribution(widget.parameter_dict['Coil Current'][2],
                                                         widget.parameter_dict['Coil Current'][3])
@@ -237,12 +237,14 @@ class MCSimWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
         self.parameter_dict['Axon Diam'].append(self.parameter_dict['Axon Diam'][0] - 2*self.parameter_dict['Axon Diam'][1])
         self.parameter_dict['Axon Diam'].append(self.parameter_dict['Axon Diam'][0] + 2*self.parameter_dict['Axon Diam'][1])
         self.parameter_dict['Axon Diam'].append(1)
+        self.parameter_dict['Axon Diam'].append(15.29)
 
         self.parameter_dict['Axon Position'] = []
         self.parameter_dict['Axon Position'].append(0)
         self.parameter_dict['Axon Position'].append(7500)
         self.parameter_dict['Axon Position'].append(self.parameter_dict['Axon Position'][0] - 2*self.parameter_dict['Axon Position'][1])
         self.parameter_dict['Axon Position'].append(self.parameter_dict['Axon Position'][0] + 2*self.parameter_dict['Axon Position'][1])
+        self.parameter_dict['Axon Position'].append(0)
         self.parameter_dict['Axon Position'].append(0)
 
         self.parameter_dict['Coil Current'] = []
@@ -251,6 +253,7 @@ class MCSimWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
         self.parameter_dict['Coil Current'].append(self.parameter_dict['Coil Current'][0] - self.parameter_dict['Coil Current'][1])
         self.parameter_dict['Coil Current'].append(self.parameter_dict['Coil Current'][0] + self.parameter_dict['Coil Current'][1])
         self.parameter_dict['Coil Current'].append(0)
+        self.parameter_dict['Coil Current'].append(1)
 
         self.update()
 
@@ -260,6 +263,7 @@ class MCSimWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
         self.stdev_spinbox.valueChanged.connect(self.set_stdev)
         self.min_double_spin_box.valueChanged.connect(self.set_min)
         self.max_double_spin_box.valueChanged.connect(self.set_max)
+        self.fixed_value_spin_box.valueChanged.connect(self.set_fixed_value)
 
         self.mc_radioButton.clicked.connect(self.state_changed)
         self.fixed_radioButton.clicked.connect(self.state_changed)
@@ -270,6 +274,7 @@ class MCSimWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
         self.stdev_spinbox.setValue(self.parameter_dict[key][1])
         self.min_double_spin_box.setValue(self.parameter_dict[key][2])
         self.max_double_spin_box.setValue(self.parameter_dict[key][3])
+        self.fixed_value_spin_box.setValue(self.parameter_dict[key][5])
         if self.parameter_dict[key][4]:
             self.fixed_radioButton.setChecked(True)
             self.mc_radioButton.setChecked(False)
@@ -292,6 +297,10 @@ class MCSimWidget(QWidget_AxonDiamSweep, Ui_AxonDiamSweepWidget):
     def set_max(self):
         key = self.parameter_combobox.currentText()
         self.parameter_dict[key][3] = self.max_double_spin_box.value()
+
+    def set_fixed_value(self):
+        key = self.parameter_combobox.currentText()
+        self.parameter_dict[key][5] = self.fixed_value_spin_box.value()
 
     def state_changed(self):
         key = self.parameter_combobox.currentText()
