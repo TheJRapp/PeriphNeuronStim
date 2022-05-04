@@ -1008,8 +1008,8 @@ def get_list_of_selected_stimuli(total_time, start_time, duration, flank_percent
 
 def stimulus_string_list():
     stim_list = [
-        'half_cosine',
         'cosine',
+        'half_cosine',
         'double_cosine',
         'half_sine',
         'sine',

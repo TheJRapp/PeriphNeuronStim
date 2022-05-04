@@ -28,6 +28,8 @@ sys.path.insert(0, "C:/nrn/lib/python")
 import neuron_sim as ns
 import neuron_sim_nerve_shape as ns_ns
 
+import pandas as pd
+from datetime import date
 
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
@@ -191,23 +193,36 @@ class Main(QMainWindow, Ui_MainWindow):
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
         if not selected_nerve.axon_infos_list:
             return
+        # Dict -----------------------------------------------------------------
+        export_dict = {'Diameter': []}
         for axon in selected_nerve.axon_infos_list:
-            if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-                neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list,
-                                                axon, self.time_axis, self.stimulus, self.total_time)
-            elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
-                neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
+            export_dict['Diameter'].append(axon.diameter)
+            z_offset = np.arange(-25000, 25000, 1000)
+            for z in z_offset:
+                if z not in export_dict:
+                    export_dict[z] = []
+                self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z + z
+                if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
+                    neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
                                                     axon, self.time_axis, self.stimulus, self.total_time)
-            elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-                neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
-                                                              interpolation_radius_index,
-                                                              self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                              axon, self.time_axis, self.stimulus, self.total_time)
-            neuron_sim.quasipot()
-            threshold = neuron_sim.threshold_simulation(self.threshold_widget)
-            self.threshold_label.setText(str(threshold))
-            neuron_sim.simple_simulation()
-        plt.show()
+                elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
+                    neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                        axon, self.time_axis, self.stimulus, self.total_time)
+                elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
+                    neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
+                                                                  interpolation_radius_index,
+                                                                  self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                                  axon, self.time_axis, self.stimulus, self.total_time)
+                neuron_sim.quasipot()
+                threshold = neuron_sim.threshold_simulation(self.threshold_widget)
+                self.threshold_label.setText(str(threshold))
+                current = 6000 * threshold
+                self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z - z
+                export_dict[z].append(current)
+        df = pd.DataFrame(export_dict)
+        today = date.today()
+        df.to_csv(str(today) + 'phrenic_fo8_diam_vs_coil_distance.csv', index=False, header=True)
+        print('Finished!')
 
     def open_threshold_widget(self):
         self.threshold_widget.show()

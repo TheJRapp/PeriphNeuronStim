@@ -250,7 +250,8 @@ class NeuronSimEFieldWithNerveShape(NeuronSim):
         return axon
 
     def quasipot(self):
-        self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(self.stimulus, self.e_field_list, self.axon, self.interpolation_radius_index)
+        self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(
+            self.stimulus, self.e_field_list, self.axon, self.interpolation_radius_index)
         mf.play_stimulus_matrix(self.axon, self.time_axis)
 
     def mdf(self):
