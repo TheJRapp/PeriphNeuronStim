@@ -221,8 +221,10 @@ class Main(QMainWindow, Ui_MainWindow):
                 export_dict[z].append(current)
         df = pd.DataFrame(export_dict)
         today = date.today()
-        df.to_csv(str(today) + 'phrenic_fo8_diam_vs_coil_distance.csv', index=False, header=True)
+        df.to_csv(str(today) + 'vagus_fo8_diam_vs_z_offset.csv', index=False, header=True)
         print('Finished!')
+
+
 
     def open_threshold_widget(self):
         self.threshold_widget.show()

@@ -168,7 +168,14 @@ def quasi_potentials(stimulus, e_field_list, cable, interpolation_radius_index):
                                 cable.get_unitvector()[int(step_vector[j])][1] * e_y[iy - r:iy + r, ix - r:ix + r].sum() + \
                                 cable.get_unitvector()[int(step_vector[j])][2] * e_z[iy - r:iy + r, ix - r:ix + r].sum()
 
-            e_average_current = e_average_current / e_x[iy - r:iy + r, ix - r:ix + r].size
+            # this section is new and must be evaluated ----------------------------------------------------------------
+            if e_x[iy - r:iy + r, ix - r:ix + r].size > 0:
+                e_average_current = e_average_current / e_x[iy - r:iy + r, ix - r:ix + r].size
+            else:
+                e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iy, ix] + \
+                                    cable.get_unitvector()[int(step_vector[j])][1] * e_y[iy, ix] + \
+                                    cable.get_unitvector()[int(step_vector[j])][2] * e_z[iy, ix]
+            # ----------------------------------------------------------------------------------------------------------
 
         if j == 0:
             k = 1
