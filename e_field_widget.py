@@ -94,7 +94,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         parser.parse_file(storage)
         storage.convert_units(1e3)  # convert mm from CST to um used for cable
         self.e_field_list = storage.generate_e_field_matrix()
-        self.state = self.E_FIELD_ONLY
+        # self.state = self.E_FIELD_ONLY
         self.update_e_field_plot()
 
     def load_e_field(self):
@@ -106,7 +106,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             return
         with open(filename, 'rb') as e:
             self.e_field_list = pickle.load(e)
-        self.state = self.E_FIELD_ONLY
+        # self.state = self.E_FIELD_ONLY
         self.update_e_field_plot()
 
     def save_e_field(self):
@@ -131,8 +131,8 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         parser.parse_file(storage)
         storage.convert_units(1e3)  # convert mm from CST to um used for cable
         self.nerve_shape = storage.generate_nerve_shape()
-        self.state = self.NERVE_SHAPE_ONLY
-        self.nerve_shape_only_radio_button.setChecked(True)
+        # self.state = self.NERVE_SHAPE_ONLY
+        # self.nerve_shape_only_radio_button.setChecked(True)
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
         self.nerve_shape_only_radio_button.setEnabled(True)
         self.update_e_field_plot()
@@ -144,8 +144,8 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             return
         with open(filename, 'rb') as e:
             self.nerve_shape = pickle.load(e)
-        self.state = self.NERVE_SHAPE_ONLY
-        self.nerve_shape_only_radio_button.setChecked(True)
+        # self.state = self.NERVE_SHAPE_ONLY
+        # self.nerve_shape_only_radio_button.setChecked(True)
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
         self.nerve_shape_only_radio_button.setEnabled(True)
         self.update_e_field_plot()
@@ -255,11 +255,11 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111, projection='3d')
         ax1f1.scatter3D(nerve_shape.x, nerve_shape.y, nerve_shape.z, c=nerve_shape.e_y)
-        ax = plt.gca(projection='3d')
-        ax.scatter3D(nerve_shape.x/1000, nerve_shape.y/1000, nerve_shape.z/1000, c=nerve_shape.e_y)
-        ax.set_xlabel('x in mm')
-        ax.set_ylabel('y in mm')
-        ax.set_zlabel('z in mm')
+        # ax = plt.gca(projection='3d')
+        # ax.scatter3D(nerve_shape.x/1000, nerve_shape.y/1000, nerve_shape.z/1000, c=nerve_shape.e_y)
+        # ax.set_xlabel('x in mm')
+        # ax.set_ylabel('y in mm')
+        # ax.set_zlabel('z in mm')
         # plt.show()
 
         return fig1

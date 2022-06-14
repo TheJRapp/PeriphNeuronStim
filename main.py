@@ -30,6 +30,9 @@ import neuron_sim_nerve_shape as ns_ns
 
 import pandas as pd
 from datetime import date
+import glob
+import os
+import pickle
 
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
@@ -144,14 +147,18 @@ class Main(QMainWindow, Ui_MainWindow):
             # fig20 = plt.figure(2)
             # ax20 = fig20.gca()
             # ax20 = plt.plot(neuron_sim.mdf())
-            fig2 = Figure()
-            ax = plt.gca(projection='3d')
-            ax.scatter3D(neuron_sim.axon.x/1000, neuron_sim.axon.y/1000, neuron_sim.axon.z/1000)
-            ax.set_xlabel('x in mm')
-            ax.set_ylabel('y in mm')
-            ax.set_zlabel('z in mm')
-            plt.show()
+
         neuron_sim.quasipot()
+        fig222 = Figure()
+        ax = plt.gca(projection='3d')
+        p = ax.scatter3D(neuron_sim.axon.x / 1000, neuron_sim.axon.y / 1000, neuron_sim.axon.z / 1000,
+                     c=neuron_sim.axon.e_field_along_axon)
+        plt.colorbar(p)
+        ax.set_xlabel('x in mm')
+        ax.set_ylabel('y in mm')
+        ax.set_zlabel('z in mm')
+        plt.show()
+
         # fig20 = plt.figure(2)
         # ax20 = fig20.gca()
         # ax20 = plt.plot(neuron_sim.mdf())
@@ -194,14 +201,13 @@ class Main(QMainWindow, Ui_MainWindow):
         if not selected_nerve.axon_infos_list:
             return
         # Dict -----------------------------------------------------------------
-        export_dict = {'Diameter': []}
+        export_dict = {}
+        thresholds = []
+        dst = np.linspace(-20, 20, 487)
+        coefficient = np.linspace(0.1, 5, 50)
         for axon in selected_nerve.axon_infos_list:
-            export_dict['Diameter'].append(axon.diameter)
-            z_offset = np.arange(-25000, 25000, 1000)
-            for z in z_offset:
-                if z not in export_dict:
-                    export_dict[z] = []
-                self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z + z
+            for coef in coefficient:
+                gauss1 = np.exp(-((dst - 0) ** 2 / (2.0 * coef ** 2))) * 100
                 if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
                     neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
                                                     axon, self.time_axis, self.stimulus, self.total_time)
@@ -214,18 +220,20 @@ class Main(QMainWindow, Ui_MainWindow):
                                                                   self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                                   axon, self.time_axis, self.stimulus, self.total_time)
                 neuron_sim.quasipot()
+                neuron_sim.axon.potential_along_axon = np.cumsum(gauss1)
                 threshold = neuron_sim.threshold_simulation(self.threshold_widget)
-                self.threshold_label.setText(str(threshold))
-                current = 6000 * threshold
-                self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z - z
-                export_dict[z].append(current)
+                thresholds.append(threshold)
+                print('Threshold 1: ', threshold)
+                export_dict['thresholds'] = thresholds
+                # self.threshold_label.setText(str(threshold))
+                # current = 6000 * threshold
+                # export_dict['threshold'].append(current)
+        export_dict['thresholds'] = thresholds
         df = pd.DataFrame(export_dict)
         today = date.today()
-        df.to_csv(str(today) + 'phrenic_fo850%_diam_vs_z_offset.csv', index=False, header=True)
+        df.to_csv(str(today) + 'thresholds_for_gauss_functions.csv', index=False, header=True)
+        print(thresholds)
         print('Finished!')
-
-
-
 
     def open_threshold_widget(self):
         self.threshold_widget.show()
