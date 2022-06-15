@@ -217,6 +217,7 @@ class NeuronSimNerveShape(NeuronSim):
                 #  units? displacement given in um, must me converted with 10e-6 for quasipotentials in V,
                 #  but v_ext from NEURON is in mV !!!!!! --> 1e-3
 
+                e_average_prev = e_field_current
                 quasi_pot_prev = quasi_pot_current
 
                 e_field_along_axon.append(e_field_current)

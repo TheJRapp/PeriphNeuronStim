@@ -184,6 +184,9 @@ def quasi_potentials(stimulus, e_field_list, cable, interpolation_radius_index):
             k = j
 
         e_average_current = e_average_current - offset
+        ########################################### delete, only for trying ############################################
+        # if j > 350:
+        #     e_average_current = e_average_prev
         e_field_integral = (1 / 2) * (e_average_current + e_average_prev)
         displacement = np.sqrt(
             (cable.x[k] - cable.x[k-1]) ** 2 + (cable.y[k] - cable.y[k-1]) ** 2 + (
@@ -194,12 +197,12 @@ def quasi_potentials(stimulus, e_field_list, cable, interpolation_radius_index):
         #  units? displacement given in um, must me converted with 10e-6 for quasipotentials in V,
         #  but v_ext from NEURON is in mV !!!!!! --> 1e-3
 
+        e_average_prev = e_average_current
         quasi_pot_prev = quasi_pot_current
 
         e_field_along_axon.append(e_average_current)
         stim_matrix.append(stimulus * quasi_pot_current)
         quasi_pot_along_axon.append(quasi_pot_current)
-
 
     # fig = plt.figure()
     # plt.imshow(efeld)
