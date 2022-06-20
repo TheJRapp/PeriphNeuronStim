@@ -82,19 +82,19 @@ def plot_traces_and_field(name, time_axis, stimulus, model, trace_height=100):
     axes2.plot(e_field, range(100 * len(e_field))[-1::-100], 'darkgray')
     # plt.tight_layout()
 
-    n = 1
-    for plt_it, voltage_trace in enumerate(trace_list):
+    n = 5
+    for plt_it, voltage_trace in enumerate(trace_list[::n]):
         stimulus_trace = stimulus is not None
         y_lim = trace_height * (len(trace_list) + 5 * int(stimulus_trace))
         if stimulus_trace:
-            y_step = trace_height * (plt_it + 5)
+            y_step = trace_height * (n*plt_it + 5)
         else:
-            y_step = trace_height * (plt_it + 1)
+            y_step = trace_height * (n*plt_it + 1)
         axes.plot(time_axis, [y_lim - y_step for j in time_axis], 'k--', alpha=0.5, linewidth=1)
         line = axes.plot(time_axis, voltage_trace[:len(time_axis)] + y_lim - y_step)
         axes2.plot(time_axis, [y_lim - y_step for j in time_axis], 'w', alpha=0.5, linewidth=1)
-        # line2 = axes2.plot(e_field[10*plt_it], y_lim - y_step, '-x')
-        line2 = axes2.plot(e_field[plt_it], y_lim - y_step, '-x')
+        line2 = axes2.plot(e_field[n*plt_it], y_lim - y_step, '-x')
+        # line2 = axes2.plot(e_field[plt_it], y_lim - y_step, '-x')
         # MAX_V[b] = max(voltage_trace[:len(time_axis)])
         # b=b+1
 

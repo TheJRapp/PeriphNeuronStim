@@ -949,11 +949,11 @@ def get_stefan_messung_11(total_time, start_time, duration, pulse_amp=1):
     with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
         data = pickle.load(e)
 
-    pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['messung_11_duration']) / h_replacement)]
-    indexes = np.round(np.linspace(0, len(data['messung_11_data']) - 1, len(pulse_indices))).astype(int)
-    pulse = data['messung_11_data'][indexes.tolist()]
+    pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['messung11_duration']) / h_replacement)]
+    indexes = np.round(np.linspace(0, len(data['messung11_data']) - 1, len(pulse_indices))).astype(int)
+    pulse = data['messung11_data'][indexes.tolist()]
 
-    stim[int(start_time / h_replacement): int((start_time + data['messung_11_duration']) / h_replacement)] = pulse.transpose()
+    stim[int(start_time / h_replacement): int((start_time + data['messung11_duration']) / h_replacement)] = pulse.transpose()
 
     return time_axis, stim, 'stefan_messung_11'
 
@@ -964,13 +964,28 @@ def get_stefan_messung_13(total_time, start_time, duration, pulse_amp=1):
     with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
         data = pickle.load(e)
 
-    pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['messung_13_duration']) / h_replacement)]
-    indexes = np.round(np.linspace(0, len(data['messung_13_data']) - 1, len(pulse_indices))).astype(int)
-    pulse = data['messung_13_data'][indexes.tolist()]
+    pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['messung13_duration']) / h_replacement)]
+    indexes = np.round(np.linspace(0, len(data['messung13_data']) - 1, len(pulse_indices))).astype(int)
+    pulse = data['messung13_data'][indexes.tolist()]
 
-    stim[int(start_time / h_replacement): int((start_time + data['messung_13_duration']) / h_replacement)] = pulse.transpose()
+    stim[int(start_time / h_replacement): int((start_time + data['messung13_duration']) / h_replacement)] = pulse.transpose()
 
     return time_axis, stim, 'stefan_messung_13'
+
+def get_stefan_sine_pulse(total_time, start_time, duration, pulse_amp=1):
+    # the pulse has a fixed length, the duration is not considered
+    stim = np.zeros(int(total_time / h_replacement))
+    time_axis = np.arange(0, total_time, h_replacement)
+    with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
+        data = pickle.load(e)
+
+    pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['sine_pulse_duration']) / h_replacement)]
+    indexes = np.round(np.linspace(0, len(data['sine_pulse_data']) - 1, len(pulse_indices))).astype(int)
+    pulse = data['sine_pulse_data'][indexes.tolist()]
+
+    stim[int(start_time / h_replacement): int((start_time + data['sine_pulse_duration']) / h_replacement)] = pulse.transpose()
+
+    return time_axis, stim, 'stefan_sine_pulse'
 
 def moving_average(curve, window=4):
     curve_averaged = []
@@ -1023,7 +1038,8 @@ def stimulus_string_list():
         'stefan_simulation',
         'stefan_sissy',
         'stefan_messung_11',
-        'stefan_messung_13'
+        'stefan_messung_13',
+        'stefan_sine_pulse'
     ]
     return stim_list
 
@@ -1061,3 +1077,5 @@ def get_stim_from_string(stim_name, total_time, start_time, duration):
         return get_stefan_messung_11(total_time, start_time, duration)
     if stim_name == 'stefan_messung_13':
         return get_stefan_messung_13(total_time, start_time, duration)
+    if stim_name == 'stefan_sine_pulse':
+        return get_stefan_sine_pulse(total_time, start_time, duration)
