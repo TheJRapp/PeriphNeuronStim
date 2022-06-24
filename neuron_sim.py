@@ -1,6 +1,7 @@
 import misc_functions as mf
 import plot as pt
 import threshold_widget as th
+from matplotlib import pyplot as plt
 from neuron import h
 import numpy as np
 from Axon_Models import hh_cable_geometry
@@ -34,6 +35,35 @@ class NeuronSim:
 
     def quasipot(self):
         raise NotImplementedError()
+
+    def apply_potential_to_nerve(self):
+        # --------------------------------- Comparing Stefan's pulses --------------------------------------------------
+        # self.axon.e_field_along_axon = list(
+        #     np.asarray(self.axon.e_field_along_axon) / max(abs(np.asarray(self.axon.e_field_along_axon))))
+        # self.axon.potential_along_axon = list(np.cumsum(self.axon.e_field_along_axon))
+
+        start = 100
+        stop = 300
+        th = 0
+
+        # last_change_start = self.axon.potential_along_axon[start+1] - self.axon.potential_along_axon[start]
+        # for i in range(start, 0, -1):
+        #     self.axon.potential_along_axon[i - 1] = self.axon.potential_along_axon[i] - (0.5 * last_change_start)
+        #     last_change_start = 0.5 * last_change_start
+
+        last_change_stop = self.axon.potential_along_axon[- (stop+1)] - self.axon.potential_along_axon[stop]
+        for i in range(stop, 0, -1):
+            self.axon.potential_along_axon[- (i - 1)] = self.axon.potential_along_axon[i] - (0.5 * last_change_stop)
+            last_change_stop = 0.5 * last_change_stop
+
+        self.axon.stim_matrix = []
+        for pot in self.axon.potential_along_axon:
+            self.axon.stim_matrix.append(self.stimulus * pot)
+
+        plt.plot(self.axon.potential_along_axon)
+        plt.show()
+
+        mf.play_stimulus_matrix(self.axon, self.time_axis)
 
     def simple_simulation(self):
 
@@ -82,11 +112,8 @@ class NeuronSimEField(NeuronSim):
     def quasipot(self):
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(
             self.stimulus, self.e_field_list, self.axon, self.interpolation_radius_index)
-        # --------------------------------- Comparing Stefan's pulses --------------------------------------------------
-        # self.axon.e_field_along_axon = list(
-        #     np.asarray(self.axon.e_field_along_axon) / max(abs(np.asarray(self.axon.e_field_along_axon))))
-        # self.axon.potential_along_axon = list(np.cumsum(self.axon.e_field_along_axon))
-        mf.play_stimulus_matrix(self.axon, self.time_axis)
+        self.apply_potential_to_nerve()
+
 
     def hh(self, diameter, x, y, z, angle, length):
         segments = 1
@@ -170,7 +197,8 @@ class NeuronSimNerveShape(NeuronSim):
 
     def quasipot(self):  # x not used here
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = self.quasi_potentials(self.stimulus, self.nerve_shape, self.axon)
-        mf.play_stimulus_matrix(self.axon, self.time_axis)
+        self.apply_potential_to_nerve()
+
 
     def quasi_potentials(self, stimulus, nerve_shape, cable):
         # quasi potential described by Aberra 2019
@@ -257,8 +285,7 @@ class NeuronSimEFieldWithNerveShape(NeuronSim):
     def quasipot(self):
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(
             self.stimulus, self.e_field_list, self.axon, self.interpolation_radius_index)
-        #self.axon.potential_along_axon[]
-        mf.play_stimulus_matrix(self.axon, self.time_axis)
+        self.apply_potential_to_nerve()
 
     def mdf(self):
         return mf.driving_function(self.axon, self.stimulus)
