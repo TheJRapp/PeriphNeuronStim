@@ -3,6 +3,7 @@ import database
 import file_parser
 import numpy as np
 import cv2
+from scipy import ndimage, misc
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
@@ -58,6 +59,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.load_nerve_shape_button.clicked.connect(self.load_cst_nerve_shape)
         self.load_saved_nerve_shape_button.clicked.connect(self.load_nerve_shape)
         self.save_nerve_shape_button.clicked.connect(self.save_nerve_shape)
+        self.smooth_push_button.clicked.connect(self.smooth_e_field)
 
         self.e_field_wtih_nerve_shape_radio_button.clicked.connect(self.state_changed)
         self.nerve_shape_only_radio_button.clicked.connect(self.state_changed)
@@ -296,6 +298,23 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
 
     def configure_layer_slider(self):
         self.e_field_layer_slider.setRange(0, len(self.e_field_list)-1)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # Modify E-field
+    # ------------------------------------------------------------------------------------------------------------------
+
+    def smooth_e_field(self):
+        for field in self.e_field_list:
+            e_field = field.e_x
+            filtered_e_field = ndimage.uniform_filter(e_field, size=20)
+            field.e_x = filtered_e_field
+            e_field = field.e_y
+            filtered_e_field = ndimage.uniform_filter(e_field, size=20)
+            field.e_y = filtered_e_field
+            e_field = field.e_z
+            filtered_e_field = ndimage.uniform_filter(e_field, size=20)
+            field.e_z = filtered_e_field
+        self.update_e_field_plot()
 
 class State(QObject):
     e_field_changed = pyqtSignal()

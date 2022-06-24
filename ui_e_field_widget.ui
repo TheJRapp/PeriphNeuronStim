@@ -143,6 +143,13 @@
      </property>
     </widget>
    </item>
+   <item row="5" column="2">
+    <widget class="QPushButton" name="smooth_push_button">
+     <property name="text">
+      <string>Smoothen field</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>

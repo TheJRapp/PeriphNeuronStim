@@ -82,6 +82,10 @@ class NeuronSimEField(NeuronSim):
     def quasipot(self):
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(
             self.stimulus, self.e_field_list, self.axon, self.interpolation_radius_index)
+        # --------------------------------- Comparing Stefan's pulses --------------------------------------------------
+        # self.axon.e_field_along_axon = list(
+        #     np.asarray(self.axon.e_field_along_axon) / max(abs(np.asarray(self.axon.e_field_along_axon))))
+        # self.axon.potential_along_axon = list(np.cumsum(self.axon.e_field_along_axon))
         mf.play_stimulus_matrix(self.axon, self.time_axis)
 
     def hh(self, diameter, x, y, z, angle, length):
@@ -253,6 +257,7 @@ class NeuronSimEFieldWithNerveShape(NeuronSim):
     def quasipot(self):
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(
             self.stimulus, self.e_field_list, self.axon, self.interpolation_radius_index)
+        #self.axon.potential_along_axon[]
         mf.play_stimulus_matrix(self.axon, self.time_axis)
 
     def mdf(self):

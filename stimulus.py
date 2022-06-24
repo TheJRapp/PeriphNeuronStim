@@ -916,7 +916,7 @@ def get_stefan_simulation(total_time, start_time, duration, pulse_amp=1):
     # the pulse has a fixed length, the duration is not considered
     stim = np.zeros(int(total_time / h_replacement))
     time_axis = np.arange(0, total_time, h_replacement)
-    with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
+    with open('stimulus_stefan', 'rb') as e:
         data = pickle.load(e)
 
     pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['simulation_duration']) / h_replacement)]
@@ -931,7 +931,7 @@ def get_stefan_sissy(total_time, start_time, duration, pulse_amp=1):
     # the pulse has a fixed length, the duration is not considered
     stim = np.zeros(int(total_time / h_replacement))
     time_axis = np.arange(0, total_time, h_replacement)
-    with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
+    with open('stimulus_stefan', 'rb') as e:
         data = pickle.load(e)
 
     pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['sissy_duration']) / h_replacement)]
@@ -946,7 +946,7 @@ def get_stefan_messung_11(total_time, start_time, duration, pulse_amp=1):
     # the pulse has a fixed length, the duration is not considered
     stim = np.zeros(int(total_time / h_replacement))
     time_axis = np.arange(0, total_time, h_replacement)
-    with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
+    with open('stimulus_stefan', 'rb') as e:
         data = pickle.load(e)
 
     pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['messung11_duration']) / h_replacement)]
@@ -961,7 +961,7 @@ def get_stefan_messung_13(total_time, start_time, duration, pulse_amp=1):
     # the pulse has a fixed length, the duration is not considered
     stim = np.zeros(int(total_time / h_replacement))
     time_axis = np.arange(0, total_time, h_replacement)
-    with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
+    with open('stimulus_stefan', 'rb') as e:
         data = pickle.load(e)
 
     pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['messung13_duration']) / h_replacement)]
@@ -976,7 +976,7 @@ def get_stefan_sine_pulse(total_time, start_time, duration, pulse_amp=1):
     # the pulse has a fixed length, the duration is not considered
     stim = np.zeros(int(total_time / h_replacement))
     time_axis = np.arange(0, total_time, h_replacement)
-    with open('D:/Files/Doktorarbeit/stefans_pulse/Python_Calculations/stimulus_stefan', 'rb') as e:
+    with open('stimulus_stefan', 'rb') as e:
         data = pickle.load(e)
 
     pulse_indices = stim[int(start_time / h_replacement): int((start_time + data['sine_pulse_duration']) / h_replacement)]
@@ -1035,6 +1035,7 @@ def stimulus_string_list():
         'real_rect_c',
         'triangle',
         'decreasing_triangle',
+        'real_monophasic',
         'stefan_simulation',
         'stefan_sissy',
         'stefan_messung_11',
@@ -1069,6 +1070,8 @@ def get_stim_from_string(stim_name, total_time, start_time, duration):
         return get_triangle(total_time, start_time, duration)
     if stim_name == 'decreasing_triangle':
         return get_decreasing_triangle(total_time, start_time, duration)
+    if stim_name == 'real_monophasic':
+        return get_real_monophasic(total_time, start_time, duration)
     if stim_name == 'stefan_simulation':
         return get_stefan_simulation(total_time, start_time, duration)
     if stim_name == 'stefan_sissy':

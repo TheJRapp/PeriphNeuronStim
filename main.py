@@ -153,7 +153,8 @@ class Main(QMainWindow, Ui_MainWindow):
         ax = plt.gca(projection='3d')
         p = ax.scatter3D(neuron_sim.axon.x / 1000, neuron_sim.axon.y / 1000, neuron_sim.axon.z / 1000,
                      c=neuron_sim.axon.e_field_along_axon)
-        plt.colorbar(p)
+        cbar = plt.colorbar(p)
+        cbar.set_label('E in V/m')
         ax.set_xlabel('x in mm')
         ax.set_ylabel('y in mm')
         ax.set_zlabel('z in mm')
@@ -203,31 +204,27 @@ class Main(QMainWindow, Ui_MainWindow):
         # Dict -----------------------------------------------------------------
         export_dict = {}
         thresholds = []
-        dst = np.linspace(-20, 20, 487)
-        coefficient = np.linspace(0.1, 5, 50)
         for axon in selected_nerve.axon_infos_list:
-            for coef in coefficient:
-                gauss1 = np.exp(-((dst - 0) ** 2 / (2.0 * coef ** 2))) * 100
-                if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-                    neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
+            if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
+                neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
+                                                axon, self.time_axis, self.stimulus, self.total_time)
+            elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
+                neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                     axon, self.time_axis, self.stimulus, self.total_time)
-                elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
-                    neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                        axon, self.time_axis, self.stimulus, self.total_time)
-                elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-                    neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
-                                                                  interpolation_radius_index,
-                                                                  self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                                  axon, self.time_axis, self.stimulus, self.total_time)
-                neuron_sim.quasipot()
-                neuron_sim.axon.potential_along_axon = np.cumsum(gauss1)
-                threshold = neuron_sim.threshold_simulation(self.threshold_widget)
-                thresholds.append(threshold)
-                print('Threshold 1: ', threshold)
-                export_dict['thresholds'] = thresholds
-                # self.threshold_label.setText(str(threshold))
-                # current = 6000 * threshold
-                # export_dict['threshold'].append(current)
+            elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
+                neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
+                                                              interpolation_radius_index,
+                                                              self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                              axon, self.time_axis, self.stimulus, self.total_time)
+            neuron_sim.quasipot()
+
+            threshold = neuron_sim.threshold_simulation(self.threshold_widget)
+            thresholds.append(threshold)
+            print('Threshold 1: ', threshold)
+            export_dict['thresholds'] = thresholds
+            # self.threshold_label.setText(str(threshold))
+            # current = 6000 * threshold
+            # export_dict['threshold'].append(current)
         export_dict['thresholds'] = thresholds
         df = pd.DataFrame(export_dict)
         today = date.today()
