@@ -42,26 +42,32 @@ class NeuronSim:
         #     np.asarray(self.axon.e_field_along_axon) / max(abs(np.asarray(self.axon.e_field_along_axon))))
         # self.axon.potential_along_axon = list(np.cumsum(self.axon.e_field_along_axon))
 
-        start = 100
-        stop = 300
-        th = 0
+        start_def = [30500, -45000, -91300]  # [x, y, z]
+        stop_def = [-4700, 14900, -75700]  # [x, y, z]
 
-        # last_change_start = self.axon.potential_along_axon[start+1] - self.axon.potential_along_axon[start]
-        # for i in range(start, 0, -1):
-        #     self.axon.potential_along_axon[i - 1] = self.axon.potential_along_axon[i] - (0.5 * last_change_start)
-        #     last_change_start = 0.5 * last_change_start
+        start = np.argmin(
+            abs(np.asarray(self.axon.x) - start_def[0]) + abs(np.asarray(self.axon.y) - start_def[1]) + abs(
+                np.asarray(self.axon.z) - start_def[2]))
+        stop = np.argmin(
+            abs(np.asarray(self.axon.x) - stop_def[0]) + abs(np.asarray(self.axon.y) - stop_def[1]) + abs(
+                np.asarray(self.axon.z) - stop_def[2]))
 
-        last_change_stop = self.axon.potential_along_axon[- (stop+1)] - self.axon.potential_along_axon[stop]
-        for i in range(stop, 0, -1):
-            self.axon.potential_along_axon[- (i - 1)] = self.axon.potential_along_axon[i] - (0.5 * last_change_stop)
+        last_change_start = self.axon.potential_along_axon[start+1] - self.axon.potential_along_axon[start]
+        for i in range(start, 0, -1):
+            self.axon.potential_along_axon[i - 1] = self.axon.potential_along_axon[start] - (0.5 * last_change_start)
+            last_change_start = 0.5 * last_change_start
+
+        last_change_stop = self.axon.potential_along_axon[- (stop+1)] - self.axon.potential_along_axon[-stop]
+        for i in range(stop, 1, -1):
+            self.axon.potential_along_axon[- (i - 1)] = self.axon.potential_along_axon[-stop] - (0.5 * last_change_stop)
             last_change_stop = 0.5 * last_change_stop
 
         self.axon.stim_matrix = []
         for pot in self.axon.potential_along_axon:
             self.axon.stim_matrix.append(self.stimulus * pot)
 
-        plt.plot(self.axon.potential_along_axon)
-        plt.show()
+        # plt.plot(self.axon.potential_along_axon)
+        # plt.show()
 
         mf.play_stimulus_matrix(self.axon, self.time_axis)
 
