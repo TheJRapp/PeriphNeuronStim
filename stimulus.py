@@ -1024,6 +1024,7 @@ def get_list_of_selected_stimuli(total_time, start_time, duration, flank_percent
 def stimulus_string_list():
     stim_list = [
         'cosine',
+        'inverted_cosine',
         'half_cosine',
         'double_cosine',
         'half_sine',
@@ -1050,6 +1051,8 @@ def get_stim_from_string(stim_name, total_time, start_time, duration):
         return get_half_cosine(total_time, start_time, duration)
     if stim_name == 'cosine':
         return get_cosine(total_time, start_time, duration)
+    if stim_name == 'inverted_cosine':
+        return get_inverted_cosine(total_time, start_time, duration)
     if stim_name == 'double_cosine':
         return get_polyphasic_cosine(total_time, start_time, duration)
     if stim_name == 'half_sine':

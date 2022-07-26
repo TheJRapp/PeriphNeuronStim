@@ -54,12 +54,12 @@ class NeuronSim:
 
         last_change_start = self.axon.potential_along_axon[start+1] - self.axon.potential_along_axon[start]
         for i in range(start, 0, -1):
-            self.axon.potential_along_axon[i - 1] = self.axon.potential_along_axon[start] - (0.5 * last_change_start)
+            self.axon.potential_along_axon[i - 1] = self.axon.potential_along_axon[i] - (0.5 * last_change_start)
             last_change_start = 0.5 * last_change_start
 
         last_change_stop = self.axon.potential_along_axon[- (stop+1)] - self.axon.potential_along_axon[-stop]
         for i in range(stop, 1, -1):
-            self.axon.potential_along_axon[- (i - 1)] = self.axon.potential_along_axon[-stop] - (0.5 * last_change_stop)
+            self.axon.potential_along_axon[- (i - 1)] = self.axon.potential_along_axon[-i] - (0.5 * last_change_stop)
             last_change_stop = 0.5 * last_change_stop
 
         self.axon.stim_matrix = []

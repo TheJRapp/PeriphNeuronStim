@@ -194,43 +194,6 @@ class Main(QMainWindow, Ui_MainWindow):
             neuron_sim.plot_simulation()
         plt.show()
 
-    def threshold_search_different_fields(self):
-        if not self.nerve_widget.nerve_dict:
-            return
-        selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if not selected_nerve.axon_infos_list:
-            return
-        # Dict -----------------------------------------------------------------
-        field_path = glob.glob('H:/Doktorarbeit/Phrenicus/e_field_data/*')
-        export_dict = {'x-offset': [], 'threshold': []}
-        for axon in selected_nerve.axon_infos_list:
-            for filename in sorted(field_path):
-                # export_dict['x-offset'].append(filename)
-                print(str(os.path.basename(filename)))
-                with open(filename, 'rb') as e:
-                    self.e_field_widget.e_field_list = pickle.load(e)
-                if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-                    neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
-                                                    axon, self.time_axis, self.stimulus, self.total_time)
-                elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
-                    neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                        axon, self.time_axis, self.stimulus, self.total_time)
-                elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-                    neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
-                                                                  interpolation_radius_index,
-                                                                  self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                                  axon, self.time_axis, self.stimulus, self.total_time)
-                neuron_sim.quasipot()
-                threshold = neuron_sim.threshold_simulation(self.threshold_widget)
-                self.threshold_label.setText(str(threshold))
-                current = 6000 * threshold
-                export_dict['threshold'].append(current)
-                export_dict['x-offset'].append(os.path.basename(filename))
-        df = pd.DataFrame(export_dict)
-        today = date.today()
-        df.to_csv(str(today) + 'phrenic_fo8_x_offset_-20_to_20.csv', index=False, header=True)
-        print('Finished!')
-
     def threshold_search(self):
         if not self.nerve_widget.nerve_dict:
             return
@@ -238,13 +201,15 @@ class Main(QMainWindow, Ui_MainWindow):
         if not selected_nerve.axon_infos_list:
             return
         # Dict -----------------------------------------------------------------
-        export_dict = {'Diameter': []}
+        field_path = glob.glob('H:/Doktorarbeit/Phrenicus/e_field_data/*')
+        export_dict = {}
         for axon in selected_nerve.axon_infos_list:
-            x_offset = np.arange(-5000, 5000, 1000)
-            for x in x_offset:
-                if x not in export_dict:
-                    export_dict[x] = []
-                self.e_field_widget.nerve_shape.x = self.e_field_widget.nerve_shape.x + x
+            for filename in sorted(field_path):
+                # export_dict['x-offset'].append(filename)
+                print(str(os.path.basename(filename)))
+                with open(filename, 'rb') as e:
+                    self.e_field_widget.e_field_list = pickle.load(e)
+                self.e_field_widget.smooth_e_field()
                 if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
                     neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
                                                     axon, self.time_axis, self.stimulus, self.total_time)
@@ -254,19 +219,19 @@ class Main(QMainWindow, Ui_MainWindow):
                 elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
                     neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
                                                                   interpolation_radius_index,
-                                                                  self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                                  self.e_field_widget.nerve_shape,
+                                                                  nerve_shape_step_size,
                                                                   axon, self.time_axis, self.stimulus, self.total_time)
                 neuron_sim.quasipot()
                 threshold = neuron_sim.threshold_simulation(self.threshold_widget)
                 self.threshold_label.setText(str(threshold))
                 current = 6000 * threshold
-                self.e_field_widget.nerve_shape.x = self.e_field_widget.nerve_shape.x - x
-                export_dict[x].append(current)
-                export_dict[x].append(neuron_sim.axon.e_field_along_axon)
-                # export_dict['Diameter'].append(axon.diameter)
+                export_dict[os.path.basename(filename)] = []
+                export_dict[os.path.basename(filename)].append(current)
+                export_dict[os.path.basename(filename)].append(neuron_sim.axon.e_field_along_axon)
         df = pd.DataFrame(export_dict)
         today = date.today()
-        df.to_csv(str(today) + 'phrenic_fo8_diam_vs_x_offset.csv', index=False, header=True)
+        df.to_csv(str(today) + 'phrenic_RC_x_offset_-50_to_50.csv', index=False, header=True)
         print('Finished!')
 
     def open_threshold_widget(self):
