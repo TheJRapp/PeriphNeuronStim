@@ -1034,6 +1034,7 @@ def stimulus_string_list():
         'real_rect_a',
         'real_rect_b',
         'real_rect_c',
+        'inv_real_rect_a',
         'triangle',
         'decreasing_triangle',
         'real_monophasic',
@@ -1068,7 +1069,9 @@ def get_stim_from_string(stim_name, total_time, start_time, duration):
     if stim_name == 'real_rect_b':
         return get_real_squarewave_mod_end(total_time, start_time, duration)
     if stim_name == 'real_rect_c':
-        return  get_real_squarewave_mod_centre(total_time, start_time, duration)
+        return get_real_squarewave_mod_centre(total_time, start_time, duration)
+    if stim_name == 'inv_real_rect_a':
+        return get_inverted_real_squarewave(total_time, start_time, duration)
     if stim_name == 'triangle':
         return get_triangle(total_time, start_time, duration)
     if stim_name == 'decreasing_triangle':

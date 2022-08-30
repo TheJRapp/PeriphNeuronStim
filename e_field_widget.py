@@ -244,9 +244,9 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
     def plot_e_field(self, e_field):
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111)
-        ax1f1.imshow(e_field.e_y, extent=[min(e_field.x)/1e3, max(e_field.x)/1e3, max(e_field.y)/1e3, min(e_field.y)/1e3])
+        pos=ax1f1.imshow(e_field.e_y, extent=[min(e_field.x)/1e3, max(e_field.x)/1e3, max(e_field.y)/1e3, min(e_field.y)/1e3])
         # self.e_field_fig = fig1
-        # fig1.colorbar(pos)
+        fig1.colorbar(pos)
 
         ax1f1.callbacks.connect('xlim_changed', self.on_xlims_change)
         ax1f1.callbacks.connect('ylim_changed', self.on_ylims_change)
