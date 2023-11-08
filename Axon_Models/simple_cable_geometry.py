@@ -68,12 +68,12 @@ class BendedAxon(simple_axon.Axon):
         del self.x[-1]
         del self.y[-1]
         del self.z[-1]
-        h.disconnect(self.sections[-1])
+        #h.disconnect(self.sections[-1])
         del self.sections[-1]
         np.delete(self.axon_list[-1].x, -1)
         np.delete(self.axon_list[-1].y, -1)
         np.delete(self.axon_list[-1].z, -1)
-        h.disconnect(self.axon_list[-1].sections[-1])
+        #h.disconnect(self.axon_list[-1].sections[-1])
         del self.axon_list[-1].sections[-1]
 
         # TODO: just a test to avoid spike at first and last segment

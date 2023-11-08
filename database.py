@@ -32,28 +32,51 @@ class DataBase(dict):
         return nerve_shape
 
     def generate_e_field_matrix(self):
-        # x_dimensions and y_dimensions of e_field must be the same
-        z_control = self.get("z ")
-        layers = set(z_control)
-        e_field_list = []
-        for layer in layers:
-            layer_index = [i for i, z_control in enumerate(z_control) if z_control == layer]
-            print('Layer: ', layer)
-            x = np.asarray([self.get("x ")[i] for i in layer_index])
-            y = np.asarray([self.get("y ")[i] for i in layer_index])
-            z = np.asarray([self.get("z ")[i] for i in layer_index])
-            xRe = np.asarray([self.get("ExRe ")[i] for i in layer_index])
-            yRe = np.asarray([self.get("EyRe ")[i] for i in layer_index])
-            zRe = np.asarray([self.get("EzRe ")[i] for i in layer_index])
-            xIm = np.asarray([self.get("ExIm ")[i] for i in layer_index])
-            yIm = np.asarray([self.get("EyIm ")[i] for i in layer_index])
-            zIm = np.asarray([self.get("EzIm ")[i] for i in layer_index])
+        e_field = self.generate_3d_field()
+        print('E-field done')
+        return e_field
 
-            e_field = EField(x, y, z, xRe, yRe, zRe, xIm, yIm, zIm, layer)
-            e_field_list.append(e_field)
-            print('...')
-            e_field_list.sort(key=lambda x: x.layer, reverse=False)
-        return e_field_list
+    def generate_3d_field(self):
+        x = np.array(self.get("x "))
+        y = np.array(self.get("y "))
+        z = np.array(self.get("z "))
+        Ex_re = np.array(self.get("ExRe "))
+        Ex_im = np.array(self.get("ExIm "))
+        Ey_re = np.array(self.get("EyRe "))
+        Ey_im = np.array(self.get("EyIm "))
+        Ez_re = np.array(self.get("EzRe "))
+        Ez_im = np.array(self.get("EzIm "))
+
+        phase_x = []
+        phase_y = []
+        phase_z = []
+
+        for i in range(Ex_re.shape[0]):
+            phase_x.append(np.arccos(Ex_re[i] / np.sqrt(Ex_re[i] ** 2 + Ex_im[i] ** 2)) if Ex_im[i] >= 0 else - np.arccos(
+                Ex_re[i] / np.sqrt(Ex_re[i] ** 2 + Ex_im[i] ** 2)))
+        # for i in range(y.shape[0]):
+            phase_y.append(np.arccos(Ey_re[i] / np.sqrt(Ey_re[i] ** 2 + Ey_im[i] ** 2)) if Ey_im[i] >= 0 else - np.arccos(
+                Ey_re[i] / np.sqrt(Ey_re[i] ** 2 + Ey_im[i] ** 2)))
+            phase_z.append(np.arccos(Ez_re[i] / np.sqrt(Ez_re[i] ** 2 + Ez_im[i] ** 2)) if Ez_im[i] >= 0 else - np.arccos(
+                Ez_re[i] / np.sqrt(Ez_re[i] ** 2 + Ez_im[i] ** 2)))
+
+        self.e_x = np.true_divide(phase_x, np.absolute(phase_x)) * np.sqrt(Ex_re ** 2 + Ex_im ** 2)
+        self.e_y = np.true_divide(phase_y, np.absolute(phase_y)) * np.sqrt(Ey_re ** 2 + Ey_im ** 2)
+        self.e_z = np.true_divide(phase_z, np.absolute(phase_z)) * np.sqrt(Ez_re ** 2 + Ez_im ** 2)
+
+        e_field = EField()
+        e_field.x = np.sort(np.asarray(list(set(x))))
+        e_field.y = np.sort(np.asarray(list(set(y))))
+        e_field.z = np.sort(np.asarray(list(set(z))))
+        e_field.e_x = np.transpose(np.reshape(self.e_x, (len(set(x)), len(set(y)), len(set(z)))), (1,2,0))
+        e_field.e_y = np.transpose(np.reshape(self.e_y, (len(set(x)), len(set(y)), len(set(z)))), (1,2,0))
+        e_field.e_z = np.transpose(np.reshape(self.e_z, (len(set(x)), len(set(y)), len(set(z)))), (1,2,0))
+
+        # e_field.e_x = np.reshape(self.e_x, (len(set(x)), -1, len(set(z))))
+        # e_field.e_y = np.reshape(self.e_y, (len(set(x)), -1, len(set(z))))
+        # e_field.e_z = np.reshape(self.e_z, (len(set(x)), -1, len(set(z))))
+        return e_field
+
 
     def rotate_e_field(self, e_field, angle):
 
@@ -96,15 +119,14 @@ class NerveShape():
         self.e_y = np.true_divide(phase_y, np.absolute(phase_y)) * np.sqrt(yRe ** 2 + yIm ** 2)
         self.e_z = np.true_divide(phase_z, np.absolute(phase_z)) * np.sqrt(zRe ** 2 + zIm ** 2)
 
-
-class EField():
+class EFieldLayer(): # TODO: Braucht man nicht mehr oder?
 
     def __init__(self, x, y, z, xRe, yRe, zRe, xIm, yIm, zIm, layer_selection):
         self.x = x
         self.y = y
         self.z = z
         self.layer = layer_selection
-        # TODO: Braucht man nicht mehr oder?
+
         # self.xRe = xRe
         # self.yRe = yRe
         # self.xIm = xIm
@@ -150,46 +172,19 @@ class EField():
             # self.y_Im = np.reshape(self.yIm, (shape, shape))
 
 
-class EField_old():
+class EField():
 
-    def __init__(self, x, y, z, xRe, yRe, zRe, xIm, yIm, zIm, layer_selection):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.layer = layer_selection
-        # TODO: Braucht man nicht mehr oder?
-        # self.xRe = xRe
-        # self.yRe = yRe
-        # self.xIm = xIm
-        # self.yIm = yIm
-        self.x_min = np.argmin(x)
-        self.x_max = np.argmax(x)
-        self.y_min = np.argmin(y)
-        self.y_max = np.argmax(y)
-        shape = len(x[self.x_min:self.x_max+1])
-        self.shape = shape
-        self.resolution = abs(x[1] - x[0])
+    def __init__(self):
+        self.x = []
+        self.y = []
+        self.z = []
+        self.e_x = []
+        self.e_y = []
+        self.e_z = []
 
-        phase_x = []
-        phase_y = []
-        phase_z = []
-
-        for i in range(x.shape[0]):
-            phase_x.append(np.arccos(xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)) if xIm[i] >= 0 else - np.arccos(
-                xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)))
-            phase_y.append(np.arccos(yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)) if yIm[i] >= 0 else - np.arccos(
-                yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)))
-            phase_z.append(np.arccos(zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)) if zIm[i] >= 0 else - np.arccos(
-                zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)))
-
-        self.e_x = np.true_divide(phase_x, np.absolute(phase_x)) * np.sqrt(xRe ** 2 + xIm ** 2)
-        self.e_y = np.true_divide(phase_y, np.absolute(phase_y)) * np.sqrt(yRe ** 2 + yIm ** 2)
-        self.e_z = np.true_divide(phase_z, np.absolute(phase_z)) * np.sqrt(zRe ** 2 + zIm ** 2)
-
-        if shape:
-            self.e_x = np.reshape(self.e_x, (shape, shape))
-            self.e_y = np.reshape(self.e_y, (shape, shape))
-            self.e_z = np.reshape(self.e_z, (shape, shape))
-            self.e_x = np.reshape(self.e_x, (shape, shape))
-            self.e_y = np.reshape(self.e_y, (shape, shape))
-            self.e_z = np.reshape(self.e_z, (shape, shape))
+    def finalize(self,):
+        self.x_min = np.argmin(self.x)
+        self.x_max = np.argmax(self.x)
+        self.y_min = np.argmin(self.y)
+        self.y_max = np.argmax(self.y)
+        self.resolution = abs(self.x[1] - self.x[0])

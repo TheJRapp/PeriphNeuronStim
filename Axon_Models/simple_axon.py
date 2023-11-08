@@ -6,16 +6,18 @@ import numpy as np
 import neuron
 import nrn
 
-
-
 # Do we just need Axons or Soma, Dentrites, etc as well?
 # If so: arbitrary class CellCompartment; then class Axon(CellCompartment); class Soma(CellCompartment); etc...
+
+
 class Axon(object):
 
-    def __init__(self, x=500, y=500, z=500, segments=1, inter_node_diameter=10, node_diameter=10, node_length=1, internode_length=1e3,
+    def __init__(self, x=500, y=500, z=500, segments=1,
+                 inter_node_diameter=10, node_diameter=10,
+                 node_length=1, internode_length=1e3,
                  node_internode_pairs=10):
 
-        self.sections = []
+        self.sections = []  # ObjectType: nrn.Section
         self.node_length = node_length
         self.internode_length = internode_length
         #self.name = "Simple Axon ," + "Node \u2300 = " + str(node_diameter) + ", IntNode \u2300 = " + str(inter_node_diameter)

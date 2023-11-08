@@ -88,7 +88,7 @@ def remove_from_simulation(model):
         vector.play_remove()
     model.time_vector.play_remove()
 
-def quasi_potentials(stimulus, e_field_list, cable, interpolation_radius_index):
+def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
     # quasi potential described by Aberra 2019
     # for(each segment)
     #   find e_field coordinates within segment +- deltaX +- deltaY +- deltaZ
@@ -101,6 +101,134 @@ def quasi_potentials(stimulus, e_field_list, cable, interpolation_radius_index):
     stim_matrix = []  # contains a row for each segment where the corresponding e-field is multiplied w. stimulus
     e_field_along_axon = []
     quasi_pot_along_axon = []
+
+    r = interpolation_radius_index  # interpolation radius
+
+    cable_x_min = round(min(cable.x))
+    cable_x_max = round(max(cable.x))
+    cable_y_min = round(min(cable.y))
+    cable_y_max = round(max(cable.y))
+    cable_z_min = round(min(cable.z))
+    cable_z_max = round(max(cable.z))
+
+    x_axis = e_field.x  # indexes of e_field, e.g. -200,...,0,...200
+    y_axis = e_field.y
+    z_axis = e_field.z
+
+    x_min_ind = np.argmin(abs(x_axis - cable_x_min)) # x-index of e_field where cable starts
+    x_max_ind = np.argmin(abs(x_axis - cable_x_max))
+    y_min_ind = np.argmin(abs(y_axis - cable_y_min))
+    y_max_ind = np.argmin(abs(y_axis - cable_y_max))
+    z_min_ind = np.argmin(abs(z_axis - cable_z_min))
+    z_max_ind = np.argmin(abs(z_axis - cable_z_max))
+
+    e_average_prev = 0
+    quasi_pot_prev = 0
+
+    offset = 0
+    for j in range(len(segment_list)):
+        # identify relevant e_field points
+        # small e-field: limited by cable limits
+        # large e-field: original field
+
+        if cable_x_max - cable_x_min:
+            x_position_relative = (cable.x[j] - cable_x_min) / (cable_x_max - cable_x_min)  # number between 0 and 1
+        else:
+            x_position_relative = 0
+        e_field_index_x = x_position_relative * (len(x_axis[x_min_ind:x_max_ind]))  # e_field_index_x in small e-field
+        ix = x_min_ind + int(e_field_index_x)  # index in large e-field
+
+        if cable_y_max - cable_y_min:
+            y_position_relative = (cable.y[j] - cable_y_min) / (cable_y_max - cable_y_min)  # number between 0 and 1
+        else:
+            y_position_relative = 0
+        e_field_index_y = y_position_relative * (len(y_axis[y_min_ind:y_max_ind]))  # e_field_index_y in small e-field
+        iy = y_min_ind + int(e_field_index_y)  # index in large e-field
+
+        if cable_z_max - cable_z_min:
+            z_position_relative = (cable.z[j] - cable_z_min) / (cable_z_max - cable_z_min)  # number between 0 and 1
+        else:
+            z_position_relative = 0
+        e_field_index_z = z_position_relative * (len(z_axis[z_min_ind:z_max_ind]))  # e_field_index_z in small e-field
+        iz = z_min_ind + int(e_field_index_z)  # index in large e-field
+
+        step_vector = cable.get_segment_indices()
+
+        # check if cable starts outside defined e_field
+        if cable.y[j] < min(y_axis) or cable.y[j] > max(y_axis) or cable.x[j] < min(x_axis) or cable.x[j] > max(x_axis) \
+                or cable.z[j] < min(z_axis) or cable.z[j] > max(z_axis):
+            e_average_current = 0
+        else:
+            e_x = e_field.e_x
+            e_y = e_field.e_y
+            e_z = e_field.e_z
+
+            e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[ix - r:ix + r, iy - r:iy + r, iz - r:iz + r].sum() + \
+                                cable.get_unitvector()[int(step_vector[j])][1] * e_y[ix - r:ix + r, iy - r:iy + r, iz - r:iz + r].sum() + \
+                                cable.get_unitvector()[int(step_vector[j])][2] * e_z[ix - r:ix + r, iy - r:iy + r, iz - r:iz + r].sum()
+
+            # this section is new and must be evaluated ----------------------------------------------------------------
+            # if e_x[iy - r:iy + r, ix - r:ix + r].size > 0:
+            #     e_average_current = e_average_current / e_x[iy - r:iy + r, ix - r:ix + r].size
+            # else:
+            #     e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iy, ix] + \
+            #                         cable.get_unitvector()[int(step_vector[j])][1] * e_y[iy, ix] + \
+            #                         cable.get_unitvector()[int(step_vector[j])][2] * e_z[iy, ix]
+            # ----------------------------------------------------------------------------------------------------------
+
+        if j == 0:
+            k = 1
+            offset = e_average_current
+        else:
+            k = j
+
+        e_average_current = e_average_current - offset
+
+        e_field_integral = (1 / 2) * (e_average_current + e_average_prev)
+        displacement = np.sqrt(
+            (cable.x[k] - cable.x[k-1]) ** 2 + (cable.y[k] - cable.y[k-1]) ** 2 + (
+                    cable.z[k] - cable.z[k-1]) ** 2) * 1e-3
+        quasi_pot_current = quasi_pot_prev - (e_field_integral * displacement)
+
+        # quasi_pot_current in mV; displacement given in um
+        #  units? displacement given in um, must me converted with 10e-6 for quasipotentials in V,
+        #  but v_ext from NEURON is in mV !!!!!! --> 1e-3
+
+        e_average_prev = e_average_current
+        quasi_pot_prev = quasi_pot_current
+
+        e_field_along_axon.append(e_average_current)
+        stim_matrix.append(stimulus * quasi_pot_current)
+        quasi_pot_along_axon.append(quasi_pot_current)
+
+    # fig = plt.figure()
+    # plt.imshow(efeld)
+    # plt.colorbar()
+    # plt.plot(e_field_along_axon)
+    # plt.show()
+
+    return stim_matrix, e_field_along_axon, quasi_pot_along_axon
+
+
+def quasi_potentials_with_details(stimulus, e_field_list, cable, interpolation_radius_index):
+    # quasi potential described by Aberra 2019
+    # for(each segment)
+    #   find e_field coordinates within segment +- deltaX +- deltaY +- deltaZ
+    #   e_field_current = interpolate e_field
+    #   quasi_pot_current = quasi_pot_prev - (1/2)(e_field_current + e_field_previous) * displacement #calc displacement from model?
+    #   generate h.vector with (stimulus and e_field as amplitude) and (time_vector)
+    #   play generated vector on segment.e_extracellular
+    segment_list = cable.get_segments()
+
+    stim_matrix = []  # contains a row for each segment where the corresponding e-field is multiplied w. stimulus
+    e_field_along_axon = []
+    quasi_pot_along_axon = []
+    x_part = []
+    y_part = []
+    z_part = []
+    x_component = []
+    y_component = []
+    z_component = []
 
     r = interpolation_radius_index  # interpolation radius
 
@@ -168,6 +296,13 @@ def quasi_potentials(stimulus, e_field_list, cable, interpolation_radius_index):
                                 cable.get_unitvector()[int(step_vector[j])][1] * e_y[iy - r:iy + r, ix - r:ix + r].sum() + \
                                 cable.get_unitvector()[int(step_vector[j])][2] * e_z[iy - r:iy + r, ix - r:ix + r].sum()
 
+            x_part.append(cable.get_unitvector()[int(step_vector[j])][0])
+            y_part.append(cable.get_unitvector()[int(step_vector[j])][1])
+            z_part.append(cable.get_unitvector()[int(step_vector[j])][2])
+            x_component.append(cable.get_unitvector()[int(step_vector[j])][0] * e_x[iy, ix])
+            y_component.append(cable.get_unitvector()[int(step_vector[j])][1] * e_y[iy, ix])
+            z_component.append(cable.get_unitvector()[int(step_vector[j])][1] * e_z[iy, ix])
+
             # this section is new and must be evaluated ----------------------------------------------------------------
             if e_x[iy - r:iy + r, ix - r:ix + r].size > 0:
                 e_average_current = e_average_current / e_x[iy - r:iy + r, ix - r:ix + r].size
@@ -208,7 +343,7 @@ def quasi_potentials(stimulus, e_field_list, cable, interpolation_radius_index):
     # plt.plot(e_field_along_axon)
     # plt.show()
 
-    return stim_matrix, e_field_along_axon, quasi_pot_along_axon
+    return stim_matrix, e_field_along_axon, quasi_pot_along_axon, x_part, y_part, z_part, x_component, y_component, z_component
 
 
 def find_threshold(axon_model, threshold_step, pulse_amp, total_time, e_field, r_interpol, stimulus):
@@ -345,6 +480,7 @@ def filter_efield(e_field):
 
     return filtered_img
 
+
 def e_field_offset(e_field):
     e_x = e_field.e_x
     e_y = e_field.e_y
@@ -354,3 +490,17 @@ def e_field_offset(e_field):
     offset_y = (e_y[0, 0] + e_y[-1, -1]) / 2
     offset_y_2 = (np.mean(e_y[0, :]) + np.mean(e_y[-1, :]) + np.mean(e_y[:, 0]) + np.mean(e_y[0, -1])) / 4
     offset_z = e_z[0, 0] + e_z[-1, -1] / 2
+
+
+def generate_new_start_point(x1, y1, z1, x2, y2, z2, offset):
+    vec_x = x2 - x1
+    vec_y = y2 - y1
+    vec_z = z2 - z1
+
+    length = np.sqrt(vec_x**2 + vec_y**2 + vec_z**2)
+
+    new_x = x1 + offset * (vec_x / length)
+    new_y = y1 + offset * (vec_y / length)
+    new_z = z1 + offset * (vec_z / length)
+
+    return new_x, new_y, new_z

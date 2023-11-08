@@ -41,10 +41,11 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.setupUi(self)
         self.updated_xlims = ()
         self.updated_ylims = ()
-        self.e_field_list = self.load_default_field()
-        self.configure_layer_slider()
-        self.nerve_shape = self.load_default_nerve_shape()
+        self.e_field = self.load_default_field()
+        # self.configure_layer_slider()
+        # self.nerve_shape = self.load_default_nerve_shape()
         self.custom_nerve = None
+        self.nerve_shape = None
         self.scaling = None
 
         self.E_FIELD_ONLY = 1
@@ -95,7 +96,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         parser = file_parser.NewCSTFileParser("", filename)
         parser.parse_file(storage)
         storage.convert_units(1e3)  # convert mm from CST to um used for cable
-        self.e_field_list = storage.generate_e_field_matrix()
+        self.e_field = storage.generate_e_field_matrix()
         # self.state = self.E_FIELD_ONLY
         self.update_e_field_plot()
 
@@ -107,7 +108,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             # TODO: warning
             return
         with open(filename, 'rb') as e:
-            self.e_field_list = pickle.load(e)
+            self.e_field = pickle.load(e)
         # self.state = self.E_FIELD_ONLY
         self.update_e_field_plot()
 
@@ -118,10 +119,10 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             return
         if filename[-4:] == ".pkl":
             with open(filename, 'wb') as f:
-                pickle.dump(self.e_field_list, f)
+                pickle.dump(self.e_field, f)
         else:
             with open(filename + ".pkl", 'wb') as f:
-                pickle.dump(self.e_field_list, f)
+                pickle.dump(self.e_field, f)
 
     def load_cst_nerve_shape(self):
         filename = self.openFileNameDialog("Text Files (*.txt)")
@@ -165,11 +166,11 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
                 pickle.dump(self.nerve_shape, f)
 
     def load_default_field(self):
-        with open(default_e_field_path, 'rb') as e:
-            self.e_field_list = pickle.load(e)
-        fig = self.plot_e_field(self.e_field_list[0])
+        # with open(default_e_field_path, 'rb') as e:
+        #     self.e_field = pickle.load(e)
+        # fig = self.plot_e_field(self.e_field, 0)
+        fig = plt.figure()
         self.add_plot(fig)
-        return self.e_field_list
 
     def load_default_nerve_shape(self):
         with open(default_nerve_shape_path, 'rb') as e:
@@ -180,20 +181,24 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
     # ------------------------------------------------------------------------------------------------------------------
     def get_current_field_plot(self):
         if self.state == self.NERVE_SHAPE_ONLY:
-            return self.plot_nerve_shape(self.nerve_shape)
+            if self.nerve_shape:
+                return self.plot_nerve_shape(self.nerve_shape)
         elif self.state == self.E_FIELD_WITH_NERVE_SHAPE:
             # ToDo: return e_field with nerve shape
-            return self.plot_nerve_shape(self.nerve_shape)
+            if self.nerve_shape:
+                return self.plot_nerve_shape(self.nerve_shape)
+            else:
+                pass
             # return self.e_field_plot_with_nerve_shape(self.e_field_list[15], self.nerve_shape)
         else:
             if self.custom_nerve and self.scaling:
-                return self.plot_2d_field_with_cable(self.e_field_list[15], self.custom_nerve, self.scaling)
+                return self.plot_2d_field_with_cable(self.e_field, 0, self.custom_nerve, self.scaling)
             else:
-                return self.plot_e_field(self.e_field_list[15])
+                return self.plot_e_field(self.e_field, 0)
 
     def change_e_field(self):
         if hasattr(self, 'e_field_list_mod'):
-            self.e_field_list = self.e_field_list_mod
+            print('Attentiaon: e_field_widget->change_e_field')
         self.e_field_changed.emit()
 
     def state_changed(self):
@@ -214,8 +219,10 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             self.e_field_layer_slider.setEnabled(False)
         else:
             self.configure_layer_slider()
-            self.layer_label.setText(str(self.e_field_list[self.e_field_layer_slider.value()].layer))
-            fig = self.plot_e_field(self.e_field_list[self.e_field_layer_slider.value()])
+            print(self.e_field_layer_slider.value())
+            test = self.e_field.z
+            self.layer_label.setText(str(self.e_field.z[self.e_field_layer_slider.value()]))
+            fig = self.plot_e_field(self.e_field, self.e_field_layer_slider.value())
             self.e_field_layer_slider.setEnabled(True)
         self.remove_plot()
         self.add_plot(fig)
@@ -241,10 +248,12 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
     # Create figures for e_field_only, e_field_only_with_custom_nerve, nerve_shape_only, and e_field_with nerve_shape
     # ------------------------------------------------------------------------------------------------------------------
 
-    def plot_e_field(self, e_field):
+    def plot_e_field(self, e_field, layer):
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111)
-        pos=ax1f1.imshow(e_field.e_y, extent=[min(e_field.x)/1e3, max(e_field.x)/1e3, max(e_field.y)/1e3, min(e_field.y)/1e3])
+        pos=ax1f1.imshow(e_field.e_y[:,:,layer], extent=[min(e_field.x)/1e3, max(e_field.x)/1e3, max(e_field.y)/1e3, min(e_field.y)/1e3])
+        ax1f1.set_xlabel('x')
+        ax1f1.set_ylabel('y')
         # self.e_field_fig = fig1
         fig1.colorbar(pos)
 
@@ -266,15 +275,19 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
 
         return fig1
 
-    def plot_2d_field_with_cable(self, e_field, nerve, scale):
-        e_modified = e_field.e_y.copy()
-        xdim = round(e_field.xshape/2)
-        ydim = round(e_field.yshape / 2)
+    def plot_2d_field_with_cable(self, e_field, layer, nerve, scale):
+        e_modified = e_field.e_y[:,:,layer].copy()
+        xdim = round(len(e_field.x)/2)
+        ydim = round(len(e_field.y) / 2)
 
         xrange = nerve.length * np.cos(nerve.angle / 360 * 2 * np.pi)
         yrange = nerve.length * np.sin(nerve.angle / 360 * 2 * np.pi)
 
-        img_mod = cv2.line(e_modified, (int(nerve.x/scale + xdim), int(nerve.y/scale + ydim)), (int(nerve.x/scale + xdim +
+        test_1 = nerve.y/scale
+        test_2 = abs(e_field.y[1] - e_field.y[0])
+        test_3 = int((nerve.y / scale + ydim) / abs(e_field.y[1] - e_field.y[0]))
+
+        img_mod = cv2.line(e_modified, (int(nerve.x/scale + xdim), int( (nerve.y/scale + ydim) / abs(e_field.y[1]/scale - e_field.y[0]/scale) )), (int(nerve.x/scale + xdim +
                           xrange/scale), int(nerve.y/scale + ydim + yrange/scale)), (255, 0, 0), 5)
 
         fig1 = Figure()
@@ -297,23 +310,30 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         # self.cut_e_field()
 
     def configure_layer_slider(self):
-        self.e_field_layer_slider.setRange(0, len(self.e_field_list)-1)
+        if len (self.e_field.e_y[1,1,:])-1 > 1:
+            self.e_field_layer_slider.setRange(0, len(self.e_field.e_y[1,1,:])-1)
+        else:
+            self.e_field_layer_slider.setEnabled(False)
+            # self.e_field_layer_slider.setValue(0)
 
     # ------------------------------------------------------------------------------------------------------------------
     # Modify E-field
     # ------------------------------------------------------------------------------------------------------------------
 
     def smooth_e_field(self):
-        for field in self.e_field_list:
-            e_field = field.e_x
-            filtered_e_field = ndimage.uniform_filter(e_field, size=20)
-            field.e_x = filtered_e_field
-            e_field = field.e_y
-            filtered_e_field = ndimage.uniform_filter(e_field, size=20)
-            field.e_y = filtered_e_field
-            e_field = field.e_z
-            filtered_e_field = ndimage.uniform_filter(e_field, size=20)
-            field.e_z = filtered_e_field
+        e_field = self.e_field.e_y
+        filtered_e_field = ndimage.uniform_filter(e_field, size=20)
+        self.e_field.e_y = filtered_e_field
+        # for field in self.e_field_list:
+        #     e_field = field.e_x
+        #     filtered_e_field = ndimage.uniform_filter(e_field, size=20)
+        #     field.e_x = filtered_e_field
+        #     e_field = field.e_y
+        #     filtered_e_field = ndimage.uniform_filter(e_field, size=20)
+        #     field.e_y = filtered_e_field
+        #     e_field = field.e_z
+        #     filtered_e_field = ndimage.uniform_filter(e_field, size=20)
+        #     field.e_z = filtered_e_field
         self.update_e_field_plot()
 
 class State(QObject):

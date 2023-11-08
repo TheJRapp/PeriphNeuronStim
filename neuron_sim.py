@@ -37,30 +37,33 @@ class NeuronSim:
         raise NotImplementedError()
 
     def apply_potential_to_nerve(self):
+        '''
+        This function was created to flatten the electric field at the end and at the start of the axon
+        '''
         # --------------------------------- Comparing Stefan's pulses --------------------------------------------------
         # self.axon.e_field_along_axon = list(
         #     np.asarray(self.axon.e_field_along_axon) / max(abs(np.asarray(self.axon.e_field_along_axon))))
         # self.axon.potential_along_axon = list(np.cumsum(self.axon.e_field_along_axon))
 
-        start_def = [30500, -45000, -91300]  # [x, y, z]
-        stop_def = [-4700, 14900, -75700]  # [x, y, z]
-
-        start = np.argmin(
-            abs(np.asarray(self.axon.x) - start_def[0]) + abs(np.asarray(self.axon.y) - start_def[1]) + abs(
-                np.asarray(self.axon.z) - start_def[2]))
-        stop = np.argmin(
-            abs(np.asarray(self.axon.x) - stop_def[0]) + abs(np.asarray(self.axon.y) - stop_def[1]) + abs(
-                np.asarray(self.axon.z) - stop_def[2]))
-
-        last_change_start = self.axon.potential_along_axon[start+1] - self.axon.potential_along_axon[start]
-        for i in range(start, 0, -1):
-            self.axon.potential_along_axon[i - 1] = self.axon.potential_along_axon[i] - (0.5 * last_change_start)
-            last_change_start = 0.5 * last_change_start
-
-        last_change_stop = self.axon.potential_along_axon[- (stop+1)] - self.axon.potential_along_axon[-stop]
-        for i in range(stop, 1, -1):
-            self.axon.potential_along_axon[- (i - 1)] = self.axon.potential_along_axon[-i] - (0.5 * last_change_stop)
-            last_change_stop = 0.5 * last_change_stop
+        # start_def = [30500, -45000, -91300]  # [x, y, z]
+        # stop_def = [-4700, 14900, -75700]  # [x, y, z]
+        #
+        # start = np.argmin(
+        #     abs(np.asarray(self.axon.x) - start_def[0]) + abs(np.asarray(self.axon.y) - start_def[1]) + abs(
+        #         np.asarray(self.axon.z) - start_def[2]))
+        # stop = np.argmin(
+        #     abs(np.asarray(self.axon.x) - stop_def[0]) + abs(np.asarray(self.axon.y) - stop_def[1]) + abs(
+        #         np.asarray(self.axon.z) - stop_def[2]))
+        #
+        # last_change_start = self.axon.potential_along_axon[start+1] - self.axon.potential_along_axon[start]
+        # for i in range(start, 0, -1):
+        #     self.axon.potential_along_axon[i - 1] = self.axon.potential_along_axon[i] - (0.5 * last_change_start)
+        #     last_change_start = 0.5 * last_change_start
+        #
+        # last_change_stop = self.axon.potential_along_axon[- (stop+1)] - self.axon.potential_along_axon[-stop]
+        # for i in range(stop, 1, -1):
+        #     self.axon.potential_along_axon[- (i - 1)] = self.axon.potential_along_axon[-i] - (0.5 * last_change_stop)
+        #     last_change_stop = 0.5 * last_change_stop
 
         self.axon.stim_matrix = []
         for pot in self.axon.potential_along_axon:
@@ -97,10 +100,10 @@ class NeuronSim:
 
 class NeuronSimEField(NeuronSim):
 
-    def __init__(self, static_e_field_list, radius, axon_model_parameter, time_axis, stimulus, total_time):
+    def __init__(self, static_e_field, radius, axon_model_parameter, time_axis, stimulus, total_time):
         super(NeuronSimEField, self).__init__(axon_model_parameter, time_axis, stimulus, total_time)
 
-        self.e_field_list = static_e_field_list
+        self.e_field = static_e_field
         self.interpolation_radius_index = radius
 
     def generate_axon(self, mp):
@@ -117,7 +120,7 @@ class NeuronSimEField(NeuronSim):
 
     def quasipot(self):
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(
-            self.stimulus, self.e_field_list, self.axon, self.interpolation_radius_index)
+            self.stimulus, self.e_field, self.axon, self.interpolation_radius_index)
         self.apply_potential_to_nerve()
 
 
