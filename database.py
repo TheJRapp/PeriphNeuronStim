@@ -107,17 +107,23 @@ class NerveShape():
         phase_y = []
         phase_z = []
 
-        for i in range(len(x)):
-            phase_x.append(np.arccos(xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)) if xIm[i] >= 0 else - np.arccos(
-                xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)))
-            phase_y.append(np.arccos(yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)) if yIm[i] >= 0 else - np.arccos(
-                yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)))
-            phase_z.append(np.arccos(zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)) if zIm[i] >= 0 else - np.arccos(
-                zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)))
+        if xRe or xIm:
 
-        self.e_x = np.true_divide(phase_x, np.absolute(phase_x)) * np.sqrt(xRe ** 2 + xIm ** 2)
-        self.e_y = np.true_divide(phase_y, np.absolute(phase_y)) * np.sqrt(yRe ** 2 + yIm ** 2)
-        self.e_z = np.true_divide(phase_z, np.absolute(phase_z)) * np.sqrt(zRe ** 2 + zIm ** 2)
+            for i in range(len(x)):
+                phase_x.append(np.arccos(xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)) if xIm[i] >= 0 else - np.arccos(
+                    xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)))
+                phase_y.append(np.arccos(yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)) if yIm[i] >= 0 else - np.arccos(
+                    yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)))
+                phase_z.append(np.arccos(zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)) if zIm[i] >= 0 else - np.arccos(
+                    zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)))
+
+            self.e_x = np.true_divide(phase_x, np.absolute(phase_x)) * np.sqrt(xRe ** 2 + xIm ** 2)
+            self.e_y = np.true_divide(phase_y, np.absolute(phase_y)) * np.sqrt(yRe ** 2 + yIm ** 2)
+            self.e_z = np.true_divide(phase_z, np.absolute(phase_z)) * np.sqrt(zRe ** 2 + zIm ** 2)
+        else:
+            self.e_x = []
+            self.e_y = []
+            self.e_z = []
 
 class EFieldLayer(): # TODO: Braucht man nicht mehr oder?
 

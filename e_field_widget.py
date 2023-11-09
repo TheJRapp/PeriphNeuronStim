@@ -45,7 +45,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         # self.configure_layer_slider()
         # self.nerve_shape = self.load_default_nerve_shape()
         self.custom_nerve = None
-        self.nerve_shape = None
+        self.nerve_shape = database.NerveShape(0,0,0,[],[],[],[],[],[])
         self.scaling = None
 
         self.E_FIELD_ONLY = 1
@@ -57,7 +57,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.load_e_field_button.clicked.connect(self.load_e_field)
         self.save_e_field_button.clicked.connect(self.save_e_field)
         self.confirm_button.clicked.connect(self.change_e_field)
-        self.load_nerve_shape_button.clicked.connect(self.load_cst_nerve_shape)
+        self.load_nerve_shape_button.clicked.connect(self.load_csv_nerve_shape)
         self.load_saved_nerve_shape_button.clicked.connect(self.load_nerve_shape)
         self.save_nerve_shape_button.clicked.connect(self.save_nerve_shape)
         self.smooth_push_button.clicked.connect(self.smooth_e_field)
@@ -140,13 +140,31 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.nerve_shape_only_radio_button.setEnabled(True)
         self.update_e_field_plot()
 
+    def load_csv_nerve_shape(self):
+        filename = self.openFileNameDialog("Text Files (*.txt)")
+        if not filename:
+            # TODO: warning
+            return
+        storage = database.DataBase()
+        parser = file_parser.CSVNerveShapeParser("", filename)
+        parser.parse_file(storage)
+        # storage.convert_units(1e3)  # convert mm from CST to um used for cable
+        self.nerve_shape = storage.generate_nerve_shape()
+        # self.state = self.NERVE_SHAPE_ONLY
+        # self.nerve_shape_only_radio_button.setChecked(True)
+        self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
+        self.nerve_shape_only_radio_button.setEnabled(True)
+        self.update_e_field_plot()
+
     def load_nerve_shape(self):
         filename = self.openFileNameDialog("Pickle Files (*.pkl)")
         if not filename:
             # TODO: warning
             return
         with open(filename, 'rb') as e:
+            print('Test 1')
             self.nerve_shape = pickle.load(e)
+            print('Test 2')
         # self.state = self.NERVE_SHAPE_ONLY
         # self.nerve_shape_only_radio_button.setChecked(True)
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
@@ -265,7 +283,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
     def plot_nerve_shape(self, nerve_shape):
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111, projection='3d')
-        ax1f1.scatter3D(nerve_shape.x, nerve_shape.y, nerve_shape.z, c=nerve_shape.e_y)
+        ax1f1.scatter3D(nerve_shape.x, nerve_shape.y, nerve_shape.z)
         # ax = plt.gca(projection='3d')
         # ax.scatter3D(nerve_shape.x/1000, nerve_shape.y/1000, nerve_shape.z/1000, c=nerve_shape.e_y)
         # ax.set_xlabel('x in mm')
