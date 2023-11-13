@@ -20,6 +20,7 @@ from e_field_widget import EFieldWidget
 from nerve_widget import NerveWidget
 from threshold_widget import ThresholdWidget
 from monte_carlo_widget import MonteCarloWidgetEField, MonteCarloWidgetNerveShape, MonteCarloWidgetEFieldWithNerveShape
+from plot_widget import PlotWidget
 
 import numpy as np
 import sys
@@ -52,7 +53,10 @@ class Main(QMainWindow, Ui_MainWindow):
 
         # E-Field widget
         self.e_field_widget = EFieldWidget()
-        self.add_plot(plt.figure())
+
+        # Plot widget
+        self.plot_widget = PlotWidget()
+        self.plot_layout.addWidget(self.plot_widget)
 
         # Nerve widget
         self.nerve_widget = NerveWidget()
@@ -106,8 +110,8 @@ class Main(QMainWindow, Ui_MainWindow):
             self.e_field_widget.scaling = scaling
         else:
             self.e_field_widget.custom_nerve = None
-        self.remove_plot()
-        self.add_plot(self.e_field_widget.get_current_field_plot())
+        # self.remove_plot()
+        self.plot_widget.add_figure(self.e_field_widget.get_current_field_plot(), 'current_e_field')
 
     def open_stimulus_widget(self):
         self.stimulus_widget.show()

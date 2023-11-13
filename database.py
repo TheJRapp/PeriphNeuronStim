@@ -68,9 +68,10 @@ class DataBase(dict):
         e_field.x = np.sort(np.asarray(list(set(x))))
         e_field.y = np.sort(np.asarray(list(set(y))))
         e_field.z = np.sort(np.asarray(list(set(z))))
-        e_field.e_x = np.transpose(np.reshape(self.e_x, (len(set(x)), len(set(y)), len(set(z)))), (1,2,0))
-        e_field.e_y = np.transpose(np.reshape(self.e_y, (len(set(x)), len(set(y)), len(set(z)))), (1,2,0))
-        e_field.e_z = np.transpose(np.reshape(self.e_z, (len(set(x)), len(set(y)), len(set(z)))), (1,2,0))
+
+        e_field.e_x = np.transpose(np.reshape(self.e_x, (len(set(z)), len(set(y)), len(set(x)))), (1,2,0))
+        e_field.e_y = np.transpose(np.reshape(self.e_y, (len(set(z)), len(set(y)), len(set(x)))), (1,2,0))
+        e_field.e_z = np.transpose(np.reshape(self.e_z, (len(set(z)), len(set(y)), len(set(x)))), (1,2,0))
 
         # e_field.e_x = np.reshape(self.e_x, (len(set(x)), -1, len(set(z))))
         # e_field.e_y = np.reshape(self.e_y, (len(set(x)), -1, len(set(z))))
