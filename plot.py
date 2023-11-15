@@ -153,3 +153,11 @@ def plot_traces_and_field(name, time_axis, stimulus, model, trace_height=100):
     # plt.tight_layout()
 
     return axes, axes2
+
+def plot_e_field_along_nerve(e_field_along_nerve):
+    fig = plt.Figure()
+    ax1 = fig.add_subplot(111)
+    ax1.plot(e_field_along_nerve)
+    ax1.set_xlabel('Compartments')
+    ax1.set_ylabel('E-field in V/m')
+    return fig

@@ -72,6 +72,9 @@ class DataBase(dict):
         e_field.e_x = np.transpose(np.reshape(self.e_x, (len(set(z)), len(set(y)), len(set(x)))), (1,2,0))
         e_field.e_y = np.transpose(np.reshape(self.e_y, (len(set(z)), len(set(y)), len(set(x)))), (1,2,0))
         e_field.e_z = np.transpose(np.reshape(self.e_z, (len(set(z)), len(set(y)), len(set(x)))), (1,2,0))
+        e_field.e_x[np.isnan(e_field.e_x)] = 0
+        e_field.e_y[np.isnan(e_field.e_y)] = 0
+        e_field.e_z[np.isnan(e_field.e_z)] = 0
 
         # e_field.e_x = np.reshape(self.e_x, (len(set(x)), -1, len(set(z))))
         # e_field.e_y = np.reshape(self.e_y, (len(set(x)), -1, len(set(z))))

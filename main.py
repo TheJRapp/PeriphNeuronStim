@@ -8,6 +8,9 @@ from PyQt5.uic import loadUiType
 from PyQt5 import uic, QtGui, QtWidgets
 
 import matplotlib
+
+import e_field_widget
+
 matplotlib.use('Qt5Agg')
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import (
@@ -21,6 +24,7 @@ from nerve_widget import NerveWidget
 from threshold_widget import ThresholdWidget
 from monte_carlo_widget import MonteCarloWidgetEField, MonteCarloWidgetNerveShape, MonteCarloWidgetEFieldWithNerveShape
 from plot_widget import PlotWidget
+import plot as plot_functions
 
 import numpy as np
 import sys
@@ -108,10 +112,14 @@ class Main(QMainWindow, Ui_MainWindow):
             selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
             self.e_field_widget.custom_nerve = selected_nerve
             self.e_field_widget.scaling = scaling
+            if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
+                self.plot_widget.add_figure(self.e_field_widget.get_e_field_with_custom_nerve_plot(), 'nerve')
         else:
             self.e_field_widget.custom_nerve = None
-        # self.remove_plot()
-        self.plot_widget.add_figure(self.e_field_widget.get_current_field_plot(), 'current_e_field')
+
+        if self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
+            self.plot_widget.add_figure(self.e_field_widget.get_nerve_shape_plot(), 'nerve')
+        self.plot_widget.add_figure(self.e_field_widget.get_current_e_field_plot(), 'current_e_field')
 
     def open_stimulus_widget(self):
         self.stimulus_widget.show()
@@ -150,11 +158,9 @@ class Main(QMainWindow, Ui_MainWindow):
                                                           self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                           selected_nerve.axon_infos_list[selected_index.row()],
                                                           self.time_axis, self.stimulus, self.total_time)
-            # fig20 = plt.figure(2)
-            # ax20 = fig20.gca()
-            # ax20 = plt.plot(neuron_sim.mdf())
 
         neuron_sim.quasipot()
+        self.plot_widget.add_figure(plot_functions.plot_e_field_along_nerve(neuron_sim.axon.e_field_along_axon), 'E_field_along_nerve')
         # plt.figure()
         # ax = plt.gca(projection='3d')
         # p = ax.scatter3D(neuron_sim.axon.x / 1000, neuron_sim.axon.y / 1000, neuron_sim.axon.z / 1000, c=neuron_sim.axon.e_field_along_axon)

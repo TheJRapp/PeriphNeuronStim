@@ -197,22 +197,18 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
     # ------------------------------------------------------------------------------------------------------------------
     # Update main.py
     # ------------------------------------------------------------------------------------------------------------------
-    def get_current_field_plot(self):
-        if self.state == self.NERVE_SHAPE_ONLY:
-            if self.nerve_shape:
-                return self.plot_nerve_shape(self.nerve_shape)
-        elif self.state == self.E_FIELD_WITH_NERVE_SHAPE:
-            # ToDo: return e_field with nerve shape
-            if self.nerve_shape:
-                return self.plot_nerve_shape(self.nerve_shape)
-            else:
-                pass
-            # return self.e_field_plot_with_nerve_shape(self.e_field_list[15], self.nerve_shape)
+    def get_current_e_field_plot(self):
+        return self.plot_e_field(self.e_field, self.e_field_layer_slider.value())
+
+    def get_e_field_with_custom_nerve_plot(self):
+        if self.custom_nerve:
+            return self.plot_2d_field_with_cable(self.e_field, self.e_field_layer_slider.value(), self.custom_nerve, self.scaling)
         else:
-            if self.custom_nerve and self.scaling:
-                return self.plot_2d_field_with_cable(self.e_field, 0, self.custom_nerve, self.scaling)
-            else:
-                return self.plot_e_field(self.e_field, 0)
+            return self.plot_e_field(self.e_field, self.e_field_layer_slider.value())
+
+    def get_nerve_shape_plot(self):
+        return self.plot_nerve_shape(self.nerve_shape)
+
 
     def change_e_field(self):
         if hasattr(self, 'e_field_list_mod'):
@@ -237,8 +233,6 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             self.e_field_layer_slider.setEnabled(False)
         else:
             self.configure_layer_slider()
-            print(self.e_field_layer_slider.value())
-            test = self.e_field.z
             self.layer_label.setText(str(self.e_field.z[self.e_field_layer_slider.value()]))
             fig = self.plot_e_field(self.e_field, self.e_field_layer_slider.value())
             self.e_field_layer_slider.setEnabled(True)

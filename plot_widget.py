@@ -31,6 +31,7 @@ class ShowPlotWidget(QWidget_Show_Plot, Ui_ShowPlotWidget):
 
     def remove_plot(self, ):
         self.show_plot_layout.removeWidget(self.canvas)
+        plt.close(self.canvas.figure)
         self.canvas.close()
         self.show_plot_layout.removeWidget(self.toolbar)
         self.toolbar.close()
