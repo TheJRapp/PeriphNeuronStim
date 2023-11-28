@@ -163,17 +163,17 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
             e_y = e_field.e_y
             e_z = e_field.e_z
 
-            e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[ix - r:ix + r, iy - r:iy + r, iz - r:iz + r].sum() + \
-                                cable.get_unitvector()[int(step_vector[j])][1] * e_y[ix - r:ix + r, iy - r:iy + r, iz - r:iz + r].sum() + \
-                                cable.get_unitvector()[int(step_vector[j])][2] * e_z[ix - r:ix + r, iy - r:iy + r, iz - r:iz + r].sum()
+            e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum() + \
+                                cable.get_unitvector()[int(step_vector[j])][1] * e_y[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum() + \
+                                cable.get_unitvector()[int(step_vector[j])][2] * e_z[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum()
 
             # this section is new and must be evaluated ----------------------------------------------------------------
-            # if e_x[iy - r:iy + r, ix - r:ix + r].size > 0:
-            #     e_average_current = e_average_current / e_x[iy - r:iy + r, ix - r:ix + r].size
-            # else:
-            #     e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iy, ix] + \
-            #                         cable.get_unitvector()[int(step_vector[j])][1] * e_y[iy, ix] + \
-            #                         cable.get_unitvector()[int(step_vector[j])][2] * e_z[iy, ix]
+            if e_x[iy - r:iy + r, ix - r:ix + r].size > 0:
+                e_average_current = e_average_current / e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].size
+            else:
+                e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r] + \
+                                    cable.get_unitvector()[int(step_vector[j])][1] * e_y[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r] + \
+                                    cable.get_unitvector()[int(step_vector[j])][2] * e_z[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r]
             # ----------------------------------------------------------------------------------------------------------
 
         if j == 0:
