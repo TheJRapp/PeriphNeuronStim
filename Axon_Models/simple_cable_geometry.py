@@ -108,7 +108,8 @@ class BendedAxon(simple_axon.Axon):
         step_vector = np.zeros(len(self.get_segments()))    # to create indices/step vector for unitvector: step_vector over number of segments
         s = 1                                               # iterate so that step_vector=(0, 0, 0, ..., 1, 1, 1, ...., 2, 2, 2, ...); length of each sequence of numbers corresponds to length of axon node_internode_pairs*2
         while s < self.axons_number:                        # -> vector shows index (=corresponding axon) for every segment
-            step_vector[self.node_internode_pairs[s-1] * 2 * s:] += 1
+            #old: step_vector[self.node_internode_pairs[s-1] * 2 * s:] += 1
+            step_vector[sum(self.node_internode_pairs[0:s]) * 2 : ] += 1
             s = s + 1
         return step_vector
 
