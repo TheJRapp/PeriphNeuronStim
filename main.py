@@ -43,7 +43,7 @@ import pickle
 
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
-interpolation_radius_index = 2
+interpolation_radius_index = 0
 nerve_shape_step_size = 2
 
 
@@ -85,10 +85,10 @@ class Main(QMainWindow, Ui_MainWindow):
         self.threshold_config_button.clicked.connect(self.open_threshold_widget)
         self.threshold_search_button.clicked.connect(self.threshold_search)
 
-        self.e_field_along_axon_button.clicked.connect(self.checkin_nerve)
-        self.simulation_button.clicked.connect(self.start_simulation)
+        self.e_field_along_axon_button.clicked.connect(self.calculate_field_along_axon)
+        self.simulation_button.clicked.connect(self.single_simulation)
 
-        self.mc_button.clicked.connect(self.analyze_field_contributions)
+        self.mc_button.clicked.connect(self.af_nerve_position_nerve_shape)
 
     def add_plot(self, fig):
         self.canvas = FigureCanvas(fig)
@@ -130,7 +130,22 @@ class Main(QMainWindow, Ui_MainWindow):
         self.time_axis = self.stimulus_widget.time_axis
         self.total_time = self.stimulus_widget.total_time
 
-    def checkin_nerve(self):
+    def get_neuron_sim(self, axon):
+        neuron_sim = None
+        if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
+            neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field, interpolation_radius_index,
+                                            axon, self.time_axis, self.stimulus, self.total_time)
+        elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
+            neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                axon, self.time_axis, self.stimulus, self.total_time)
+        elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
+            neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field,
+                                                          interpolation_radius_index,
+                                                          self.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                          axon, self.time_axis, self.stimulus, self.total_time)
+        return neuron_sim
+
+    def calculate_field_along_axon(self):
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
@@ -143,21 +158,7 @@ class Main(QMainWindow, Ui_MainWindow):
         if hasattr(self, 'field_axon_canvas'):
             self.potential_layout.removeWidget(self.field_axon_canvas)
             self.field_axon_canvas.close()
-        if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-            neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field, interpolation_radius_index,
-                                            selected_nerve.axon_infos_list[selected_index.row()], self.time_axis,
-                                            self.stimulus, self.total_time)
-        elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
-            neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                selected_nerve.axon_infos_list[selected_index.row()],
-                                                self.time_axis, self.stimulus,
-                                                self.total_time)
-        elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-            # self.e_field_widget.nerve_shape.y = self.e_field_widget.nerve_shape.y + 50000
-            neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field, interpolation_radius_index,
-                                                          self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                          selected_nerve.axon_infos_list[selected_index.row()],
-                                                          self.time_axis, self.stimulus, self.total_time)
+        neuron_sim = self.get_neuron_sim(selected_nerve.axon_infos_list[selected_index.row()])
 
         neuron_sim.quasipot()
         self.plot_widget.add_figure(plot_functions.plot_e_field_along_nerve(neuron_sim.axon.e_field_along_axon), 'E_field_along_nerve')
@@ -183,24 +184,14 @@ class Main(QMainWindow, Ui_MainWindow):
         self.potential_layout.addWidget(self.field_axon_canvas)
         self.field_axon_canvas.draw()
 
-    def start_simulation(self):
+    def single_simulation(self):
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
         if not selected_nerve.axon_infos_list:
             return
         for axon in selected_nerve.axon_infos_list:
-            if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-                neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field, interpolation_radius_index,
-                                                axon, self.time_axis, self.stimulus, self.total_time)
-            elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
-                neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                    axon, self.time_axis, self.stimulus, self.total_time)
-            elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-                neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field,
-                                                              interpolation_radius_index,
-                                                              self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                              axon, self.time_axis, self.stimulus, self.total_time)
+            neuron_sim = self.get_neuron_sim(axon)
             neuron_sim.quasipot()
             neuron_sim.simple_simulation()
             neuron_sim.plot_simulation()
@@ -221,26 +212,102 @@ class Main(QMainWindow, Ui_MainWindow):
                 if z not in export_dict:
                     export_dict[z] = []
                 self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z + z
-                if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-                    neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field, interpolation_radius_index,
-                                                    axon, self.time_axis, self.stimulus, self.total_time)
-                elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
-                    neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                        axon, self.time_axis, self.stimulus, self.total_time)
-                elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-                    neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field,
-                                                                  interpolation_radius_index,
-                                                                  self.e_field_widget.nerve_shape, nerve_shape_step_size,
-                                                                  axon, self.time_axis, self.stimulus, self.total_time)
+                neuron_sim = self.get_neuron_sim(axon)
                 neuron_sim.quasipot()
                 threshold = neuron_sim.threshold_simulation(self.threshold_widget)
                 self.threshold_label.setText(str(threshold))
                 current = 6000 * threshold
+                print('Threshold coil current: ', current)
                 self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z - z
                 export_dict[z].append(current)
         df = pd.DataFrame(export_dict)
         today = date.today()
-        df.to_csv(str(today) + 'phrenic_fo8_diam_vs_z_offset_x_8_RECT.csv', index=False, header=True)
+        df.to_csv(str(today) + 'phrenic_rc_z_offset.csv', index=False, header=True)
+        print('Finished!')
+
+    def af_nerve_position_nerve_shape(self):
+        '''
+        Description:
+        - E field with e_field and nerve shape
+        - Varies nerve position
+        - Calculate quasipotenital
+        - Write files
+            - e_field_along_axon
+            - potential along axon
+        Required:
+        Single axon, single e_field
+        What is done here:
+        Different postions of the axon
+        Output:
+        Dict with activation function for each offset
+        '''
+        if not self.nerve_widget.nerve_dict:
+            return
+        selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
+        if not selected_nerve.axon_infos_list:
+            return
+        axon = selected_nerve.axon_infos_list[0]
+        # Dict -----------------------------------------------------------------
+        export_dict_efield = {}
+        export_dict_potential = {}
+        x_offset = np.arange(-190000, 190000, 400)
+        for x in x_offset:
+            self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z + z
+            neuron_sim = self.get_neuron_sim(axon)
+            neuron_sim.quasipot()
+            export_dict_efield[str(x)] = neuron_sim.axon.e_field_along_axon
+            export_dict_potential[str(x)] = neuron_sim.axon.potential_along_axon
+            self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z + z
+        path = 'Y:/Sonstiges/Stimit AG/'
+        project = 'phrenic'
+        file_name = '001'
+        df = pd.DataFrame(export_dict_efield)
+        df.to_csv(path + project + '_' + file_name + 'e_field_'+ '.csv', index=False, header=True)
+        df = pd.DataFrame(export_dict_potential)
+        df.to_csv(path + project + '_' + file_name + 'potential_'+ '.csv', index=False, header=True)
+        print('Finished!')
+
+    def af_nerve_position_custom_nerve(self):
+        '''
+        Description:
+        - E field with custom nerve shape
+        - Varies nerve position
+        - Calculate quasipotenital
+        - Write files
+            - e_field_along_axon
+            - potential along axon
+        Required:
+        Single axon, single e_field
+        What is done here:
+        Different postions of the axon
+        Output:
+        Dict with activation function for each offset
+        '''
+        if not self.nerve_widget.nerve_dict:
+            return
+        selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
+        if not selected_nerve.axon_infos_list:
+            return
+        axon = selected_nerve.axon_infos_list[0]
+        # Dict -----------------------------------------------------------------
+        export_dict_efield = {}
+        export_dict_potential = {}
+        x_offset = np.arange(-190000, 190000, 400)
+        for x in x_offset:
+            axon.x = axon.x + x
+            neuron_sim = self.get_neuron_sim(axon)
+            neuron_sim.quasipot()
+            export_dict_efield[str(x)] = neuron_sim.axon.e_field_along_axon
+            export_dict_potential[str(x)] = neuron_sim.axon.potential_along_axon
+            axon.x = axon.x - x
+        today = date.today()
+        path = 'Y:/Sonstiges/Stimit AG/'
+        project = 'phrenic'
+        file_name = '001'
+        df = pd.DataFrame(export_dict_efield)
+        df.to_csv(path + project + '_' + file_name + 'e_field_'+ '.csv', index=False, header=True)
+        df = pd.DataFrame(export_dict_potential)
+        df.to_csv(path + project + '_' + file_name + 'potential_'+ '.csv', index=False, header=True)
         print('Finished!')
 
     def analyze_field_contributions(self):

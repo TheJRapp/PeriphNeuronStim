@@ -162,9 +162,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             # TODO: warning
             return
         with open(filename, 'rb') as e:
-            print('Test 1')
             self.nerve_shape = pickle.load(e)
-            print('Test 2')
         # self.state = self.NERVE_SHAPE_ONLY
         # self.nerve_shape_only_radio_button.setChecked(True)
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
@@ -232,10 +230,12 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             fig = self.plot_nerve_shape(self.nerve_shape)
             self.e_field_layer_slider.setEnabled(False)
         else:
-            self.configure_layer_slider()
-            self.layer_label.setText(str(self.e_field.z[self.e_field_layer_slider.value()]))
-            fig = self.plot_e_field(self.e_field, self.e_field_layer_slider.value())
-            self.e_field_layer_slider.setEnabled(True)
+            if self.configure_layer_slider():
+                self.layer_label.setText(str(self.e_field.z[self.e_field_layer_slider.value()]))
+                fig = self.plot_e_field(self.e_field, self.e_field_layer_slider.value())
+                self.e_field_layer_slider.setEnabled(True)
+            else:
+                fig = self.plot_e_field(self.e_field, 0)
         self.remove_plot()
         self.add_plot(fig)
 
@@ -322,11 +322,12 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         # self.cut_e_field()
 
     def configure_layer_slider(self):
-        if len (self.e_field.e_y[1,1,:])-1 > 1:
+        if (min(self.e_field.e_y.shape)-1) > 1:
             self.e_field_layer_slider.setRange(0, len(self.e_field.e_y[1,1,:])-1)
+            return True
         else:
             self.e_field_layer_slider.setEnabled(False)
-            # self.e_field_layer_slider.setValue(0)
+            return False
 
     # ------------------------------------------------------------------------------------------------------------------
     # Modify E-field

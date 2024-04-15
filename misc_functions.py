@@ -155,25 +155,30 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
         step_vector = cable.get_segment_indices()
 
         # check if cable starts outside defined e_field
-        if cable.y[j] < min(y_axis) or cable.y[j] > max(y_axis) or cable.x[j] < min(x_axis) or cable.x[j] > max(x_axis) \
-                or cable.z[j] < min(z_axis) or cable.z[j] > max(z_axis):
+        if round(cable.y[j]) < min(y_axis) or round(cable.y[j]) > max(y_axis) or round(cable.x[j]) < min(x_axis) or round(cable.x[j]) > max(x_axis) \
+                or round(cable.z[j]) < min(z_axis) or round(cable.z[j]) > max(z_axis):
             e_average_current = 0
+
         else:
             e_x = e_field.e_x
             e_y = e_field.e_y
             e_z = e_field.e_z
 
-            e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum() + \
-                                cable.get_unitvector()[int(step_vector[j])][1] * e_y[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum() + \
-                                cable.get_unitvector()[int(step_vector[j])][2] * e_z[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum()
-
-            # this section is new and must be evaluated ----------------------------------------------------------------
-            if e_x[iy - r:iy + r, ix - r:ix + r].size > 0:
-                e_average_current = e_average_current / e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].size
-            else:
-                e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r] + \
-                                    cable.get_unitvector()[int(step_vector[j])][1] * e_y[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r] + \
-                                    cable.get_unitvector()[int(step_vector[j])][2] * e_z[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r]
+            e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iy, ix, iz] + \
+                                cable.get_unitvector()[int(step_vector[j])][1] * e_y[iy, ix, iz] + \
+                                cable.get_unitvector()[int(step_vector[j])][2] * e_z[iy, ix, iz]
+            # using interpolation radius: (just possible when e_field is not a single plane)
+            # e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum() + \
+            #                     cable.get_unitvector()[int(step_vector[j])][1] * e_y[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum() + \
+            #                     cable.get_unitvector()[int(step_vector[j])][2] * e_z[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum()
+            #
+            # # this section is new and must be evaluated ----------------------------------------------------------------
+            # if e_x[iy - r:iy + r, ix - r:ix + r].size > 0:
+            #     e_average_current = e_average_current / e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].size
+            # else:
+            #     e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r] + \
+            #                         cable.get_unitvector()[int(step_vector[j])][1] * e_y[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r] + \
+            #                         cable.get_unitvector()[int(step_vector[j])][2] * e_z[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r]
             # ----------------------------------------------------------------------------------------------------------
 
         if j == 0:
@@ -202,8 +207,6 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
         quasi_pot_along_axon.append(quasi_pot_current)
 
     # fig = plt.figure()
-    # plt.imshow(efeld)
-    # plt.colorbar()
     # plt.plot(e_field_along_axon)
     # plt.show()
 

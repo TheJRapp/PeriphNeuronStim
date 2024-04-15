@@ -51,6 +51,9 @@
    </item>
    <item row="3" column="1">
     <widget class="QDoubleSpinBox" name="steps_fine_spin_box">
+     <property name="decimals">
+      <number>3</number>
+     </property>
      <property name="value">
       <double>0.020000000000000</double>
      </property>
@@ -80,7 +83,7 @@
    <item row="1" column="1">
     <widget class="QDoubleSpinBox" name="start_amp_spin_box">
      <property name="decimals">
-      <number>4</number>
+      <number>5</number>
      </property>
      <property name="value">
       <double>0.100000000000000</double>
@@ -104,7 +107,7 @@
    <item row="4" column="1">
     <widget class="QDoubleSpinBox" name="steps_precission_spin_box">
      <property name="decimals">
-      <number>3</number>
+      <number>5</number>
      </property>
      <property name="value">
       <double>0.002000000000000</double>

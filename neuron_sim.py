@@ -41,36 +41,29 @@ class NeuronSim:
         This function was created to flatten the electric field at the end and at the start of the axon
         '''
         # --------------------------------- Comparing Stefan's pulses --------------------------------------------------
-        # self.axon.e_field_along_axon = list(
-        #     np.asarray(self.axon.e_field_along_axon) / max(abs(np.asarray(self.axon.e_field_along_axon))))
-        # self.axon.potential_along_axon = list(np.cumsum(self.axon.e_field_along_axon))
+        plt.plot(self.axon.e_field_along_axon)
 
-        # start_def = [30500, -45000, -91300]  # [x, y, z]
-        # stop_def = [-4700, 14900, -75700]  # [x, y, z]
-        #
-        # start = np.argmin(
-        #     abs(np.asarray(self.axon.x) - start_def[0]) + abs(np.asarray(self.axon.y) - start_def[1]) + abs(
-        #         np.asarray(self.axon.z) - start_def[2]))
-        # stop = np.argmin(
-        #     abs(np.asarray(self.axon.x) - stop_def[0]) + abs(np.asarray(self.axon.y) - stop_def[1]) + abs(
-        #         np.asarray(self.axon.z) - stop_def[2]))
-        #
-        # last_change_start = self.axon.potential_along_axon[start+1] - self.axon.potential_along_axon[start]
-        # for i in range(start, 0, -1):
-        #     self.axon.potential_along_axon[i - 1] = self.axon.potential_along_axon[i] - (0.5 * last_change_start)
-        #     last_change_start = 0.5 * last_change_start
-        #
-        # last_change_stop = self.axon.potential_along_axon[- (stop+1)] - self.axon.potential_along_axon[-stop]
-        # for i in range(stop, 1, -1):
-        #     self.axon.potential_along_axon[- (i - 1)] = self.axon.potential_along_axon[-i] - (0.5 * last_change_stop)
-        #     last_change_stop = 0.5 * last_change_stop
+        # select segment which is closest to start point / stop point
+        start = 100  # number of segment from start
+        stop = 100  # number of segment from the end
+
+        # Stepwise decrease potential along axon
+        last_change_start = self.axon.potential_along_axon[start+1] - self.axon.potential_along_axon[start]
+        for i in range(start, 0, -1):
+            self.axon.potential_along_axon[i - 1] = self.axon.potential_along_axon[i] - (0.8 * last_change_start)
+            last_change_start = 0.8 * last_change_start
+
+        last_change_stop = self.axon.potential_along_axon[- (stop+1)] - self.axon.potential_along_axon[-stop]
+        for i in range(stop, 1, -1):
+            self.axon.potential_along_axon[- (i - 1)] = self.axon.potential_along_axon[-i] - (0.8 * last_change_stop)
+            last_change_stop = 0.8 * last_change_stop
 
         self.axon.stim_matrix = []
         for pot in self.axon.potential_along_axon:
             self.axon.stim_matrix.append(self.stimulus * pot)
 
-        # plt.plot(self.axon.potential_along_axon)
-        # plt.show()
+        plt.plot(self.axon.potential_along_axon)
+        plt.show()
 
         mf.play_stimulus_matrix(self.axon, self.time_axis)
 

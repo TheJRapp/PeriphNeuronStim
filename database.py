@@ -69,9 +69,16 @@ class DataBase(dict):
         e_field.y = np.sort(np.asarray(list(set(y))))
         e_field.z = np.sort(np.asarray(list(set(z))))
 
-        e_field.e_x = np.transpose(np.reshape(self.e_x, (len(set(z)), len(set(y)), len(set(x)))), (0, 1, 2))    # (0,1,2) to make sure Efield array arranged as [z,y,x] form
-        e_field.e_y = np.transpose(np.reshape(self.e_y, (len(set(z)), len(set(y)), len(set(x)))), (0, 1, 2))
-        e_field.e_z = np.transpose(np.reshape(self.e_z, (len(set(z)), len(set(y)), len(set(x)))), (0, 1, 2))
+        # This is correct reshaping:
+        # the text file must have three colums, first x must vary, second y and thrid z
+        # if
+        e_field.e_x = np.reshape(self.e_x, (len(set(z)), len(set(y)), len(set(x))))    # (0,1,2) to make sure Efield array arranged as [z,y,x] form
+        e_field.e_y = np.reshape(self.e_y, (len(set(z)), len(set(y)), len(set(x))))
+        e_field.e_z = np.reshape(self.e_z, (len(set(z)), len(set(y)), len(set(x))))
+        e_field.e_x = np.transpose(e_field.e_x, (1, 2, 0))
+        e_field.e_y = np.transpose(e_field.e_y, (1, 2, 0))
+        e_field.e_z = np.transpose(e_field.e_z, (1, 2, 0))
+
         e_field.e_x[np.isnan(e_field.e_x)] = 0
         e_field.e_y[np.isnan(e_field.e_y)] = 0
         e_field.e_z[np.isnan(e_field.e_z)] = 0

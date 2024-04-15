@@ -58,26 +58,29 @@ class ThresholdWidget(QWidget_Threshold, Ui_ThresholdWidget):
     def rough_to_fine_search(self, axon_model, total_time, time_axis, stimulus):
         axon_model_internal = copy.copy(axon_model)
         # axon_model MUST INCLUDE quasi_pot_list
-        start_amp = 0.1
+        start_amp = self.start_amp
         event = 2  # 1 = propagation in one direction, 2 = propagation in both directions,
 
         # rough search
-        event_result, pulse_amp = self.find_threshold(axon_model_internal, start_amp, 0.2, total_time, time_axis, stimulus,
-                                                 event)
-        while event_result == 0:  # make shure start_amp is not too high
+        event_result, pulse_amp = self.find_threshold(axon_model_internal, start_amp, self.rough_step_size, total_time,
+                                                      time_axis, stimulus, event)
+        pulse_amp = pulse_amp - self.rough_step_size
+        # search start amp
+        while event_result == 2:
             start_amp = start_amp / 2
-            event_result, pulse_amp = self.find_threshold(axon_model_internal, start_amp, 0.2, total_time, time_axis,
-                                                     stimulus, event)
+            event_result, new_start_amp = self.find_threshold(axon_model_internal, start_amp, self.rough_step_size,
+                                                          total_time, time_axis, stimulus, event=0)
+            pulse_amp = new_start_amp
         if event_result == 3:
             return 0
 
         # finer search
-        event, pulse_amp = self.find_threshold(axon_model_internal, pulse_amp - 0.2, 0.02, total_time, time_axis, stimulus,
-                                          event)
+        event, pulse_amp = self.find_threshold(axon_model_internal, pulse_amp,
+                                               self.fine_step_size, total_time, time_axis, stimulus, event)
 
         # even finer search
-        event, pulse_amp = self.find_threshold(axon_model_internal, pulse_amp - 0.02, 0.002, total_time, time_axis, stimulus,
-                                          event)
+        event, pulse_amp = self.find_threshold(axon_model_internal, pulse_amp - self.fine_step_size,
+                                               self.precission_step_size, total_time, time_axis, stimulus, event)
 
         return pulse_amp
 
@@ -99,16 +102,17 @@ class ThresholdWidget(QWidget_Threshold, Ui_ThresholdWidget):
             this_event = self.event_detector(axon_model.potential_vector_list)
 
             if first:
-                if this_event is not 0:
-                    return 0, pulse_amp
+                if this_event != 0:
+                    return 2, pulse_amp
             first = False
 
             if this_event == event:
                 return event, pulse_amp
             pulse_amp += step
             count += 1
-            print(count)
-            print(pulse_amp)
+            print('Count: ', count)
+            print('Pulse amp: ', pulse_amp)
+            print('Event: ', event)
             if count > 50:
                 return 3, 0
 
@@ -122,6 +126,7 @@ class ThresholdWidget(QWidget_Threshold, Ui_ThresholdWidget):
             if max(potential_vector_list[0]) >= self.ap_threshold and max(potential_vector_list[-1]) >= self.ap_threshold:
                 return 2  # propagation in both directions
         else:
+            print('Problem occured')
             return 3  # something is not ok
 
 
