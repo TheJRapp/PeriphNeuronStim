@@ -12,7 +12,6 @@ import sys
 sys.path.insert(0, "C:/nrn/lib/python")
 import neuron
 
-
 class NeuronSim:
 
     def __init__(self, axon_model_parameter, time_axis, stimulus, total_time):
@@ -41,7 +40,6 @@ class NeuronSim:
         This function was created to flatten the electric field at the end and at the start of the axon
         '''
         # --------------------------------- Comparing Stefan's pulses --------------------------------------------------
-        plt.plot(self.axon.e_field_along_axon)
 
         # select segment which is closest to start point / stop point
         start = 100  # number of segment from start
@@ -61,9 +59,6 @@ class NeuronSim:
         self.axon.stim_matrix = []
         for pot in self.axon.potential_along_axon:
             self.axon.stim_matrix.append(self.stimulus * pot)
-
-        plt.plot(self.axon.potential_along_axon)
-        plt.show()
 
         mf.play_stimulus_matrix(self.axon, self.time_axis)
 
@@ -101,11 +96,11 @@ class NeuronSimEField(NeuronSim):
 
     def generate_axon(self, mp):
         if mp.axon_type == 'HH':
-            axon = self.hh(mp.diameter, mp.x, mp.y, mp.z, mp.angle, mp.length)
+            axon = self.hh(mp.diameter, mp.nseg_node, mp.x, mp.y, mp.z, mp.angle, mp.length)
         elif mp.axon_type == 'RMG':
             axon = self.mrg(mp.diameter, mp.x, mp.y, mp.z, mp.angle, mp.length)
         else:
-            axon = self.simple(mp.diameter, mp.x, mp.y, mp.z, mp.angle, mp.length)
+            axon = self.simple(mp.diameter, mp.nseg_node, mp.nseg_internode, mp.x, mp.y, mp.z, mp.angle, mp.length)
 
         mf.record_membrane_potentials(axon, 0.5)
 
@@ -117,9 +112,7 @@ class NeuronSimEField(NeuronSim):
         self.apply_potential_to_nerve()
 
 
-    def hh(self, diameter, x, y, z, angle, length):
-        segments = 1
-
+    def hh(self, diameter, nseg_node, x, y, z, angle, length):
         node_diameter = diameter  # um (?)
         node_length = 82
         axons_number = 1
@@ -129,14 +122,13 @@ class NeuronSimEField(NeuronSim):
         theta = [90 / 360 * 2 * np.pi, 90 / 360 * 2 * np.pi]
         # phi = [np.pi / 2, np.pi / 2]
 
-        hh_model = hh_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, segments, node_diameter,
+        hh_model = hh_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, nseg_node, node_diameter,
                                                 node_length,
                                                 number_of_nodes_per_unit_vector)
 
         return hh_model
 
-    def simple(self, diameter, x, y, z, angle, length):
-        segments = 1
+    def simple(self, diameter, nseg_node, nseg_internode, x, y, z, angle, length):
         node_internode_pairs_per_unit_vector = []
         node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis
         internode_diameter = diameter
@@ -152,7 +144,7 @@ class NeuronSimEField(NeuronSim):
         theta = [90 / 360 * 2 * np.pi, 90 / 360 * 2 * np.pi]
         # phi = [np.pi / 2, np.pi / 2]
 
-        simple_model = simple_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, segments,
+        simple_model = simple_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, nseg_node, nseg_internode,
                                                         internode_diameter,
                                                         node_diameter, node_length, internode_length,
                                                         node_internode_pairs_per_unit_vector)
@@ -191,7 +183,7 @@ class NeuronSimNerveShape(NeuronSim):
         elif mp.axon_type == 'RMG':
             axon = self.mrg(mp.diameter, self.nerve_shape)
         else:
-            axon = simple_from_nerve_shape(mp.diameter, self.nerve_shape, self.step_size)
+            axon = simple_from_nerve_shape(mp.diameter, mp.nseg_node, mp.nseg_internode, self.nerve_shape, self.step_size)
 
         mf.record_membrane_potentials(axon, 0.5)
 
@@ -278,7 +270,7 @@ class NeuronSimEFieldWithNerveShape(NeuronSim):
         elif mp.axon_type == 'RMG':
             axon = self.mrg(mp.diameter, self.nerve_shape)
         else:
-            axon = simple_from_nerve_shape(mp.diameter, self.nerve_shape, self.step_size)
+            axon = simple_from_nerve_shape(mp.diameter, mp.nseg_node, mp.nseg_internode, self.nerve_shape, self.step_size)
 
         mf.record_membrane_potentials(axon, 0.5)
 
@@ -294,7 +286,7 @@ class NeuronSimEFieldWithNerveShape(NeuronSim):
 
 
 class AxonInformation:
-    def __init__(self, start_x, start_y, start_z, angle, length, diameter, axon_type):
+    def __init__(self, start_x, start_y, start_z, angle, length, diameter, axon_type, nseg_node, nseg_internode):
         super(AxonInformation, self).__init__()
         self.x = start_x
         self.y = start_y
@@ -303,6 +295,8 @@ class AxonInformation:
         self.length = length
         self.diameter = diameter
         self.axon_type = axon_type
+        self.nseg_node = nseg_node
+        self.nseg_internode = nseg_internode
 
 
 def simple_from_nerve_shape_old(diameter, nerve_shape, step_size):
@@ -346,8 +340,7 @@ def simple_from_nerve_shape_old(diameter, nerve_shape, step_size):
     return simple_model
 
 
-def simple_from_nerve_shape(diameter, nerve_shape, step_size):
-    segments = 1
+def simple_from_nerve_shape(diameter, nseg_node, nseg_internode, nerve_shape, step_size):
     node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis
     internode_diameter = diameter
     node_length = 1
@@ -394,7 +387,7 @@ def simple_from_nerve_shape(diameter, nerve_shape, step_size):
             last_y = nerve_shape.y[i+step_size]
             last_z = nerve_shape.z[i+step_size]
 
-    simple_model = simple_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, segments,
+    simple_model = simple_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, nseg_node, nseg_internode,
                                                     internode_diameter,
                                                     node_diameter, node_length, internode_length,
                                                     node_internode_pairs)

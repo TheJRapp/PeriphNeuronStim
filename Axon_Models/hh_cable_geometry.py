@@ -4,8 +4,8 @@ from Axon_Models import hh_axon
 
 class TiltedAxon(hh_axon.Axon):
 
-    def __init__(self, theta, phi, x=500, y=500, z=500, segments=1, node_diameter=10, node_length=1, number_of_nodes=10):
-        super(TiltedAxon, self).__init__(x, y, z, segments, node_diameter, node_length, number_of_nodes)
+    def __init__(self, theta, phi, x=500, y=500, z=500, nseg_node=1, node_diameter=10, node_length=1, number_of_nodes=10):
+        super(TiltedAxon, self).__init__(x, y, z, nseg_node, node_diameter, node_length, number_of_nodes)
 
         self.theta = theta
         self.phi = phi
@@ -30,15 +30,16 @@ class TiltedAxon(hh_axon.Axon):
 
 class BendedAxon(hh_axon.Axon):
     # create BendedAxon by combining TiltedAxons together
-    def __init__(self, theta, phi, axons_number=2, x=500, y=500, z=500, segments=1, node_diameter=10, node_length=1, number_of_nodes=10):
-        super(BendedAxon,self).__init__(x, y, z, segments, node_diameter, node_length, number_of_nodes)
+    def __init__(self, theta, phi, axons_number=2, x=500, y=500, z=500, nseg_node=1, node_diameter=10,
+                 node_length=1, number_of_nodes=10):
+        super(BendedAxon,self).__init__(x, y, z, nseg_node, node_diameter, node_length, number_of_nodes)
 
         self.axons_number=axons_number
         self.number_of_nodes=number_of_nodes
         self.name = "HH_d_" + str(node_diameter) + 'nnode_' + str(number_of_nodes * axons_number)
 
         self.axon_list = []
-        axon = TiltedAxon(theta[0], phi[0], x, y, z, segments, node_diameter, node_length, number_of_nodes)
+        axon = TiltedAxon(theta[0], phi[0], x, y, z, nseg_node, node_diameter, node_length, number_of_nodes)
         self.sections = axon.sections
         self.x=axon.x
         self.x=self.x.tolist()
@@ -48,7 +49,10 @@ class BendedAxon(hh_axon.Axon):
         self.z=self.z.tolist()
         self.axon_list.append(axon)
         for i in range(axons_number-1):
-            axon = TiltedAxon(theta[i+1], phi[i+1], self.axon_list[-1].x_final + node_length/2*(self.x[-1]-self.x[-2]), self.axon_list[-1].y_final+ node_length/2*(self.y[-1]-self.y[-2]), self.axon_list[-1].z_final + node_length/2*(self.z[-1]-self.z[-2]), segments, node_diameter, node_length, number_of_nodes)
+            axon = TiltedAxon(theta[i+1], phi[i+1], self.axon_list[-1].x_final + node_length/2*(self.x[-1]-self.x[-2]),
+                              self.axon_list[-1].y_final+ node_length/2*(self.y[-1]-self.y[-2]),
+                              self.axon_list[-1].z_final + node_length/2*(self.z[-1]-self.z[-2]),
+                              nseg_node, node_diameter, node_length, number_of_nodes)
             axon.sections[0].connect(self.axon_list[-1].sections[-1], 1)
             self.sections.extend(axon.sections)
             self.x.extend(axon.x.tolist())

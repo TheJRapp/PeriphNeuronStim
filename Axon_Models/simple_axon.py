@@ -12,7 +12,7 @@ import nrn
 
 class Axon(object):
 
-    def __init__(self, x=500, y=500, z=500, segments=1,
+    def __init__(self, x=500, y=500, z=500, nseg_node=1, nseg_internode=1,
                  inter_node_diameter=10, node_diameter=10,
                  node_length=1, internode_length=1e3,
                  node_internode_pairs=10):
@@ -24,19 +24,19 @@ class Axon(object):
         self.name = "Simple Axon ," + "Node \u2300 = " + "{:.2f}".format(node_diameter) + ", IntNode \u2300 = " + str(
             inter_node_diameter)
 
-        node = Node(segments, node_length, node_diameter)
+        node = Node(nseg_node, node_length, node_diameter)
         self.sections.append(node)
 
         for i in range(node_internode_pairs-1):
-            internode = InterNode(segments, internode_length, inter_node_diameter)
+            internode = InterNode(nseg_internode, internode_length, inter_node_diameter)
             internode.connect(self.sections[-1], 1)
             self.sections.append(internode)
 
-            node = Node(segments, node_length, node_diameter)
+            node = Node(nseg_node, node_length, node_diameter)
             node.connect(self.sections[-1], 1)
             self.sections.append(node)
 
-        internode = InterNode(segments, internode_length, inter_node_diameter)
+        internode = InterNode(nseg_internode, internode_length, inter_node_diameter)
         internode.connect(self.sections[-1], 1)
         self.sections.append(internode)
 

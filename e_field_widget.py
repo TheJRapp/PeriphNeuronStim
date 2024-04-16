@@ -305,7 +305,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         fig1 = Figure()
         # cv2.imshow("Line", img_mod)
         ax1f1 = fig1.add_subplot(111)
-        ax1f1.imshow(e_modified, extent=[min(e_field.y)/scale, max(e_field.y)/scale, min(e_field.x)/scale, max(e_field.x)/scale])
+        ax1f1.imshow(e_modified, extent=[min(e_field.y)/scale, max(e_field.y)/scale, max(e_field.x)/scale, min(e_field.x)/scale])
         return fig1
 
     def e_field_plot_with_nerve_shape(self, e_field, nerve_shape):

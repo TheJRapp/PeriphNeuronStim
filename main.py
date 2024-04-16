@@ -45,6 +45,8 @@ Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
 interpolation_radius_index = 0
 nerve_shape_step_size = 2
+internode_segments = 20
+node_segments = 1
 
 
 class Main(QMainWindow, Ui_MainWindow):
@@ -63,7 +65,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.plot_layout.addWidget(self.plot_widget)
 
         # Nerve widget
-        self.nerve_widget = NerveWidget()
+        self.nerve_widget = NerveWidget(scaling, node_segments, internode_segments)
         self.nerve_layout.addWidget(self.nerve_widget)
 
         # Stimulus widget
@@ -113,13 +115,13 @@ class Main(QMainWindow, Ui_MainWindow):
             self.e_field_widget.custom_nerve = selected_nerve
             self.e_field_widget.scaling = scaling
             if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-                self.plot_widget.add_figure(self.e_field_widget.get_e_field_with_custom_nerve_plot(), 'nerve')
+                self.plot_widget.add_figure(self.e_field_widget.get_e_field_with_custom_nerve_plot(), 'Nerve in Field')
         else:
             self.e_field_widget.custom_nerve = None
 
         if self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-            self.plot_widget.add_figure(self.e_field_widget.get_nerve_shape_plot(), 'nerve')
-        self.plot_widget.add_figure(self.e_field_widget.get_current_e_field_plot(), 'current_e_field')
+            self.plot_widget.add_figure(self.e_field_widget.get_nerve_shape_plot(), 'Nerve Shape')
+        self.plot_widget.add_figure(self.e_field_widget.get_current_e_field_plot(), 'Current E-field')
 
     def open_stimulus_widget(self):
         self.stimulus_widget.show()
@@ -159,23 +161,18 @@ class Main(QMainWindow, Ui_MainWindow):
             self.potential_layout.removeWidget(self.field_axon_canvas)
             self.field_axon_canvas.close()
         neuron_sim = self.get_neuron_sim(selected_nerve.axon_infos_list[selected_index.row()])
-
         neuron_sim.quasipot()
-        self.plot_widget.add_figure(plot_functions.plot_e_field_along_nerve(neuron_sim.axon.e_field_along_axon), 'E_field_along_nerve')
-        # plt.figure()
-        # ax = plt.gca(projection='3d')
-        # p = ax.scatter3D(neuron_sim.axon.x / 1000, neuron_sim.axon.y / 1000, neuron_sim.axon.z / 1000, c=neuron_sim.axon.e_field_along_axon)
-        # cbar = plt.colorbar(p)
-        # cbar.set_label('E in V/m')
-        # ax.set_xlabel('x in mm')
-        # ax.set_ylabel('y in mm')
-        # ax.set_zlabel('z in mm')
-        # plt.show()
 
-        # fig20 = plt.figure(2)
-        # ax20 = fig20.gca()
-        # ax20 = plt.plot(neuron_sim.mdf())
-        # plt.show()
+        self.plot_widget.add_figure(plot_functions.plot_e_field_along_nerve(neuron_sim.axon.e_field_along_axon),
+                                    'E_field_along_nerve')
+        self.plot_widget.add_figure(plot_functions.plot_potential_along_nerve(neuron_sim.axon.potential_along_axon),
+                                    'Potential_along_nerve')
+        self.plot_widget.add_figure(plot_functions.plot_axon_xy_coordinates(neuron_sim.axon),
+                                    'Axon x y coordinates')
+        if self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
+            self.plot_widget.add_figure(plot_functions.plot_axon_nerve_shape_xy_coordinates(neuron_sim.axon,
+                                        self.e_field_widget.nerve_shape), 'Axon and Nerve Shape coordinates')
+
         e_field_along_axon = neuron_sim.axon.e_field_along_axon
         fig1 = Figure()
         ax1f1 = fig1.add_subplot(111)
@@ -183,6 +180,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.field_axon_canvas = FigureCanvas(fig1)
         self.potential_layout.addWidget(self.field_axon_canvas)
         self.field_axon_canvas.draw()
+
 
     def single_simulation(self):
         if not self.nerve_widget.nerve_dict:
@@ -252,12 +250,12 @@ class Main(QMainWindow, Ui_MainWindow):
         export_dict_potential = {}
         x_offset = np.arange(-190000, 190000, 400)
         for x in x_offset:
-            self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z + z
+            self.e_field_widget.nerve_shape.x = self.e_field_widget.nerve_shape.x + x
             neuron_sim = self.get_neuron_sim(axon)
             neuron_sim.quasipot()
             export_dict_efield[str(x)] = neuron_sim.axon.e_field_along_axon
             export_dict_potential[str(x)] = neuron_sim.axon.potential_along_axon
-            self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z + z
+            self.e_field_widget.nerve_shape.x = self.e_field_widget.nerve_shape.x + x
         path = 'Y:/Sonstiges/Stimit AG/'
         project = 'phrenic'
         file_name = '001'
@@ -305,9 +303,9 @@ class Main(QMainWindow, Ui_MainWindow):
         project = 'phrenic'
         file_name = '001'
         df = pd.DataFrame(export_dict_efield)
-        df.to_csv(path + project + '_' + file_name + 'e_field_'+ '.csv', index=False, header=True)
+        df.to_csv(path + project + '_' + file_name + 'e_field_' + '.csv', index=False, header=True)
         df = pd.DataFrame(export_dict_potential)
-        df.to_csv(path + project + '_' + file_name + 'potential_'+ '.csv', index=False, header=True)
+        df.to_csv(path + project + '_' + file_name + 'potential_' + '.csv', index=False, header=True)
         print('Finished!')
 
     def analyze_field_contributions(self):

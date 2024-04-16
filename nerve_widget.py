@@ -11,10 +11,7 @@ import neuron_sim as ns
 Ui_NerveWidget, QWidget_Nerve = uic.loadUiType("ui_nerve_widget.ui")
 Ui_NerveDimensionWidget, QWidget_NerveDimensions = uic.loadUiType("ui_nerve_dimension_widget.ui")
 
-
-
 rmg_diameter_list = ["16.0", "15.0", "14.0", "12.8", "11.5", "10.0", "8.7", "7.3", "5.7"]
-scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
 
 # This class does:
 
@@ -22,11 +19,14 @@ scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field ar
 class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
     e_field_changed = pyqtSignal()
 
-    def __init__(self, parent = None):
+    def __init__(self, scaling, nseg_node, nseg_internode, parent = None):
         super(NerveWidget, self).__init__(parent)
 
         self.setupUi(self)
 
+        self.scaling = scaling  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by self.scaling
+        self.nseg_node = nseg_node
+        self.nseg_internode = nseg_internode
         self.nerve_dict = {}
         self.axon_list_item_model = QtGui.QStandardItemModel(self.axon_list_view)
         self.nerve_list_item_model = QtGui.QStandardItemModel(self.nerve_combo_box)
@@ -60,11 +60,11 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
     def add_nerve(self):
         if self.nerve_name_line_edit.text() and self.nerve_name_line_edit.text() not in self.nerve_dict:
             self.nerve_dict[self.nerve_name_line_edit.text()] = ner.Nerve(
-                x=self.nerve_dimension_widget.x_spin_box.value() * scaling,
-                y=self.nerve_dimension_widget.y_spin_box.value() * scaling,
-                z=self.nerve_dimension_widget.z_spin_box.value() * scaling,
+                x=self.nerve_dimension_widget.x_spin_box.value() * self.scaling,
+                y=self.nerve_dimension_widget.y_spin_box.value() * self.scaling,
+                z=self.nerve_dimension_widget.z_spin_box.value() * self.scaling,
                 angle=self.nerve_dimension_widget.angle_spin_box.value(),
-                length=self.nerve_dimension_widget.length_spin_box.value() * scaling,
+                length=self.nerve_dimension_widget.length_spin_box.value() * self.scaling,
                 nerv_diam=self.nerve_dimension_widget.diam_spin_box.value(),
                 name=self.nerve_name_line_edit.text())
             item = QtGui.QStandardItem(self.nerve_name_line_edit.text())
@@ -92,7 +92,7 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
         else:
             diameter = self.axon_diam_spin_box.value()
         model_info = ns.AxonInformation(selected_nerve.x, selected_nerve.y, selected_nerve.z, selected_nerve.angle,
-                                        selected_nerve.length, diameter, axon_type)
+                                        selected_nerve.length, diameter, axon_type, self.nseg_node, self.nseg_internode)
         selected_nerve.axon_infos_list.append(model_info)
         self.update_axon_list()
 
@@ -147,29 +147,29 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
         self.update_axon_list()
         self.nerve_dimension_widget.name_label.setText(self.nerve_combo_box.currentText())
-        self.nerve_dimension_widget.x_spin_box.setValue(selected_nerve.x / scaling)
-        self.nerve_dimension_widget.y_spin_box.setValue(selected_nerve.y / scaling)
-        self.nerve_dimension_widget.z_spin_box.setValue(selected_nerve.z / scaling)
+        self.nerve_dimension_widget.x_spin_box.setValue(selected_nerve.x / self.scaling)
+        self.nerve_dimension_widget.y_spin_box.setValue(selected_nerve.y / self.scaling)
+        self.nerve_dimension_widget.z_spin_box.setValue(selected_nerve.z / self.scaling)
         self.nerve_dimension_widget.angle_spin_box.setValue(selected_nerve.angle)
-        self.nerve_dimension_widget.length_spin_box.setValue(selected_nerve.length / scaling)
+        self.nerve_dimension_widget.length_spin_box.setValue(selected_nerve.length / self.scaling)
         self.nerve_dimension_widget.diam_spin_box.setValue(selected_nerve.nerve_diameter)
         # self.e_field_changed.emit()
 
     def set_nerve_x(self, value):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
-        selected_nerve.x = value * scaling  # convert from mm to um
+        selected_nerve.x = value * self.scaling  # convert from mm to um
         self.update_axons()
         self.e_field_changed.emit()
 
     def set_nerve_y(self, value):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
-        selected_nerve.y = value * scaling  # convert from mm to um
+        selected_nerve.y = value * self.scaling  # convert from mm to um
         self.update_axons()
         self.e_field_changed.emit()
 
     def set_nerve_z(self, value):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
-        selected_nerve.z = value * scaling  # convert from mm to um
+        selected_nerve.z = value * self.scaling  # convert from mm to um
         self.update_axons()
         self.e_field_changed.emit()
 
@@ -181,7 +181,7 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
 
     def set_nerve_length(self, value):
         selected_nerve = self.nerve_dict[self.nerve_combo_box.currentText()]
-        selected_nerve.length = value * scaling  # convert from mm to um
+        selected_nerve.length = value * self.scaling  # convert from mm to um
         self.update_axons()
         self.e_field_changed.emit()
 

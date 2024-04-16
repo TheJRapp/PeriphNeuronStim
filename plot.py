@@ -161,3 +161,28 @@ def plot_e_field_along_nerve(e_field_along_nerve):
     ax1.set_xlabel('Compartments')
     ax1.set_ylabel('E-field in V/m')
     return fig
+
+def plot_potential_along_nerve(potential_along_nerve):
+    fig = plt.Figure()
+    ax1 = fig.add_subplot(111)
+    ax1.plot(potential_along_nerve)
+    ax1.set_xlabel('Compartments')
+    ax1.set_ylabel('Potential in V')
+    return fig
+
+def plot_axon_xy_coordinates(axon):
+    fig = plt.Figure()
+    ax1 = fig.add_subplot(111)
+    ax1.plot(axon.x, axon.y)
+    ax1.set_xlabel('Compartments')
+    ax1.set_ylabel('Potential in V')
+    return fig
+
+def plot_axon_nerve_shape_xy_coordinates(axon, nerve_shape):
+    fig = plt.Figure()
+    ax1 = fig.add_subplot(111)
+    ax1.plot(axon.x, axon.y)
+    ax1.plot(nerve_shape.x, nerve_shape.y)
+    ax1.set_xlabel('Compartments')
+    ax1.set_ylabel('Potential in V')
+    return fig
