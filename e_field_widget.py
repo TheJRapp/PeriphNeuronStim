@@ -34,6 +34,7 @@ default_nerve_shape_path = 'volume_shape_default.pkl'
 
 class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
     e_field_changed = pyqtSignal()
+    nerve_shape_loaded = pyqtSignal()
 
     def __init__(self, parent=None):
         super(EFieldWidget, self).__init__(parent)
@@ -57,7 +58,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         self.load_e_field_button.clicked.connect(self.load_e_field)
         self.save_e_field_button.clicked.connect(self.save_e_field)
         self.confirm_button.clicked.connect(self.change_e_field)
-        self.load_nerve_shape_button.clicked.connect(self.load_csv_nerve_shape)
+        self.load_nerve_shape_button.clicked.connect(self.load_cst_nerve_shape)
         self.load_saved_nerve_shape_button.clicked.connect(self.load_nerve_shape)
         self.save_nerve_shape_button.clicked.connect(self.save_nerve_shape)
         self.smooth_push_button.clicked.connect(self.smooth_e_field)
@@ -134,11 +135,13 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         parser.parse_file(storage)
         storage.convert_units(1e3)  # convert mm from CST to um used for cable
         self.nerve_shape = storage.generate_nerve_shape()
+        print('Test 2')
+        self.nerve_shape_loaded.emit()
         # self.state = self.NERVE_SHAPE_ONLY
         # self.nerve_shape_only_radio_button.setChecked(True)
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
         self.nerve_shape_only_radio_button.setEnabled(True)
-        self.update_e_field_plot()
+        # self.update_e_field_plot()
 
     def load_csv_nerve_shape(self):
         filename = self.openFileNameDialog("Text Files (*.txt)")
@@ -150,6 +153,7 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
         parser.parse_file(storage)
         # storage.convert_units(1e3)  # convert mm from CST to um used for cable
         self.nerve_shape = storage.generate_nerve_shape()
+        self.nerve_shape_loaded.emit()
         # self.state = self.NERVE_SHAPE_ONLY
         # self.nerve_shape_only_radio_button.setChecked(True)
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
@@ -162,7 +166,11 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
             # TODO: warning
             return
         with open(filename, 'rb') as e:
-            self.nerve_shape = pickle.load(e)
+            nerve_shape = pickle.load(e)
+            self.nerve_shape = database.NerveShape(nerve_shape.x, nerve_shape.y, nerve_shape.z, nerve_shape.xRe,
+                                                   nerve_shape.yRe, nerve_shape.zRe, nerve_shape.xIm, nerve_shape.yIm,
+                                                   nerve_shape.zIm)
+        self.nerve_shape_loaded.emit()
         # self.state = self.NERVE_SHAPE_ONLY
         # self.nerve_shape_only_radio_button.setChecked(True)
         self.e_field_wtih_nerve_shape_radio_button.setEnabled(True)
@@ -294,13 +302,11 @@ class EFieldWidget(QWidget_EField, Ui_EFieldWidget):
 
         xrange = nerve.length * np.cos(nerve.angle / 360 * 2 * np.pi)
         yrange = nerve.length * np.sin(nerve.angle / 360 * 2 * np.pi)
-
-        test_1 = nerve.y/scale
+        test_1 = nerve.y[0]/scale
         test_2 = abs(e_field.y[1] - e_field.y[0])
-        test_3 = int((nerve.y / scale + ydim) / abs(e_field.y[1] - e_field.y[0]))
-
-        img_mod = cv2.line(e_modified, (int(nerve.x/scale + xdim), int( (nerve.y/scale + ydim) / abs(e_field.y[1]/scale - e_field.y[0]/scale) )), (int(nerve.x/scale + xdim +
-                          xrange/scale), int(nerve.y/scale + ydim + yrange/scale)), (255, 0, 0), 5)
+        test_3 = int((nerve.y[0] / scale + ydim) / abs(e_field.y[1] - e_field.y[0]))
+        img_mod = cv2.line(e_modified, (int(nerve.x[0]/scale + xdim), int( (nerve.y[0]/scale + ydim) / abs(e_field.y[1]/scale - e_field.y[0]/scale) )), (int(nerve.x[0]/scale + xdim +
+                          xrange/scale), int(nerve.y[0]/scale + ydim + yrange/scale)), (255, 0, 0), 5)
 
         fig1 = Figure()
         # cv2.imshow("Line", img_mod)

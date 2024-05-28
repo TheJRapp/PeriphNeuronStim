@@ -154,6 +154,7 @@ def plot_traces_and_field(name, time_axis, stimulus, model, trace_height=100):
 
     return axes, axes2
 
+
 def plot_e_field_along_nerve(e_field_along_nerve):
     fig = plt.Figure()
     ax1 = fig.add_subplot(111)
@@ -161,6 +162,7 @@ def plot_e_field_along_nerve(e_field_along_nerve):
     ax1.set_xlabel('Compartments')
     ax1.set_ylabel('E-field in V/m')
     return fig
+
 
 def plot_potential_along_nerve(potential_along_nerve):
     fig = plt.Figure()
@@ -170,19 +172,32 @@ def plot_potential_along_nerve(potential_along_nerve):
     ax1.set_ylabel('Potential in V')
     return fig
 
+
 def plot_axon_xy_coordinates(axon):
     fig = plt.Figure()
     ax1 = fig.add_subplot(111)
     ax1.plot(axon.x, axon.y)
-    ax1.set_xlabel('Compartments')
-    ax1.set_ylabel('Potential in V')
+    ax1.set_xlabel('x in µm')
+    ax1.set_ylabel('y in µm')
     return fig
+
+
+def plot_axon_xy_coordinates_with_nodes(axon, internode_segments):
+    # This works only for MHH model, whith nseg_internode=x and nseg_node=1
+    fig = plt.Figure()
+    ax1 = fig.add_subplot(111)
+    ax1.plot(axon.x, axon.y)
+    ax1.plot(axon.x[::internode_segments], axon.y[::internode_segments], 'x')
+    ax1.set_xlabel('x in µm')
+    ax1.set_ylabel('y in µm')
+    return fig
+
 
 def plot_axon_nerve_shape_xy_coordinates(axon, nerve_shape):
     fig = plt.Figure()
     ax1 = fig.add_subplot(111)
     ax1.plot(axon.x, axon.y)
     ax1.plot(nerve_shape.x, nerve_shape.y)
-    ax1.set_xlabel('Compartments')
-    ax1.set_ylabel('Potential in V')
+    ax1.set_xlabel('x in µm')
+    ax1.set_ylabel('y in µm')
     return fig

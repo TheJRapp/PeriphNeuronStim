@@ -107,19 +107,42 @@ class DataBase(dict):
         return e_modified
 
 
-class NerveShape():
+class Nerve():
 
-    def __init__(self, x, y, z, xRe, yRe, zRe, xIm, yIm, zIm):
+    def __init__(self, x, y, z, nerv_diam, name=''):
+        self.axon_infos_list = []
         self.x = x
         self.y = y
         self.z = z
+        self.name = name
+        self.nerve_diameter = nerv_diam
+        self.axon_distribution_number = 6
 
+
+class CustomNerve(Nerve):
+    def __init__(self, x, y, z, resolution, angle, length, nerv_diam, name=''):
+        phi = angle / 360 * 2 * np.pi
+        theta = 90 / 360 * 2 * np.pi
+        x_final = length * np.sin(theta) * np.cos(phi) + x  # spherical coordinates
+        y_final = length * np.sin(theta) * np.sin(phi) + y
+        z_final = length * np.cos(theta) + z
+        x_vec = np.linspace(x, x_final, resolution)
+        y_vec = np.linspace(y, y_final, resolution)
+        z_vec = np.linspace(z, z_final, resolution)
+        super(CustomNerve, self).__init__(x_vec, y_vec, z_vec, nerv_diam, name=name)
+        self.angle = angle
+        self.length = length
+        # TODO: make x y and z an array
+
+
+class NerveShape(Nerve):
+    def __init__(self, x, y, z, xRe, yRe, zRe, xIm, yIm, zIm, name=''):
+        super(NerveShape, self).__init__(x, y, z, nerv_diam=0, name=name)
         phase_x = []
         phase_y = []
         phase_z = []
-
-        if xRe or xIm:
-
+        if isinstance(xRe, np.ndarray):
+            print('test 1')
             for i in range(len(x)):
                 phase_x.append(np.arccos(xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)) if xIm[i] >= 0 else - np.arccos(
                     xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)))
@@ -127,7 +150,6 @@ class NerveShape():
                     yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)))
                 phase_z.append(np.arccos(zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)) if zIm[i] >= 0 else - np.arccos(
                     zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)))
-
             self.e_x = np.true_divide(phase_x, np.absolute(phase_x)) * np.sqrt(xRe ** 2 + xIm ** 2)
             self.e_y = np.true_divide(phase_y, np.absolute(phase_y)) * np.sqrt(yRe ** 2 + yIm ** 2)
             self.e_z = np.true_divide(phase_z, np.absolute(phase_z)) * np.sqrt(zRe ** 2 + zIm ** 2)
@@ -135,6 +157,7 @@ class NerveShape():
             self.e_x = []
             self.e_y = []
             self.e_z = []
+
 
 class EFieldLayer(): # TODO: Braucht man nicht mehr oder?
 

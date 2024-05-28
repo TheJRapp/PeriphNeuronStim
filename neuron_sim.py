@@ -4,6 +4,7 @@ import threshold_widget as th
 from matplotlib import pyplot as plt
 from neuron import h
 import numpy as np
+from scipy.interpolate import BSpline, make_interp_spline
 from Axon_Models import hh_cable_geometry
 from Axon_Models import simple_cable_geometry
 from Axon_Models import mrg_cable_geometry
@@ -100,7 +101,7 @@ class NeuronSimEField(NeuronSim):
         elif mp.axon_type == 'RMG':
             axon = self.mrg(mp.diameter, mp.x, mp.y, mp.z, mp.angle, mp.length)
         else:
-            axon = self.simple(mp.diameter, mp.nseg_node, mp.nseg_internode, mp.x, mp.y, mp.z, mp.angle, mp.length)
+            axon = simple_from_nerve_shape(mp.diameter, mp.nseg_node, mp.nseg_internode, self.nerve_shape, self.step_size)
 
         mf.record_membrane_potentials(axon, 0.5)
 
@@ -258,9 +259,7 @@ class NeuronSimEFieldWithNerveShape(NeuronSim):
     def __init__(self, static_e_field_list, radius, nerve_shape, nerve_step_size, axon_model_parameter, time_axis, stimulus, total_time):
         self.nerve_shape = nerve_shape
         self.step_size = nerve_step_size
-
         super(NeuronSimEFieldWithNerveShape, self).__init__(axon_model_parameter, time_axis, stimulus, total_time)
-
         self.e_field_list = static_e_field_list
         self.interpolation_radius_index = radius
 
@@ -286,21 +285,18 @@ class NeuronSimEFieldWithNerveShape(NeuronSim):
 
 
 class AxonInformation:
-    def __init__(self, start_x, start_y, start_z, angle, length, diameter, axon_type, nseg_node, nseg_internode):
+    def __init__(self, start_x, start_y, start_z, diameter, axon_type, nseg_node, nseg_internode):
         super(AxonInformation, self).__init__()
         self.x = start_x
         self.y = start_y
         self.z = start_z
-        self.angle = angle
-        self.length = length
         self.diameter = diameter
         self.axon_type = axon_type
         self.nseg_node = nseg_node
         self.nseg_internode = nseg_internode
 
 
-def simple_from_nerve_shape_old(diameter, nerve_shape, step_size):
-    segments = 1
+def simple_from_nerve_shape_working(diameter, nseg_node, nseg_internode, nerve_shape, step_size):
     node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis
     internode_diameter = diameter
     node_length = 1
@@ -318,13 +314,18 @@ def simple_from_nerve_shape_old(diameter, nerve_shape, step_size):
     axons_number = 0
     step_size = step_size
     for i in range(len(nerve_shape.x) - step_size)[::step_size]:
-        length = np.sqrt((nerve_shape.x[i + step_size] - nerve_shape.x[i]) ** 2 + (
-                    nerve_shape.y[i + step_size] - nerve_shape.y[i]) ** 2
-                         + (nerve_shape.z[i + step_size] - nerve_shape.z[i]) ** 2)
+        if i == 0:
+            last_x = nerve_shape.x[i]
+            last_y = nerve_shape.y[i]
+            last_z = nerve_shape.z[i]
+
+        length = np.sqrt((nerve_shape.x[i + step_size] - last_x) ** 2 + (
+                    nerve_shape.y[i + step_size] - last_y) ** 2
+                         + (nerve_shape.z[i + step_size] - last_z) ** 2)
         phi_c = np.arctan2(
-            (nerve_shape.y[i + step_size] - nerve_shape.y[i]),
-            (nerve_shape.x[i + step_size] - nerve_shape.x[i]))
-        theta_c = np.arccos(((nerve_shape.z[i + step_size] - nerve_shape.z[i]) / length))
+            (nerve_shape.y[i + step_size] - last_y),
+            (nerve_shape.x[i + step_size] - last_x))
+        theta_c = np.arccos(((nerve_shape.z[i + step_size] - last_z) / length))
         test = nerve_shape.z[i] / length
         node_internode_pairs_c = int(round(length / (node_length + internode_length)))
         if node_internode_pairs_c > 0:
@@ -332,8 +333,17 @@ def simple_from_nerve_shape_old(diameter, nerve_shape, step_size):
             theta.append(theta_c)
             node_internode_pairs.append(node_internode_pairs_c)
             axons_number += 1
+            # for pair in range(node_internode_pairs_c):
+            #     phi.append(phi_c/node_internode_pairs_c)
+            #     theta.append(theta_c/node_internode_pairs_c)
+            #     axons_number += 1
+            #     node_internode_pairs.append(1)
 
-    simple_model = simple_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, segments,
+            last_x = nerve_shape.x[i+step_size]
+            last_y = nerve_shape.y[i+step_size]
+            last_z = nerve_shape.z[i+step_size]
+
+    simple_model = simple_cable_geometry.BendedAxon(theta, phi, axons_number, x, y, z, nseg_node, nseg_internode,
                                                     internode_diameter,
                                                     node_diameter, node_length, internode_length,
                                                     node_internode_pairs)
@@ -341,6 +351,20 @@ def simple_from_nerve_shape_old(diameter, nerve_shape, step_size):
 
 
 def simple_from_nerve_shape(diameter, nseg_node, nseg_internode, nerve_shape, step_size):
+    fig1 = plt.figure()
+    ax1f1 = fig1.add_subplot(111, projection='3d')
+    ax1f1.scatter3D(nerve_shape.x, nerve_shape.y, nerve_shape.z)
+    plt.show()
+    # fig2 = plt.figure()
+    # bspl = make_interp_spline(nerve_shape, [nerve_shape.y,nerve_shape.z], k=5, bc_type='periodic', axis=1)
+    # xx = np.linspace(nerve_shape.x[0], nerve_shape.x[-1], 1000)
+    # ax = plt.axes(projection='3d')
+    # ax.plot3D(xx, *bspl(xx))
+    # # ax1f2 = fig2.add_subplot(111, projection='3d')
+    # # ax1f2.scatter3D(nerve_shape.x, nerve_shape.y, nerve_shape.z)
+    # plt.show()
+
+
     node_diameter = 0.3449 * diameter - 0.1484  # um; the formula is from Olivar Izard Master's thesis
     internode_diameter = diameter
     node_length = 1

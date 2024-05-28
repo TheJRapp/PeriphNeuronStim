@@ -68,7 +68,7 @@ class PlotWidget(QWidget_Plot, Ui_PlotWidget):
 
     def plot_figure(self):
         current_index = self.plot_list_view.currentIndex().row()
-        if current_index:
+        if self.figure_list:
             self.show_widget.remove_plot()
             self.show_widget.add_plot(self.figure_list[current_index].fig)
             self.show_widget.show()

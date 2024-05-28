@@ -5,7 +5,7 @@
 import sys
 sys.path.insert(0, "C:/nrn/lib/python")
 
-import nerve as ner
+import nerve_widget as ner
 import stimulus as stim
 import time
 import pandas as pd
