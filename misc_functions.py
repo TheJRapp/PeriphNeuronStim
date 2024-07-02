@@ -96,7 +96,6 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
     #   quasi_pot_current = quasi_pot_prev - (1/2)(e_field_current + e_field_previous) * displacement #calc displacement from model?
     #   generate h.vector with (stimulus and e_field as amplitude) and (time_vector)
     #   play generated vector on segment.e_extracellular
-    segment_list = cable.get_segments()
 
     stim_matrix = []  # contains a row for each segment where the corresponding e-field is multiplied w. stimulus
     e_field_along_axon = []
@@ -126,7 +125,7 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
     quasi_pot_prev = 0
 
     offset = 0
-    for j in range(len(segment_list)):
+    for j in range(len(cable.x)):
         # identify relevant e_field points
         # small e-field: limited by cable limits
         # large e-field: original field
@@ -152,8 +151,6 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
         e_field_index_z = z_position_relative * (len(z_axis[z_min_ind:z_max_ind]))  # e_field_index_z in small e-field
         iz = z_min_ind + int(e_field_index_z)  # index in large e-field
 
-        step_vector = cable.get_segment_indices()
-
         # check if cable starts outside defined e_field
         if round(cable.y[j]) < min(y_axis) or round(cable.y[j]) > max(y_axis) or round(cable.x[j]) < min(x_axis) or round(cable.x[j]) > max(x_axis) \
                 or round(cable.z[j]) < min(z_axis) or round(cable.z[j]) > max(z_axis):
@@ -164,9 +161,9 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
             e_y = e_field.e_y
             e_z = e_field.e_z
 
-            e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iy, ix, iz] + \
-                                cable.get_unitvector()[int(step_vector[j])][1] * e_y[iy, ix, iz] + \
-                                cable.get_unitvector()[int(step_vector[j])][2] * e_z[iy, ix, iz]
+            e_average_current = cable.unit_vector[j][0] * e_x[iy, ix, iz] + \
+                                cable.unit_vector[j][1] * e_y[iy, ix, iz] + \
+                                cable.unit_vector[j][2] * e_z[iy, ix, iz]
             # using interpolation radius: (just possible when e_field is not a single plane)
             # e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum() + \
             #                     cable.get_unitvector()[int(step_vector[j])][1] * e_y[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum() + \
@@ -507,3 +504,17 @@ def generate_new_start_point(x1, y1, z1, x2, y2, z2, offset):
     new_z = z1 + offset * (vec_z / length)
 
     return new_x, new_y, new_z
+
+
+def moving_average(curve, window=18):
+    curve_averaged = []
+    for i in range(len(curve)):
+        if i < window:
+            curve_averaged.append(curve[i:i + window].sum() / curve[i:i + window].size)
+        elif (i + window) > len(curve):
+            curve_averaged.append(curve[i - window:i].sum() / curve[i - window:i].size)
+        else:
+            av = curve[i - window:i + window].sum() / curve[i - window:i + window].size
+            curve_averaged.append(av)
+
+    return curve_averaged

@@ -28,13 +28,13 @@ class ExperimentProtocol:
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if not selected_nerve.axon_infos_list:
+        if not selected_nerve.axon_list:
             return
 
         
 
         export_dict = {'Diameter': []}
-        for axon in selected_nerve.axon_infos_list:
+        for axon in selected_nerve.axon_list:
             export_dict['Diameter'].append(axon.diameter)
 
             if x_search:
@@ -87,11 +87,11 @@ class ExperimentProtocol:
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if not selected_nerve.axon_infos_list:
+        if not selected_nerve.axon_list:
             return
         # Dict -----------------------------------------------------------------
         export_dict = {'Diameter': []}
-        for axon in selected_nerve.axon_infos_list:
+        for axon in selected_nerve.axon_list:
             export_dict['Diameter'].append(axon.diameter)
             z_offset = np.arange(-25000, 26000, 1000)
             for z in z_offset:
@@ -124,14 +124,14 @@ class ExperimentProtocol:
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if not selected_nerve.axon_infos_list:
+        if not selected_nerve.axon_list:
             return
         # Dict -----------------------------------------------------------------
         offset = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700]
         exp_name = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r']
         for l, e in zip(offset, exp_name):
             export_dict = {'Diameter': []}
-            for axon in selected_nerve.axon_infos_list:
+            for axon in selected_nerve.axon_list:
                 export_dict['Diameter'].append(axon.diameter)
                 z_offset = np.arange(-25000, 26000, 1000)
                 for z in z_offset:
@@ -176,7 +176,7 @@ class ExperimentProtocol:
         for x in x_offset:
             if x not in export_dict:
                 export_dict[x] = []
-                master.e_field_widget.nerve_shape.z = master.e_field_widget.nerve_shape.z + z
+                master.input_data_widget.nerve_shape.z = master.input_data_widget.nerve_shape.z + z
                 self.simulate(axon)
 
                 threshold = neuron_sim.threshold_simulation(self.threshold_widget)
@@ -194,16 +194,16 @@ class ExperimentProtocol:
 
     def simulate(self, axon, threshold=False):
         master = self.master_widget
-        if master.e_field_widget.state == master.e_field_widget.NERVE_SHAPE_ONLY:
-            neuron_sim = ns.NeuronSimNerveShape(master.e_field_widget.nerve_shape, nerve_shape_step_size,
+        if master.input_data_widget.state == master.input_data_widget.NERVE_SHAPE_ONLY:
+            neuron_sim = ns.NeuronSimNerveShape(master.input_data_widget.nerve_shape, nerve_shape_step_size,
                                                 axon, master.time_axis, master.stimulus, master.total_time)
-        elif master.e_field_widget.state == master.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-            neuron_sim = ns.NeuronSimEFieldWithNerveShape(master.e_field_widget.e_field_list,
+        elif master.input_data_widget.state == master.input_data_widget.E_FIELD_WITH_NERVE_SHAPE:
+            neuron_sim = ns.NeuronSimEFieldWithNerveShape(master.input_data_widget.e_field_list,
                                                           interpolation_radius_index,
-                                                          master.e_field_widget.nerve_shape, nerve_shape_step_size,
+                                                          master.input_data_widget.nerve_shape, nerve_shape_step_size,
                                                           axon, master.time_axis, master.stimulus, master.total_time)
         else:
-            neuron_sim = ns.NeuronSimEField(master.e_field_widget.e_field_list, interpolation_radius_index,
+            neuron_sim = ns.NeuronSimEField(master.input_data_widget.e_field_list, interpolation_radius_index,
                                             axon, master.time_axis, master.stimulus, master.total_time)
         neuron_sim.quasipot()
         if threshold:

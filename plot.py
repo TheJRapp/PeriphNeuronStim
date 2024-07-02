@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from neuron import h
 from Axon_Models import mrg_axon, hh_axon, simple_axon
 from matplotlib.ticker import FormatStrFormatter
+import cv2
 
 
 def plot_traces(name, trace_list, time_axis, stimulus, trace_height=100):
@@ -196,8 +197,29 @@ def plot_axon_xy_coordinates_with_nodes(axon, internode_segments):
 def plot_axon_nerve_shape_xy_coordinates(axon, nerve_shape):
     fig = plt.Figure()
     ax1 = fig.add_subplot(111)
-    ax1.plot(axon.x, axon.y)
-    ax1.plot(nerve_shape.x, nerve_shape.y)
+    ax1.plot(axon.x, axon.y, label='Axon')
+    ax1.plot(nerve_shape.x, nerve_shape.y, label='Nerve shape')
     ax1.set_xlabel('x in µm')
     ax1.set_ylabel('y in µm')
+    ax1.legend()
     return fig
+
+
+def plot_2d_field_with_cable(e_field, layer, nerve, scale):
+    e_modified = e_field.e_y[:,:,layer].copy()
+    xdim = round(len(e_field.x)/2)
+    ydim = round(len(e_field.y) / 2)
+
+    xrange = nerve.length * np.cos(nerve.angle / 360 * 2 * np.pi)
+    yrange = nerve.length * np.sin(nerve.angle / 360 * 2 * np.pi)
+    test_1 = nerve.y[0]/scale
+    test_2 = abs(e_field.y[1] - e_field.y[0])
+    test_3 = int((nerve.y[0] / scale + ydim) / abs(e_field.y[1] - e_field.y[0]))
+    img_mod = cv2.line(e_modified, (int(nerve.x[0]/scale + xdim), int( (nerve.y[0]/scale + ydim) / abs(e_field.y[1]/scale - e_field.y[0]/scale) )), (int(nerve.x[0]/scale + xdim +
+                      xrange/scale), int(nerve.y[0]/scale + ydim + yrange/scale)), (255, 0, 0), 5)
+
+    fig1 = plt.Figure()
+    # cv2.imshow("Line", img_mod)
+    ax1f1 = fig1.add_subplot(111)
+    ax1f1.imshow(e_modified, extent=[min(e_field.y)/scale, max(e_field.y)/scale, max(e_field.x)/scale, min(e_field.x)/scale])
+    return fig1

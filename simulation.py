@@ -9,7 +9,7 @@ import nerve_widget as ner
 import stimulus as stim
 import time
 import pandas as pd
-import e_field_widget as em
+import input_data_widget as em
 import neuron_sim as ns
 from matplotlib import pyplot as plt
 
@@ -81,7 +81,7 @@ phrenicus_dict['x'] = []
 phrenicus_dict['z'] = []
 phrenicus_dict['threshold'] = []
 phrenicus_dict['name'] = []
-for axon_info in phrenic_nerve.axon_infos_list:
+for axon_info in phrenic_nerve.axon_list:
     neuron_sim = ns.NeuronSim(axon_info, e_field_list, time_axis, stimulus, total_time)
     neuron_sim.quasipot(interpolation_radius_index)
     neuron_sim.simple_simulation()

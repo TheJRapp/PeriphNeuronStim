@@ -110,13 +110,13 @@ class DataBase(dict):
 class Nerve():
 
     def __init__(self, x, y, z, nerv_diam, name=''):
-        self.axon_infos_list = []
+        self.axon_list = []
         self.x = x
         self.y = y
         self.z = z
         self.name = name
         self.nerve_diameter = nerv_diam
-        self.axon_distribution_number = 6
+        self.axon_distribution_number = 6  # TODO: wtf is that?
 
 
 class CustomNerve(Nerve):
@@ -132,7 +132,6 @@ class CustomNerve(Nerve):
         super(CustomNerve, self).__init__(x_vec, y_vec, z_vec, nerv_diam, name=name)
         self.angle = angle
         self.length = length
-        # TODO: make x y and z an array
 
 
 class NerveShape(Nerve):

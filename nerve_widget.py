@@ -6,10 +6,12 @@ from PyQt5 import uic, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
 
 import neuron_sim as ns
+from Axon_Models import mhh_model
 import database
 
 Ui_NerveWidget, QWidget_Nerve = uic.loadUiType("ui_nerve_widget.ui")
 Ui_NerveDimensionWidget, QWidget_NerveDimensions = uic.loadUiType("ui_nerve_dimension_widget.ui")
+from PyQt5.QtWidgets import QMessageBox
 
 rmg_diameter_list = ["16.0", "15.0", "14.0", "12.8", "11.5", "10.0", "8.7", "7.3", "5.7"]
 
@@ -17,7 +19,7 @@ rmg_diameter_list = ["16.0", "15.0", "14.0", "12.8", "11.5", "10.0", "8.7", "7.3
 
 
 class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
-    e_field_changed = pyqtSignal()
+    custom_nerve_changed = pyqtSignal()
 
     def __init__(self, scaling, nseg_node, nseg_internode, parent = None):
         super(NerveWidget, self).__init__(parent)
@@ -28,34 +30,31 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
         self.nseg_node = nseg_node
         self.nseg_internode = nseg_internode
         self.axon_list_item_model = QtGui.QStandardItemModel(self.axon_list_view)
+        self.axon_list = []
 
         # self.nerve_dimension_button.setEnabled(False)
-        self.nerve_dimension_widget = nerveDimensionWidget()
+        self.nerve_dimension_widget = NerveDimensionWidget()
 
         self.anatomical_nerve = None
-        self.custom_nerve = self.add_custom_nerve()
+        self.custom_nerve= None
+        self.add_custom_nerve()
 
-        self.axon_diam_combo_box.setVisible(False)
+        self.axon_diam_combo_box.setVisible(False)  # just visible in case RMG is selected
         self.axon_diam_combo_box.addItems(rmg_diameter_list)
 
         # self.nerve_name_line_edit.setText('Default')
 
-        self.add_axon_button.clicked.connect(self.add_axon_to_nerve)
+        self.create_axon_button.clicked.connect(self.add_axon_to_nerve)
         self.delete_axon_button.clicked.connect(self.delete_axon)
 
         self.axon_type_combo_box.currentTextChanged.connect(self.set_axon_diam_widget)
 
         self.nerve_dimension_button.clicked.connect(self.show_nerve_dimension_widget)
-
-        self.nerve_dimension_widget.x_spin_box.valueChanged.connect(self.set_nerve_x)
-        self.nerve_dimension_widget.y_spin_box.valueChanged.connect(self.set_nerve_y)
-        self.nerve_dimension_widget.z_spin_box.valueChanged.connect(self.set_nerve_z)
-        self.nerve_dimension_widget.angle_spin_box.valueChanged.connect(self.set_nerve_angle)
-        self.nerve_dimension_widget.length_spin_box.valueChanged.connect(self.set_nerve_length)
-        self.nerve_dimension_widget.diam_spin_box.valueChanged.connect(self.set_nerve_diam)
+        # TODO: is it sufficient to overwrite nerve shape or must the old one be deleted?
+        self.nerve_dimension_widget.apply_button.clicked.connect(self.add_custom_nerve)
 
     def add_custom_nerve(self):
-        custom_nerve = database.CustomNerve(
+        self.custom_nerve = database.CustomNerve(
             x=self.nerve_dimension_widget.x_spin_box.value() * self.scaling,
             y=self.nerve_dimension_widget.y_spin_box.value() * self.scaling,
             z=self.nerve_dimension_widget.z_spin_box.value() * self.scaling,
@@ -64,11 +63,12 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
             length=self.nerve_dimension_widget.length_spin_box.value() * self.scaling,
             nerv_diam=self.nerve_dimension_widget.diam_spin_box.value(),
             name='')
-        self.e_field_changed.emit()
-        return custom_nerve
+        self.custom_nerve_changed.emit()
+        self.update_axons()
 
     def add_anatomical_nerve(self, nerve_shape):
         self.anatomical_nerve = nerve_shape
+        self.anatomicalRadioButton.setEnabled()
         self.warningLabel.setText('Available')
 
     def get_selected_nerve(self):
@@ -86,6 +86,10 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
     #     self.update_axon_list()
     #     self.e_field_changed.emit()
 
+    # ------------------------------------------------------------------------------------------------------------------
+    # Axon
+    # ------------------------------------------------------------------------------------------------------------------
+
     def add_axon_to_nerve(self):
         selected_nerve = self.get_selected_nerve()
         axon_type = self.axon_type_combo_box.currentText()
@@ -93,37 +97,40 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
             diameter = float(self.axon_diam_combo_box.currentText())
         else:
             diameter = self.axon_diam_spin_box.value()
-        print(selected_nerve.x[0])
-        model_info = ns.AxonInformation(selected_nerve.x[0], selected_nerve.y[0], selected_nerve.z[0], diameter,
-                                        axon_type, self.nseg_node, self.nseg_internode)
-        print('Check if i was here')
-        selected_nerve.axon_infos_list.append(model_info)
-        print('Check if i was here')
+        # TODO: Implement for RMG and HH
+        axon_model = mhh_model.Axon(selected_nerve, self.nseg_node, self.nseg_internode,
+                                    diameter)
+        self.axon_list.append(axon_model)
         self.update_axon_list()
 
     def update_axon_list(self):
         selected_nerve = self.get_selected_nerve()
         self.axon_list_item_model.clear()
-        for axon_info in selected_nerve.axon_infos_list:
-            item = QtGui.QStandardItem(axon_info.axon_type + "_" + str(axon_info.diameter))
+        for axon in self.axon_list:
+            item = QtGui.QStandardItem(axon.type + "_" + str(axon.diameter))
             self.axon_list_item_model.appendRow(item)
         self.axon_list_view.setModel(self.axon_list_item_model)
 
     def update_axons(self):
-        selected_nerve = self.get_selected_nerve()
-        for axon_info in selected_nerve.axon_infos_list:
-            axon_info.x = selected_nerve.x
-            axon_info.y = selected_nerve.y
-            axon_info.z = selected_nerve.z
-            axon_info.angle = selected_nerve.angle
-            axon_info.length = selected_nerve.length
+        if not self.axon_list:
+            return
+        message_box = QMessageBox
+        reply = message_box.question(self, 'Custom nerve changed', 'Rebuild existing axon models?',
+                                     QMessageBox.Yes | QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            new_axon_list = []
+            for axon in self.axon_list:
+                if axon.type == 'MHH':
+                    new_axon_list.append(mhh_model.Axon(self.get_selected_nerve(), self.nseg_node, self.nseg_internode,
+                                                        axon.diameter))
+                    # TODO: repeat for RMG and HH
+            self.axon_list = new_axon_list
 
     def delete_axon(self):
-        selected_nerve = self.get_selected_nerve()
         if not self.axon_list_view.currentIndex().isValid():
             return
         selected_index = self.axon_list_view.currentIndex()
-        del selected_nerve.axon_infos_list[selected_index.row()]
+        del self.axon_list[selected_index.row()]
         self.update_axon_list()
 
     def set_axon_diam_widget(self):
@@ -133,6 +140,10 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
         else:
             self.axon_diam_combo_box.setVisible(False)
             self.axon_diam_spin_box.setVisible(True)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # Custom nerve dimension
+    # ------------------------------------------------------------------------------------------------------------------
 
     def show_nerve_dimension_widget(self):
         self.nerve_dimension_widget.show()
@@ -153,41 +164,41 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
         selected_nerve = self.custom_nerve
         selected_nerve.x = value * self.scaling  # convert from mm to um
         self.update_axons()
-        self.e_field_changed.emit()
+        self.custom_nerve_changed.emit()
 
     def set_nerve_y(self, value):
         selected_nerve = self.custom_nerve
         selected_nerve.y = value * self.scaling  # convert from mm to um
         self.update_axons()
-        self.e_field_changed.emit()
+        self.custom_nerve_changed.emit()
 
     def set_nerve_z(self, value):
         selected_nerve = self.custom_nerve
         selected_nerve.z = value * self.scaling  # convert from mm to um
         self.update_axons()
-        self.e_field_changed.emit()
+        self.custom_nerve_changed.emit()
 
     def set_nerve_angle(self, value):
         selected_nerve = self.custom_nerve
         selected_nerve.angle = value
         self.update_axons()
-        self.e_field_changed.emit()
+        self.custom_nerve_changed.emit()
 
     def set_nerve_length(self, value):
         selected_nerve = self.custom_nerve
         selected_nerve.length = value * self.scaling  # convert from mm to um
         self.update_axons()
-        self.e_field_changed.emit()
+        self.custom_nerve_changed.emit()
 
     def set_nerve_diam(self, value):
         selected_nerve = self.custom_nerve
         selected_nerve.nerve_diameter = value
-        self.e_field_changed.emit()
+        self.custom_nerve_changed.emit()
 
 
-class nerveDimensionWidget(QWidget_NerveDimensions, Ui_NerveDimensionWidget):
+class NerveDimensionWidget(QWidget_NerveDimensions, Ui_NerveDimensionWidget):
 
     def __init__(self, parent = None):
-        super(nerveDimensionWidget, self).__init__(parent)
+        super(NerveDimensionWidget, self).__init__(parent)
 
         self.setupUi(self)

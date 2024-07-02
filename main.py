@@ -9,7 +9,7 @@ from PyQt5 import uic, QtGui, QtWidgets
 
 import matplotlib
 
-import e_field_widget
+import input_data_widget
 
 matplotlib.use('Qt5Agg')
 from matplotlib.figure import Figure
@@ -19,7 +19,7 @@ from matplotlib.backends.backend_qt5agg import (
 from matplotlib import pyplot as plt
 
 from stimulus_widget import stimulusWidget
-from e_field_widget import EFieldWidget
+from input_data_widget import InputDataWidget
 from nerve_widget import NerveWidget
 from threshold_widget import ThresholdWidget
 from monte_carlo_widget import MonteCarloWidgetEField, MonteCarloWidgetNerveShape, MonteCarloWidgetEFieldWithNerveShape
@@ -32,6 +32,7 @@ sys.path.insert(0, "C:/nrn/lib/python")
 
 import neuron_sim as ns
 import misc_functions as mf
+from Axon_Models import mhh_model
 import neuron_sim_nerve_shape as ns_ns
 from copy import deepcopy
 
@@ -45,7 +46,7 @@ Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
 interpolation_radius_index = 0
 nerve_shape_step_size = 2
-internode_segments = 50
+internode_segments = 1
 node_segments = 1
 
 
@@ -58,7 +59,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.setWindowTitle("MFE Neuro Simulation")
 
         # E-Field widget
-        self.e_field_widget = EFieldWidget()
+        self.input_data_widget = InputDataWidget()
 
         # Plot widget
         self.plot_widget = PlotWidget()
@@ -80,10 +81,10 @@ class Main(QMainWindow, Ui_MainWindow):
 
         # signal connections
         self.conf_efield_button.clicked.connect(self.configure_efield)
-        self.e_field_widget.e_field_changed.connect(self.update_e_field)
-        self.e_field_widget.nerve_shape_loaded.connect(self.set_nerve_shape)
+        self.input_data_widget.e_field_changed.connect(self.update_e_field)
+        self.input_data_widget.nerve_shape_changed.connect(self.set_nerve_shape)
 
-        self.nerve_widget.e_field_changed.connect(self.update_e_field)
+        self.nerve_widget.custom_nerve_changed.connect(self.update_e_field)
 
         self.stimulus_button.clicked.connect(self.open_stimulus_widget)
         self.stimulus_widget.stimulus_changed.connect(self.update_stimulus)
@@ -101,7 +102,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.e_field_layout.addWidget(self.canvas)
         self.canvas.draw()
         self.toolbar = NavigationToolbar(self.canvas,
-                self.e_field_widget, coordinates=True)
+                                         self.input_data_widget, coordinates=True)
         self.e_field_layout.addWidget(self.toolbar)
 
     def remove_plot(self,):
@@ -111,18 +112,16 @@ class Main(QMainWindow, Ui_MainWindow):
         self.toolbar.close()
 
     def configure_efield(self):
-        self.e_field_widget.show()
+        self.input_data_widget.show()
 
     def update_e_field(self):
-        self.e_field_widget.custom_nerve = self.nerve_widget.custom_nerve
-        self.e_field_widget.scaling = scaling
-        if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-            self.plot_widget.add_figure(self.e_field_widget.get_e_field_with_custom_nerve_plot(), 'Nerve in Field')
-        else:
-            self.e_field_widget.custom_nerve = None
-
-        if self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-            self.plot_widget.add_figure(self.e_field_widget.get_nerve_shape_plot(), 'Nerve Shape')
+        self.input_data_widget.scaling = scaling
+        self.plot_widget.add_figure(plot_functions.plot_2d_field_with_cable(self.input_data_widget.e_field,
+                                                                            self.input_data_widget.e_field_layer_slider.value(),
+                                                                            self.nerve_widget.custom_nerve,
+                                                                            scaling), 'Custom Nerve in Field')
+        if self.input_data_widget.nerve_shape:
+            self.plot_widget.add_figure(self.input_data_widget.get_nerve_shape_plot(), 'Nerve Shape')
         # self.plot_widget.add_figure(self.e_field_widget.get_current_e_field_plot(), 'Current E-field')
 
     def open_stimulus_widget(self):
@@ -134,24 +133,9 @@ class Main(QMainWindow, Ui_MainWindow):
         self.time_axis = self.stimulus_widget.time_axis
         self.total_time = self.stimulus_widget.total_time
 
-    def build_neuron_sim(self, axon):
-        neuron_sim = None
-        if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-            neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field, interpolation_radius_index,
-                                            axon, self.time_axis, self.stimulus, self.total_time)
-        elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
-            neuron_sim = ns.NeuronSimNerveShape(self.nerve_widget.get_selected_nerve(), nerve_shape_step_size,
-                                                axon, self.time_axis, self.stimulus, self.total_time)
-        elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-            neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field,
-                                                          interpolation_radius_index,
-                                                          self.nerve_widget.get_selected_nerve(), nerve_shape_step_size,
-                                                          axon, self.time_axis, self.stimulus, self.total_time)
-        self.neuron_sim = neuron_sim
-
     def create_neuronal_model(self):
-        selected_nerve = self.nerve_widget.custom_nerve
-        if not selected_nerve.axon_infos_list:
+        selected_nerve = self.nerve_widget.get_selected_nerve()
+        if not selected_nerve.axon_list:
             return
         if not self.nerve_widget.axon_list_view.currentIndex().isValid():
             return
@@ -160,37 +144,51 @@ class Main(QMainWindow, Ui_MainWindow):
         if hasattr(self, 'field_axon_canvas'):
             self.potential_layout.removeWidget(self.field_axon_canvas)
             self.field_axon_canvas.close()
-        self.build_neuron_sim(selected_nerve.axon_infos_list[selected_index.row()])
-        self.neuron_sim.quasipot()
+        axon = selected_nerve.axon_list[selected_index.row()]
+        axon_model = mhh_model.Axon(self.nerve_widget.get_selected_nerve(),axon.nseg_node, axon.nseg_internode,
+                                    axon.diameter)
 
-        self.plot_widget.add_figure(plot_functions.plot_e_field_along_nerve(self.neuron_sim.axon.e_field_along_axon),
-                                    'E_field_along_nerve')
-        self.plot_widget.add_figure(plot_functions.plot_potential_along_nerve(self.neuron_sim.axon.potential_along_axon),
-                                    'Potential_along_nerve')
-        self.plot_widget.add_figure(plot_functions.plot_axon_xy_coordinates(self.neuron_sim.axon),
-                                    'Axon x y coordinates')
-        self.plot_widget.add_figure(plot_functions.plot_axon_xy_coordinates_with_nodes(self.neuron_sim.axon, internode_segments),
-                                    'Axon x y coordinates with nodes')
-        if self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-            self.plot_widget.add_figure(plot_functions.plot_axon_nerve_shape_xy_coordinates(self.neuron_sim.axon,
-                                        self.nerve_widget.get_selected_nerve()), 'Axon and Nerve Shape coordinates')
+        nerve_shape = self.nerve_widget.get_selected_nerve()
+        fig1 = plt.Figure()
+        plt.plot(nerve_shape.y, nerve_shape.z)
+        plt.plot(axon_model.y, axon_model.z)
+        plt.show()
 
-        e_field_along_axon = self.neuron_sim.axon.e_field_along_axon
-        fig1 = Figure()
-        ax1f1 = fig1.add_subplot(111)
-        ax1f1.plot(e_field_along_axon)
-        self.field_axon_canvas = FigureCanvas(fig1)
-        self.potential_layout.addWidget(self.field_axon_canvas)
-        self.field_axon_canvas.draw()
+        # self.neuron_sim = ns.NeuronSim(self.e_field_widget.e_field,
+        #                                                   interpolation_radius_index,
+        #                                                   self.nerve_widget.get_selected_nerve(), nerve_shape_step_size,
+        #                                                   axon, self.time_axis, self.stimulus, self.total_time)
+        #
+        # self.neuron_sim.quasipot()
+        #
+        # self.plot_widget.add_figure(plot_functions.plot_e_field_along_nerve(self.neuron_sim.axon.e_field_along_axon),
+        #                             'E_field_along_nerve')
+        # self.plot_widget.add_figure(plot_functions.plot_potential_along_nerve(self.neuron_sim.axon.potential_along_axon),
+        #                             'Potential_along_nerve')
+        # self.plot_widget.add_figure(plot_functions.plot_axon_xy_coordinates(self.neuron_sim.axon),
+        #                             'Axon x y coordinates')
+        # self.plot_widget.add_figure(plot_functions.plot_axon_xy_coordinates_with_nodes(self.neuron_sim.axon, internode_segments),
+        #                             'Axon x y coordinates with nodes')
+        # if self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
+        #     self.plot_widget.add_figure(plot_functions.plot_axon_nerve_shape_xy_coordinates(self.neuron_sim.axon,
+        #                                 self.nerve_widget.get_selected_nerve()), 'Axon and Nerve Shape coordinates')
+        #
+        # e_field_along_axon = self.neuron_sim.axon.e_field_along_axon
+        # fig1 = Figure()
+        # ax1f1 = fig1.add_subplot(111)
+        # ax1f1.plot(e_field_along_axon)
+        # self.field_axon_canvas = FigureCanvas(fig1)
+        # self.potential_layout.addWidget(self.field_axon_canvas)
+        # self.field_axon_canvas.draw()
 
 
     def single_simulation(self):
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if not selected_nerve.axon_infos_list:
+        if not selected_nerve.axon_list:
             return
-        for axon in selected_nerve.axon_infos_list:
+        for axon in selected_nerve.axon_list:
             self.build_neuron_sim(axon)
             self.neuron_sim.quasipot()
             self.neuron_sim.simple_simulation()
@@ -199,11 +197,11 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def threshold_search(self):
         selected_nerve = self.nerve_widget.custom_nerve
-        if not selected_nerve.axon_infos_list:
+        if not selected_nerve.axon_list:
             return
         # Dict -----------------------------------------------------------------
         export_dict = {'Diameter': []}
-        for axon in selected_nerve.axon_infos_list:
+        for axon in selected_nerve.axon_list:
             self.build_neuron_sim(axon)
             self.neuron_sim.quasipot()
             threshold = self.neuron_sim.threshold_simulation(self.threshold_widget)
@@ -234,9 +232,9 @@ class Main(QMainWindow, Ui_MainWindow):
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if not selected_nerve.axon_infos_list:
+        if not selected_nerve.axon_list:
             return
-        axon = selected_nerve.axon_infos_list[0]
+        axon = selected_nerve.axon_list[0]
         # Dict -----------------------------------------------------------------
         export_dict_efield = {}
         export_dict_potential = {}
@@ -276,9 +274,9 @@ class Main(QMainWindow, Ui_MainWindow):
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if not selected_nerve.axon_infos_list:
+        if not selected_nerve.axon_list:
             return
-        axon = selected_nerve.axon_infos_list[0]
+        axon = selected_nerve.axon_list[0]
         # Dict -----------------------------------------------------------------
         export_dict_efield = {}
         export_dict_potential = {}
@@ -304,11 +302,11 @@ class Main(QMainWindow, Ui_MainWindow):
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if not selected_nerve.axon_infos_list:
+        if not selected_nerve.axon_list:
             return
         # Dict -----------------------------------------------------------------
 
-        for axon in selected_nerve.axon_infos_list:
+        for axon in selected_nerve.axon_list:
             z_offset = np.arange(-25000, 26000, 5000)
             for z in z_offset:
                 export_dict = {}
@@ -355,7 +353,10 @@ class Main(QMainWindow, Ui_MainWindow):
         undulation_amplitude = 50000  # µm
         undulation_sine = undulation_amplitude * np.sin(2 * np.pi * (1 / undulation_period) * distance)
         self.nerve_widget.custom_nerve.x = self.nerve_widget.custom_nerve.x + undulation_sine
-        self.plot_widget.add_figure(self.e_field_widget.get_e_field_with_custom_nerve_plot(), 'Nerve in Field')
+        self.plot_widget.add_figure(plot_functions.plot_2d_field_with_cable(self.input_data_widget.e_field,
+                                                                            self.e_field_layer_slider.value(),
+                                                                            self.nerve_widget.custom_nerve,
+                                                                            scaling), 'Nerve in Field')
         # undulation_period = 200  # µm
         # undulation_amplitude = 40  # µm
         # undulation_sine = undulation_amplitude * np.sin(2 * np.pi * (1 / undulation_period) * distance)
@@ -383,26 +384,26 @@ class Main(QMainWindow, Ui_MainWindow):
         self.threshold_widget.show()
 
     def set_nerve_shape(self):
-        self.nerve_widget.add_anatomical_nerve(self.e_field_widget.nerve_shape)
+        self.nerve_widget.add_anatomical_nerve(self.input_data_widget.nerve_shape)
 
     def monte_carlo_axon_diam_sweep(self):
         if not self.nerve_widget.nerve_dict:
             return
         selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-            self.monte_carlo_widget = MonteCarloWidgetEField(self.e_field_widget.e_field,
+        if self.input_data_widget.state == self.input_data_widget.E_FIELD_ONLY:
+            self.monte_carlo_widget = MonteCarloWidgetEField(self.input_data_widget.e_field,
                                                              interpolation_radius_index, selected_nerve, self.stimulus,
                                                              self.time_axis, self.total_time, self.threshold_widget)
             self.monte_carlo_widget.show()
-        elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
-            self.monte_carlo_widget = MonteCarloWidgetNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
+        elif self.input_data_widget.state == self.input_data_widget.NERVE_SHAPE_ONLY:
+            self.monte_carlo_widget = MonteCarloWidgetNerveShape(self.input_data_widget.nerve_shape, nerve_shape_step_size,
                                                                  self.stimulus, self.time_axis, self.total_time,
                                                                  self.threshold_widget)
             self.monte_carlo_widget.show()
-        elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-            self.monte_carlo_widget = MonteCarloWidgetEFieldWithNerveShape(self.e_field_widget.e_field,
+        elif self.input_data_widget.state == self.input_data_widget.E_FIELD_WITH_NERVE_SHAPE:
+            self.monte_carlo_widget = MonteCarloWidgetEFieldWithNerveShape(self.input_data_widget.e_field,
                                                                            interpolation_radius_index,
-                                                                           self.e_field_widget.nerve_shape,
+                                                                           self.input_data_widget.nerve_shape,
                                                                            nerve_shape_step_size,
                                                                            self.stimulus, self.time_axis,
                                                                            self.total_time, self.threshold_widget)
