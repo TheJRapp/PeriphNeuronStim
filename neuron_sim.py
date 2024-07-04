@@ -18,19 +18,16 @@ import neuron
 
 class NeuronSim:
 
-    def __init__(self, static_e_field_list, radius, nerve_shape, nerve_step_size, axon_model_parameter, time_axis,
-                 stimulus, total_time):
+    def __init__(self, e_field, axon, radius, time_axis, stimulus, total_time):
         super(NeuronSim, self).__init__()
-        self.nerve_shape = nerve_shape
-        self.step_size = nerve_step_size
-        self.e_field_list = static_e_field_list
+        self.e_field = e_field
+        self.axon = axon
         self.interpolation_radius_index = radius
 
         h.load_file('stdrun.hoc')
         h.celsius = 37
         h.dt = 0.001  # ms
 
-        self.axon = self.generate_axon(axon_model_parameter)
         self.time_axis = time_axis
         self.stimulus = stimulus[0]
         self.uni_stimulus = stimulus[1]
@@ -38,22 +35,9 @@ class NeuronSim:
         self.e_field_along_axon = []
         self.potential_along_axon = []
 
-    def generate_axon(self, mp):
-        if mp.axon_type == 'HH':
-            axon = self.hh(mp.diameter, self.nerve_shape)
-        elif mp.axon_type == 'RMG':
-            axon = self.mrg(mp.diameter, self.nerve_shape)
-        else:
-            axon = simple_from_nerve_shape_working(mp.diameter, mp.nseg_node, mp.nseg_internode, self.nerve_shape,
-                                                   self.step_size)
-
-        mf.record_membrane_potentials(axon, 0.5)
-
-        return axon
-
     def quasipot(self):
         self.axon.stim_matrix, self.axon.e_field_along_axon, self.axon.potential_along_axon, = mf.quasi_potentials(
-            self.stimulus, self.e_field_list, self.axon, self.interpolation_radius_index)
+            self.stimulus, self.e_field, self.axon, self.interpolation_radius_index)
         self.apply_potential_to_nerve()
 
     def mdf(self):

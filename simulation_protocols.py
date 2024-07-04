@@ -56,19 +56,19 @@ class ExperimentProtocol:
             for filename in sorted(field_path):
                 print(str(os.path.basename(filename)))
                 with open(filename, 'rb') as e:
-                    self.e_field_widget.e_field_list = pickle.load(e)
+                    self.e_field_widget.e_field = pickle.load(e)
                 export_dict[os.path.basename(filename)] = []
                 self.e_field_widget.smooth_e_field()
 
                 self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z + z
                 if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-                    neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
+                    neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field, interpolation_radius_index,
                                                     axon, self.time_axis, self.stimulus, self.total_time)
                 elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
                     neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                         axon, self.time_axis, self.stimulus, self.total_time)
                 elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-                    neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
+                    neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field,
                                                                   interpolation_radius_index,
                                                                   self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                                   axon, self.time_axis, self.stimulus, self.total_time)
@@ -99,13 +99,13 @@ class ExperimentProtocol:
                     export_dict[z] = []
                 self.e_field_widget.nerve_shape.z = self.e_field_widget.nerve_shape.z + z
                 if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-                    neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
+                    neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field, interpolation_radius_index,
                                                     axon, self.time_axis, self.stimulus, self.total_time)
                 elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
                     neuron_sim = ns.NeuronSimNerveShape(self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                         axon, self.time_axis, self.stimulus, self.total_time)
                 elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-                    neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
+                    neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field,
                                                                   interpolation_radius_index,
                                                                   self.e_field_widget.nerve_shape, nerve_shape_step_size,
                                                                   axon, self.time_axis, self.stimulus, self.total_time)
@@ -147,13 +147,13 @@ class ExperimentProtocol:
                     nerve_shape.z[0] = new_z
                     nerve_shape.z = nerve_shape.z + z
                     if self.e_field_widget.state == self.e_field_widget.E_FIELD_ONLY:
-                        neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field_list, interpolation_radius_index,
+                        neuron_sim = ns.NeuronSimEField(self.e_field_widget.e_field, interpolation_radius_index,
                                                         axon, self.time_axis, self.stimulus, self.total_time)
                     elif self.e_field_widget.state == self.e_field_widget.NERVE_SHAPE_ONLY:
                         neuron_sim = ns.NeuronSimNerveShape(nerve_shape, nerve_shape_step_size,
                                                             axon, self.time_axis, self.stimulus, self.total_time)
                     elif self.e_field_widget.state == self.e_field_widget.E_FIELD_WITH_NERVE_SHAPE:
-                        neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field_list,
+                        neuron_sim = ns.NeuronSimEFieldWithNerveShape(self.e_field_widget.e_field,
                                                                       interpolation_radius_index, nerve_shape,
                                                                       nerve_shape_step_size,
                                                                       axon, self.time_axis, self.stimulus, self.total_time)
@@ -198,12 +198,12 @@ class ExperimentProtocol:
             neuron_sim = ns.NeuronSimNerveShape(master.input_data_widget.nerve_shape, nerve_shape_step_size,
                                                 axon, master.time_axis, master.stimulus, master.total_time)
         elif master.input_data_widget.state == master.input_data_widget.E_FIELD_WITH_NERVE_SHAPE:
-            neuron_sim = ns.NeuronSimEFieldWithNerveShape(master.input_data_widget.e_field_list,
+            neuron_sim = ns.NeuronSimEFieldWithNerveShape(master.input_data_widget.e_field,
                                                           interpolation_radius_index,
                                                           master.input_data_widget.nerve_shape, nerve_shape_step_size,
                                                           axon, master.time_axis, master.stimulus, master.total_time)
         else:
-            neuron_sim = ns.NeuronSimEField(master.input_data_widget.e_field_list, interpolation_radius_index,
+            neuron_sim = ns.NeuronSimEField(master.input_data_widget.e_field, interpolation_radius_index,
                                             axon, master.time_axis, master.stimulus, master.total_time)
         neuron_sim.quasipot()
         if threshold:

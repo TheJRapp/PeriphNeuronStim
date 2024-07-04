@@ -19,7 +19,8 @@ rmg_diameter_list = ["16.0", "15.0", "14.0", "12.8", "11.5", "10.0", "8.7", "7.3
 
 
 class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
-    custom_nerve_changed = pyqtSignal()
+    nerve_shape_changed = pyqtSignal()
+    axon_added = pyqtSignal()
 
     def __init__(self, scaling, nseg_node, nseg_internode, parent = None):
         super(NerveWidget, self).__init__(parent)
@@ -53,6 +54,11 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
         # TODO: is it sufficient to overwrite nerve shape or must the old one be deleted?
         self.nerve_dimension_widget.apply_button.clicked.connect(self.add_custom_nerve)
 
+        self.anatomicalRadioButton.clicked.connect(self.nerve_shape_changed)
+        self.customRadioButton.clicked.connect(self.nerve_shape_changed)
+        self.anatomicalRadioButton.clicked.connect(self.update_axons)
+        self.customRadioButton.clicked.connect(self.update_axons)
+
     def add_custom_nerve(self):
         self.custom_nerve = database.CustomNerve(
             x=self.nerve_dimension_widget.x_spin_box.value() * self.scaling,
@@ -63,12 +69,12 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
             length=self.nerve_dimension_widget.length_spin_box.value() * self.scaling,
             nerv_diam=self.nerve_dimension_widget.diam_spin_box.value(),
             name='')
-        self.custom_nerve_changed.emit()
+        self.nerve_shape_changed.emit()
         self.update_axons()
 
     def add_anatomical_nerve(self, nerve_shape):
         self.anatomical_nerve = nerve_shape
-        self.anatomicalRadioButton.setEnabled()
+        self.anatomicalRadioButton.setEnabled(True)
         self.warningLabel.setText('Available')
 
     def get_selected_nerve(self):
@@ -110,6 +116,7 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
             item = QtGui.QStandardItem(axon.type + "_" + str(axon.diameter))
             self.axon_list_item_model.appendRow(item)
         self.axon_list_view.setModel(self.axon_list_item_model)
+        self.axon_added.emit()
 
     def update_axons(self):
         if not self.axon_list:
@@ -125,6 +132,8 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
                                                         axon.diameter))
                     # TODO: repeat for RMG and HH
             self.axon_list = new_axon_list
+        self.update_axon_list()
+
 
     def delete_axon(self):
         if not self.axon_list_view.currentIndex().isValid():
@@ -164,36 +173,36 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
         selected_nerve = self.custom_nerve
         selected_nerve.x = value * self.scaling  # convert from mm to um
         self.update_axons()
-        self.custom_nerve_changed.emit()
+        self.nerve_shape_changed.emit()
 
     def set_nerve_y(self, value):
         selected_nerve = self.custom_nerve
         selected_nerve.y = value * self.scaling  # convert from mm to um
         self.update_axons()
-        self.custom_nerve_changed.emit()
+        self.nerve_shape_changed.emit()
 
     def set_nerve_z(self, value):
         selected_nerve = self.custom_nerve
         selected_nerve.z = value * self.scaling  # convert from mm to um
         self.update_axons()
-        self.custom_nerve_changed.emit()
+        self.nerve_shape_changed.emit()
 
     def set_nerve_angle(self, value):
         selected_nerve = self.custom_nerve
         selected_nerve.angle = value
         self.update_axons()
-        self.custom_nerve_changed.emit()
+        self.nerve_shape_changed.emit()
 
     def set_nerve_length(self, value):
         selected_nerve = self.custom_nerve
         selected_nerve.length = value * self.scaling  # convert from mm to um
         self.update_axons()
-        self.custom_nerve_changed.emit()
+        self.nerve_shape_changed.emit()
 
     def set_nerve_diam(self, value):
         selected_nerve = self.custom_nerve
         selected_nerve.nerve_diameter = value
-        self.custom_nerve_changed.emit()
+        self.nerve_shape_changed.emit()
 
 
 class NerveDimensionWidget(QWidget_NerveDimensions, Ui_NerveDimensionWidget):

@@ -56,7 +56,6 @@ class PlotWidget(QWidget_Plot, Ui_PlotWidget):
         self.plot_list_item_model = QtGui.QStandardItemModel(self.plot_list_view)
         self.show_plot_button.clicked.connect(self.plot_figure)
 
-
     def add_figure(self, figure, label):
         for i in range(len(self.figure_list)):
             if self.figure_list[i].label == label:
@@ -64,6 +63,10 @@ class PlotWidget(QWidget_Plot, Ui_PlotWidget):
                 self.update_plot_list()
                 return
         self.figure_list.append(CustomFigure(figure, label))
+        self.update_plot_list()
+
+    def clear_figures(self):
+        self.figure_list = []
         self.update_plot_list()
 
     def plot_figure(self):

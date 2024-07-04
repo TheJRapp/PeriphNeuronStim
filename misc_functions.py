@@ -16,8 +16,9 @@ def play_stimulus_matrix(model, time_axis):
     """
     Plays the stimulus into each node.
     """
+    print('Hi')
     segment_list = model.get_segments()
-
+    print('there')
     time_vector = h.Vector()
     time_vector.from_python(time_axis)
 
@@ -31,6 +32,8 @@ def play_stimulus_matrix(model, time_axis):
     # save vectors from garbage collector
     model.stimulus_vector_list = stimulus_vector_list
     model.time_vector = time_vector
+    print('Im done lol')
+
 
 
 def homogeneous_medium(stimulus, model):
@@ -129,7 +132,9 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
         # identify relevant e_field points
         # small e-field: limited by cable limits
         # large e-field: original field
-
+        print('------------------')
+        print('Index: ', str(j)+'/'+str(len(cable.x)))
+        print('Loop started')
         if cable_x_max - cable_x_min:
             x_position_relative = (cable.x[j] - cable_x_min) / (cable_x_max - cable_x_min)  # number between 0 and 1
         else:
@@ -150,20 +155,25 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
             z_position_relative = 0
         e_field_index_z = z_position_relative * (len(z_axis[z_min_ind:z_max_ind]))  # e_field_index_z in small e-field
         iz = z_min_ind + int(e_field_index_z)  # index in large e-field
-
+        print('Relative indeces set')
         # check if cable starts outside defined e_field
         if round(cable.y[j]) < min(y_axis) or round(cable.y[j]) > max(y_axis) or round(cable.x[j]) < min(x_axis) or round(cable.x[j]) > max(x_axis) \
                 or round(cable.z[j]) < min(z_axis) or round(cable.z[j]) > max(z_axis):
             e_average_current = 0
-
+            print('Cable starts outside e_field!')
         else:
             e_x = e_field.e_x
             e_y = e_field.e_y
             e_z = e_field.e_z
-
-            e_average_current = cable.unit_vector[j][0] * e_x[iy, ix, iz] + \
-                                cable.unit_vector[j][1] * e_y[iy, ix, iz] + \
-                                cable.unit_vector[j][2] * e_z[iy, ix, iz]
+            print('Cable starts inside e_field')
+            print('field indices : ', iy, ix, iz)
+            print('Unit vector x : ', cable.seg_unit_vectors[j][0])
+            print('Unit vector y : ', cable.seg_unit_vectors[j][1])
+            print('Unit vector z : ', cable.seg_unit_vectors[j][2])
+            print('field ex: ', e_x[iy, ix, iz])
+            e_average_current = cable.seg_unit_vectors[j][0] * e_x[iy, ix, iz] + \
+                                cable.seg_unit_vectors[j][1] * e_y[iy, ix, iz] + \
+                                cable.seg_unit_vectors[j][2] * e_z[iy, ix, iz]
             # using interpolation radius: (just possible when e_field is not a single plane)
             # e_average_current = cable.get_unitvector()[int(step_vector[j])][0] * e_x[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum() + \
             #                     cable.get_unitvector()[int(step_vector[j])][1] * e_y[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r].sum() + \
@@ -177,7 +187,7 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
             #                         cable.get_unitvector()[int(step_vector[j])][1] * e_y[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r] + \
             #                         cable.get_unitvector()[int(step_vector[j])][2] * e_z[iz - r:iz + r, iy - r:iy + r, ix - r:ix + r]
             # ----------------------------------------------------------------------------------------------------------
-
+            print('e_average_current done')
         if j == 0:
             k = 1
             offset = e_average_current

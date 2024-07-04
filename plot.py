@@ -183,21 +183,23 @@ def plot_axon_xy_coordinates(axon):
     return fig
 
 
-def plot_axon_xy_coordinates_with_nodes(axon, internode_segments):
+def plot_axon_xy_coordinates_with_nodes(axon_list, internode_segments):
     # This works only for MHH model, whith nseg_internode=x and nseg_node=1
     fig = plt.Figure()
     ax1 = fig.add_subplot(111)
-    ax1.plot(axon.x, axon.y)
-    ax1.plot(axon.x[::internode_segments], axon.y[::internode_segments], 'x')
+    for axon in axon_list:
+        ax1.plot(axon.x, axon.y)
+        ax1.plot(axon.x[::internode_segments], axon.y[::internode_segments], 'x')
     ax1.set_xlabel('x in µm')
     ax1.set_ylabel('y in µm')
     return fig
 
 
-def plot_axon_nerve_shape_xy_coordinates(axon, nerve_shape):
+def plot_axon_nerve_shape_xy_coordinates(axon_list, nerve_shape):
     fig = plt.Figure()
     ax1 = fig.add_subplot(111)
-    ax1.plot(axon.x, axon.y, label='Axon')
+    for axon in axon_list:
+        ax1.plot(axon.x, axon.y, label='Axon '+str(axon.diameter))
     ax1.plot(nerve_shape.x, nerve_shape.y, label='Nerve shape')
     ax1.set_xlabel('x in µm')
     ax1.set_ylabel('y in µm')
