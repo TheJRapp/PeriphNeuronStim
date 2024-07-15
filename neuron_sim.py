@@ -24,6 +24,7 @@ class NeuronSim:
         self.axon = axon
         self.interpolation_radius_index = radius
 
+        mf.record_membrane_potentials(self.axon, 0.5)
         h.load_file('stdrun.hoc')
         h.celsius = 37
         h.dt = 0.001  # ms
@@ -76,7 +77,7 @@ class NeuronSim:
         h.continuerun(self.total_time)
 
     def plot_simulation(self):
-        ax1, ax2 = pt.plot_traces_and_field('Nodes: ' + self.axon.name, self.time_axis, self.stimulus, self.axon)
+        ax1, ax2 = pt.plot_traces_and_field('', self.time_axis, self.stimulus, self.axon)
         return ax1, ax2
 
     def threshold_simulation(self, threshold_widget):

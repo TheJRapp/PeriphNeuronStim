@@ -75,6 +75,7 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
     def add_anatomical_nerve(self, nerve_shape):
         self.anatomical_nerve = nerve_shape
         self.anatomicalRadioButton.setEnabled(True)
+        self.anatomicalRadioButton.setChecked(True)
         self.warningLabel.setText('Available')
 
     def get_selected_nerve(self):

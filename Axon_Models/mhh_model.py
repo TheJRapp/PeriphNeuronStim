@@ -5,7 +5,7 @@ sys.path.insert(0, "C:/nrn/lib/python")
 import numpy as np
 import neuron
 import nrn
-
+from matplotlib import pyplot as plt
 
 class Axon(object):
 
@@ -29,20 +29,17 @@ class Axon(object):
 
         # spacing = smallest segment length
         if self.node_length/self.nseg_node < self.internode_length / self.nseg_internode:
-            self.spacing = self.node_length/self.nseg_node
+            self.spacing = self.node_length / (self.nseg_node)
         else:
-            self.spacing = self.internode_length / self.nseg_internode
+            self.spacing = self.internode_length / (self.nseg_internode)
         self.x_coordinates, self.y_coordinates, self.z_coordinates, self.total_length = self.adapt_nerve_shape_to_axon(nerve_shape)
-        self.number_node_internode_pairs = int(self.total_length / (self.internode_length + self.node_length))
+        self.number_node_internode_pairs = int(self.total_length / (self.internode_length + self.node_length))-1
         self.internode_start_points, self.node_start_points, self.segment_start_points = self.determine_coordinates()
-        print('Spacing: ', self.spacing)
-        print('Internode length: ', self.internode_length)
-        print('Node internode pairs: ', self.number_node_internode_pairs)
+
         self.x = self.x_coordinates[self.segment_start_points]
         self.y = self.y_coordinates[self.segment_start_points]
         self.z = self.z_coordinates[self.segment_start_points]
-        print('X coordinate length: ', len(self.x_coordinates))
-        print('X length: ', len(self.x))
+
         node = Node(nseg_node, node_length, node_diameter)
         self.sections.append(node)
         for i in range(self.number_node_internode_pairs):
@@ -98,17 +95,15 @@ class Axon(object):
         if spacings_per_node == 0:
             spacings_per_node = 1
         # Assigning the start points instead of the middle points --> cable is shifted for half internode length
-        node_start_points = [i * (spacings_per_internode + spacings_per_node) for i in
-                             range(self.number_node_internode_pairs)]
+        node_start_points = [i * (spacings_per_internode + spacings_per_node + 1) for i in
+                             range(self.number_node_internode_pairs+1)]
         internode_start_points = [i + spacings_per_node for i in node_start_points]
-
         spacings_per_in_seg = int((self.internode_length/self.nseg_internode) / self.spacing)
         spacings_per_n_seg = int((self.node_length / self.nseg_node) / self.spacing)
         if spacings_per_in_seg == 0:
             spacings_per_in_seg = 1
         if spacings_per_n_seg == 0:
             spacings_per_n_seg = 1
-
         segment_start_points = []
         for j in range(self.nseg_node):
             node_seg_start_point = node_start_points
@@ -131,31 +126,22 @@ class Axon(object):
                self.z_coordinates[self.internode_start_points]
 
     def calculate_unit_vectors(self):
-        seg_list = self.get_segments()
         seg_unit_vectors = []
-        # TODO: nicht durch spacing dividieren, sondern segment length (bei einem internode segment, segment lenght = internode length, nicht spacing)
-        for seg in seg_list:
-            print('Segment L:')
-            print(seg.L)
-            # delta_x = (self.x[i + 1] - self.x[i]) / self.spacing
-            # delta_y = (self.y[i + 1] - self.y[i]) / self.spacing
-            # delta_z = (self.z[i + 1] - self.z[i]) / self.spacing
-            # seg_unit_vectors.append([delta_x, delta_y, delta_z])
-
+        for i in range(len(self.x)-1):
+            delta_x = (self.x[i + 1] - self.x[i])
+            delta_y = (self.y[i + 1] - self.y[i])
+            delta_z = (self.z[i + 1] - self.z[i])
+            length = np.sqrt(delta_x ** 2 + delta_y ** 2 + delta_z ** 2)
+            seg_unit_vectors.append([delta_x/length, delta_y/length, delta_z/length])
         seg_unit_vectors.append(seg_unit_vectors[-1])
-        # print('Len unit_vector: ', len(seg_unit_vectors))
-        # print('Unit vector 1 : ', seg_unit_vectors[0])
-        # print('Unit vector 2 : ', seg_unit_vectors[1])
-        # print('Unit vector 3 : ', seg_unit_vectors[2])
-        # print('Unit vector -1 : ', seg_unit_vectors[-1])
         return seg_unit_vectors
 
     def get_segments(self):
         seg_list = []
         for sec in self.sections:
             seg_list.extend([sec(seg.x) for seg in sec])
-        print(np.asarray(seg_list))
         return np.asarray(seg_list)
+
 
 class SuperCompartment(nrn.Section):
 

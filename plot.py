@@ -9,7 +9,7 @@ sys.path.insert(0, "C:/nrn/lib/python")
 import numpy as np
 import matplotlib.pyplot as plt
 from neuron import h
-from Axon_Models import mrg_axon, hh_axon, simple_axon
+from Axon_Models import mrg_axon, hh_axon, simple_axon, mhh_model
 from matplotlib.ticker import FormatStrFormatter
 import cv2
 
@@ -67,7 +67,9 @@ def plot_traces(name, trace_list, time_axis, stimulus, trace_height=100):
 
 
 def plot_traces_and_field(name, time_axis, stimulus, model, trace_height=100):
+    print('test 1')
     trace_list = np.array(model.potential_vector_node_list)
+    print('test 2')
     # MAX_V = np.ones(30)*1000
     fig = plt.figure()
     axes2 = fig.add_axes([0.85, 0.125, 0.09, 0.8])
@@ -76,15 +78,16 @@ def plot_traces_and_field(name, time_axis, stimulus, model, trace_height=100):
 
     e_field = []
     for sec, e_field_value in zip(model.sections, model.e_field_along_axon):
-        if type(sec) == mrg_axon.Node or type(sec) == simple_axon.Node or type(sec) == hh_axon.Node:
+        if type(sec) == mrg_axon.Node or type(sec) == mhh_model.Node or type(sec) == hh_axon.Node:
             e_field.append(e_field_value)
-
+    print('test 3')
     # axes2.plot(e_field[0::10], range(10*len(e_field))[-1::-100], 'g')
     axes2.plot(e_field, range(100 * len(e_field))[-1::-100], 'darkgray')
     # plt.tight_layout()
 
     n = 5
     for plt_it, voltage_trace in enumerate(trace_list[::n]):
+        print(plt_it)
         stimulus_trace = stimulus is not None
         y_lim = trace_height * (len(trace_list) + 5 * int(stimulus_trace))
         if stimulus_trace:
@@ -98,7 +101,7 @@ def plot_traces_and_field(name, time_axis, stimulus, model, trace_height=100):
         # line2 = axes2.plot(e_field[plt_it], y_lim - y_step, '-x')
         # MAX_V[b] = max(voltage_trace[:len(time_axis)])
         # b=b+1
-
+    print('test 5')
     if stimulus is not None:
         zipped = np.array(list(zip(time_axis, stimulus)))
         x = zipped[:, 0]
@@ -115,7 +118,7 @@ def plot_traces_and_field(name, time_axis, stimulus, model, trace_height=100):
             axes.set_yticks('')
         else:
             axes.set_ylabel('Membrane Potential ($mV$)')
-
+    print('test 6')
     if len(trace_list) > 1:
         middle_y = (axes.get_ylim()[1] - axes.get_ylim()[0]) / 2.
         slightly_left = (axes.get_xlim()[1] - axes.get_xlim()[0]) * 0.05 * -1.5
@@ -152,7 +155,7 @@ def plot_traces_and_field(name, time_axis, stimulus, model, trace_height=100):
     # axes2 = fig.add_axes([0.90, 0.125, 0.09, 0.7])
     # axes2.plot(e_field[0::10], range(10*len(e_field))[0::100], '-x')
     # plt.tight_layout()
-
+    # return fig
     return axes, axes2
 
 

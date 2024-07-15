@@ -361,7 +361,15 @@ class InputDataWidget(QWidget_InputData, Ui_InputDataWidget):
     def smooth_nerve_shape(self):
         if not self.nerve_shape:
             return
-        self.nerve_shape.y = np.asarray(misc_functions.moving_average(self.nerve_shape.y, 15))
+        self.nerve_shape.x = np.asarray(misc_functions.moving_average(self.nerve_shape.x, 15))
         self.nerve_shape.y = np.asarray(misc_functions.moving_average(self.nerve_shape.y, 15))
         self.nerve_shape.z = np.asarray(misc_functions.moving_average(self.nerve_shape.z, 15))
+        sorted_indices = np.argsort(self.nerve_shape.y)
+        self.nerve_shape.x = np.take_along_axis(self.nerve_shape.x, sorted_indices, axis=0)
+        self.nerve_shape.y = np.take_along_axis(self.nerve_shape.y, sorted_indices, axis=0)
+        self.nerve_shape.z = np.take_along_axis(self.nerve_shape.z, sorted_indices, axis=0)
+        self.nerve_shape.e_x = np.take_along_axis(self.nerve_shape.e_x, sorted_indices, axis=0)
+        self.nerve_shape.e_y = np.take_along_axis(self.nerve_shape.e_y, sorted_indices, axis=0)
+        self.nerve_shape.e_z = np.take_along_axis(self.nerve_shape.e_z, sorted_indices, axis=0)
         self.nerve_shape_changed.emit()
+        self.update_nerve_shape_plot()
