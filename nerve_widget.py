@@ -1,5 +1,6 @@
 import matplotlib
 matplotlib.use('Qt5Agg')
+import numpy as np
 
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5 import uic, QtGui, QtWidgets
@@ -58,6 +59,7 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
         self.customRadioButton.clicked.connect(self.nerve_shape_changed)
         self.anatomicalRadioButton.clicked.connect(self.update_axons)
         self.customRadioButton.clicked.connect(self.update_axons)
+        self.add_undulation_button.clicked.connect(self.add_undulation_to_axon)
 
     def add_custom_nerve(self):
         self.custom_nerve = database.CustomNerve(
@@ -92,6 +94,12 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
     #     self.nerve_combo_box.setModel(self.nerve_list_item_model)
     #     self.update_axon_list()
     #     self.e_field_changed.emit()
+
+    def add_undulation_to_axon(self):
+        selected_index = self.axon_list_view.currentIndex()
+        axon = self.axon_list[selected_index.row()]
+        axon.add_undulation(self.undu_period_spinbox.value(), self.undu_amp_spinbox.value(),
+                            self.undu_coordinate_combobox.currentText())
 
     # ------------------------------------------------------------------------------------------------------------------
     # Axon

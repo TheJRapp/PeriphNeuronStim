@@ -152,7 +152,6 @@ class Main(QMainWindow, Ui_MainWindow):
         self.total_time = self.stimulus_widget.total_time
 
     def create_neuronal_model(self):
-        selected_nerve = self.nerve_widget.get_selected_nerve()
         if not self.nerve_widget.axon_list:
             return
         if not self.nerve_widget.axon_list_view.currentIndex().isValid():
@@ -306,7 +305,7 @@ class Main(QMainWindow, Ui_MainWindow):
                 df.to_csv(str(today) + 'z_offset_' + str(z) + '.csv', index=False, header=True)
             print('Finished!')
 
-    def add_undulation(self):
+    def add_undulation_test(self):
         if self.neuron_sim:
             distance = np.linspace(0,self.neuron_sim.axon.total_length, len(self.neuron_sim.axon.x))
             undulation_period = 200  # µm

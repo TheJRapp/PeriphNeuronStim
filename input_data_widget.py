@@ -101,9 +101,12 @@ class InputDataWidget(QWidget_InputData, Ui_InputDataWidget):
                 self.e_field = pickle.load(e)
         elif filename.endswith('.txt'):
             storage = database.DataBase()
-            parser = file_parser.NewCSTFileParser("", filename)
+            # parser = file_parser.NewCSTFileParser("", filename)
+            # parser.parse_file(storage)
+            # storage.convert_units(1e3)  # convert mm from CST to um used for cable
+            parser = file_parser.S4LFileParser("", filename)
             parser.parse_file(storage)
-            storage.convert_units(1e3)  # convert mm from CST to um used for cable
+            storage.convert_units(1e6)  # convert m from S4L to um used for cable
             self.e_field = storage.generate_e_field_matrix()
 
         self.e_field_changed.emit()
@@ -139,7 +142,7 @@ class InputDataWidget(QWidget_InputData, Ui_InputDataWidget):
             storage = database.DataBase()
             parser = file_parser.CSVNerveShapeParser("", filename)
             parser.parse_file(storage)
-            # storage.convert_units(1e3)  # convert mm from CST to um used for cable
+            storage.convert_units(1e6)  # convert m from S4L to um used for cable
             self.nerve_shape = storage.generate_nerve_shape()
         else:
             print('Error: Loading nerve shape')

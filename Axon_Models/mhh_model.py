@@ -6,6 +6,8 @@ import numpy as np
 import neuron
 import nrn
 from matplotlib import pyplot as plt
+import copy
+
 
 class Axon(object):
 
@@ -26,43 +28,38 @@ class Axon(object):
         self.node_diameter = node_diameter
         self.nseg_node = nseg_node
         self.nseg_internode = nseg_internode
-
+        self.x = []
+        self.y = []
+        self.z = []
+        self.nerve_shape = copy.copy(nerve_shape)
+        self.internode_start_points, self.node_start_points, self.segment_start_points = [], [], []
+        self.seg_unit_vectors = []
+        self.total_length = 0
         # spacing = smallest segment length
         if self.node_length/self.nseg_node < self.internode_length / self.nseg_internode:
             self.spacing = self.node_length / (self.nseg_node)
         else:
             self.spacing = self.internode_length / (self.nseg_internode)
-        self.x_coordinates, self.y_coordinates, self.z_coordinates, self.total_length = self.adapt_nerve_shape_to_axon(nerve_shape)
-        self.number_node_internode_pairs = int(self.total_length / (self.internode_length + self.node_length))-1
-        self.internode_start_points, self.node_start_points, self.segment_start_points = self.determine_coordinates()
+        self.build_axon()
 
-        self.x = self.x_coordinates[self.segment_start_points]
-        self.y = self.y_coordinates[self.segment_start_points]
-        self.z = self.z_coordinates[self.segment_start_points]
-
-        node = Node(nseg_node, node_length, node_diameter)
-        self.sections.append(node)
-        for i in range(self.number_node_internode_pairs):
-            internode = InterNode(self.nseg_internode, self.internode_length, self.diameter)
-            internode.connect(self.sections[-1], 1)
-            self.sections.append(internode)
-            node = Node(self.nseg_node, self.node_length, self.node_diameter)
-            node.connect(self.sections[-1], 1)
-            self.sections.append(node)
-
-        self.seg_unit_vectors = self.calculate_unit_vectors()
         self.e_field_along_axon = None
         self.potential_along_axon = None
-        # TODO: Implement unit vector
         print('Creating axon done')
 
     def adapt_nerve_shape_to_axon(self, nerve_shape):
         total_length = 0
         first = True
+        last_taken = 0
+        x_coordinates = [nerve_shape.x[0]]
+        y_coordinates = [nerve_shape.y[0]]
+        z_coordinates = [nerve_shape.z[0]]
         for i in range(len(nerve_shape.x) - 1):
-            delta = np.sqrt((nerve_shape.x[i + 1] - nerve_shape.x[i]) ** 2 + (
-                    nerve_shape.y[i + 1] - nerve_shape.y[i]) ** 2
-                            + (nerve_shape.z[i + 1] - nerve_shape.z[i]) ** 2)
+            # delta = np.sqrt((nerve_shape.x[i + 1] - nerve_shape.x[i]) ** 2 + (
+            #         nerve_shape.y[i + 1] - nerve_shape.y[i]) ** 2
+            #                 + (nerve_shape.z[i + 1] - nerve_shape.z[i]) ** 2)
+            delta = np.sqrt((nerve_shape.x[i + 1] - x_coordinates[-1]) ** 2 + (
+                    nerve_shape.y[i + 1] - y_coordinates[-1]) ** 2
+                            + (nerve_shape.z[i + 1] - z_coordinates[-1]) ** 2)
             total_length = total_length + delta
             num_of_points = round(delta / self.spacing)
             delta_x = nerve_shape.x[i + 1] - nerve_shape.x[i]
@@ -82,10 +79,40 @@ class Axon(object):
                     z_coordinates.extend(
                         list(np.linspace(z_coordinates[-1], z_coordinates[-1] + delta_z, num_of_points)))
 
-        x_coordinates = np.asarray(x_coordinates)
-        y_coordinates = np.asarray(y_coordinates)
-        z_coordinates = np.asarray(z_coordinates)
-        return x_coordinates, y_coordinates, z_coordinates, total_length
+        self.nerve_shape.x = np.asarray(x_coordinates)
+        self.nerve_shape.y = np.asarray(y_coordinates)
+        self.nerve_shape.z = np.asarray(z_coordinates)
+        self.total_length = total_length
+
+    def add_undulation(self, period, amplitude, coordinate):
+        distance = np.linspace(0, self.total_length, len(self.nerve_shape.x))
+        undulation_sine = amplitude * np.sin(2 * np.pi * (1 / period) * distance)
+        if coordinate == 'x':
+            self.nerve_shape.x = self.nerve_shape.x + undulation_sine
+        if coordinate == 'y':
+            self.nerve_shape.y = self.nerve_shape.y + undulation_sine
+        if coordinate == 'z':
+            self.nerve_shape.z = self.nerve_shape.z + undulation_sine
+        self.build_axon()
+
+    def build_axon(self):
+        self.adapt_nerve_shape_to_axon(self.nerve_shape)
+        self.number_node_internode_pairs = int(self.total_length / (self.internode_length + self.node_length))-1
+        self.internode_start_points, self.node_start_points, self.segment_start_points = self.determine_coordinates()
+        self.x = self.nerve_shape.x[self.segment_start_points]
+        self.y = self.nerve_shape.y[self.segment_start_points]
+        self.z = self.nerve_shape.z[self.segment_start_points]
+        self.seg_unit_vectors = self.calculate_unit_vectors()
+        self.sections = []
+        node = Node(self.nseg_node, self.node_length, self.node_diameter)
+        self.sections.append(node)
+        for i in range(self.number_node_internode_pairs):
+            internode = InterNode(self.nseg_internode, self.internode_length, self.diameter)
+            internode.connect(self.sections[-1], 1)
+            self.sections.append(internode)
+            node = Node(self.nseg_node, self.node_length, self.node_diameter)
+            node.connect(self.sections[-1], 1)
+            self.sections.append(node)
 
     def determine_coordinates(self):
         spacings_per_internode = int(self.internode_length / self.spacing)
@@ -117,13 +144,14 @@ class Axon(object):
         segment_start_points.sort()
         return internode_start_points, node_start_points, segment_start_points
 
+
     def return_node_coordinates(self):
-        return self.x_coordinates[self.node_start_points], self.y_coordinates[self.node_start_points], \
-               self.z_coordinates[self.node_start_points]
+        return self.nerve_shape.x[self.node_start_points], self.nerve_shape.y[self.node_start_points], \
+               self.nerve_shape.z[self.node_start_points]
 
     def return_internode_coordinates(self):
-        return self.x_coordinates[self.internode_start_points], self.y_coordinates[self.internode_start_points], \
-               self.z_coordinates[self.internode_start_points]
+        return self.nerve_shape.x[self.internode_start_points], self.nerve_shape.y[self.internode_start_points], \
+               self.nerve_shape.z[self.internode_start_points]
 
     def calculate_unit_vectors(self):
         seg_unit_vectors = []
