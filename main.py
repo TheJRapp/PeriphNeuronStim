@@ -44,8 +44,8 @@ Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
 interpolation_radius_index = 2
 nerve_shape_step_size = 2
-internode_segments = 10
-node_segments = 5
+internode_segments = 50
+node_segments = 1
 
 
 class Main(QMainWindow, Ui_MainWindow):

@@ -190,7 +190,8 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
             k = j
 
         e_average_current = e_average_current - offset
-
+        if np.isnan(e_average_current):
+            e_average_current = e_average_prev
         e_field_integral = (1 / 2) * (e_average_current + e_average_prev)
         displacement = np.sqrt(
             (cable.x[k] - cable.x[k-1]) ** 2 + (cable.y[k] - cable.y[k-1]) ** 2 + (
@@ -211,7 +212,6 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
     # fig = plt.figure()
     # plt.plot(e_field_along_axon)
     # plt.show()
-
     return stim_matrix, e_field_along_axon, quasi_pot_along_axon
 
 

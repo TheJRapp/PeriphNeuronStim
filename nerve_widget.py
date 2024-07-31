@@ -100,6 +100,7 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
         axon = self.axon_list[selected_index.row()]
         axon.add_undulation(self.undu_period_spinbox.value(), self.undu_amp_spinbox.value(),
                             self.undu_coordinate_combobox.currentText())
+        self.axon_added.emit()
 
     # ------------------------------------------------------------------------------------------------------------------
     # Axon

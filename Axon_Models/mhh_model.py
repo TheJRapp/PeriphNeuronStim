@@ -49,23 +49,24 @@ class Axon(object):
     def adapt_nerve_shape_to_axon(self, nerve_shape):
         total_length = 0
         first = True
-        last_taken = 0
         x_coordinates = [nerve_shape.x[0]]
         y_coordinates = [nerve_shape.y[0]]
         z_coordinates = [nerve_shape.z[0]]
         for i in range(len(nerve_shape.x) - 1):
-            # delta = np.sqrt((nerve_shape.x[i + 1] - nerve_shape.x[i]) ** 2 + (
-            #         nerve_shape.y[i + 1] - nerve_shape.y[i]) ** 2
-            #                 + (nerve_shape.z[i + 1] - nerve_shape.z[i]) ** 2)
+            delta_ns = np.sqrt((nerve_shape.x[i + 1] - nerve_shape.x[i]) ** 2 + (
+                    nerve_shape.y[i + 1] - nerve_shape.y[i]) ** 2
+                            + (nerve_shape.z[i + 1] - nerve_shape.z[i]) ** 2)
+            # total_length = total_length + delta_ns
             delta = np.sqrt((nerve_shape.x[i + 1] - x_coordinates[-1]) ** 2 + (
                     nerve_shape.y[i + 1] - y_coordinates[-1]) ** 2
                             + (nerve_shape.z[i + 1] - z_coordinates[-1]) ** 2)
-            total_length = total_length + delta
+
             num_of_points = round(delta / self.spacing)
-            delta_x = nerve_shape.x[i + 1] - nerve_shape.x[i]
-            delta_y = nerve_shape.y[i + 1] - nerve_shape.y[i]
-            delta_z = nerve_shape.z[i + 1] - nerve_shape.z[i]
+            delta_x = nerve_shape.x[i + 1] - x_coordinates[-1]
+            delta_y = nerve_shape.y[i + 1] - y_coordinates[-1]
+            delta_z = nerve_shape.z[i + 1] - z_coordinates[-1]
             if num_of_points > 5:
+                total_length = total_length + (num_of_points * self.spacing)
                 if first:
                     x_coordinates = list(np.linspace(nerve_shape.x[0], nerve_shape.x[0] + delta_x, num_of_points))
                     y_coordinates = list(np.linspace(nerve_shape.y[0], nerve_shape.y[0] + delta_y, num_of_points))
@@ -99,6 +100,9 @@ class Axon(object):
         self.adapt_nerve_shape_to_axon(self.nerve_shape)
         self.number_node_internode_pairs = int(self.total_length / (self.internode_length + self.node_length))-1
         self.internode_start_points, self.node_start_points, self.segment_start_points = self.determine_coordinates()
+        print('Nerve shape xlen: ', len(self.nerve_shape.x))
+        print('total length: ', self.total_length)
+        print('Max seg start point: ', max(self.segment_start_points))
         self.x = self.nerve_shape.x[self.segment_start_points]
         self.y = self.nerve_shape.y[self.segment_start_points]
         self.z = self.nerve_shape.z[self.segment_start_points]
@@ -113,6 +117,7 @@ class Axon(object):
             node = Node(self.nseg_node, self.node_length, self.node_diameter)
             node.connect(self.sections[-1], 1)
             self.sections.append(node)
+        print('Axon updated')
 
     def determine_coordinates(self):
         spacings_per_internode = int(self.internode_length / self.spacing)
