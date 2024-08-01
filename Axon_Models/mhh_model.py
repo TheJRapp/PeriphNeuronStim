@@ -89,7 +89,25 @@ class Axon(object):
         distance = np.linspace(0, self.total_length, len(self.nerve_shape.x))
         undulation_sine = amplitude * np.sin(2 * np.pi * (1 / period) * distance)
         if coordinate == 'x':
-            self.nerve_shape.x = self.nerve_shape.x + undulation_sine
+            # self.nerve_shape.x = self.nerve_shape.x + undulation_sine
+            fasc_point_x = []
+            fasc_point_y = []
+            alpha = 0
+            for i in range(len(self.nerve_shape.x)-1):
+                delta_x = self.nerve_shape.x[i + 1] - self.nerve_shape.x[i]
+                delta_y = self.nerve_shape.y[i + 1] - self.nerve_shape.y[i]
+                dist = np.sqrt(delta_x**2 + delta_y**2)
+                if dist > 0:
+                    alpha = np.rad2deg(np.arcsin(delta_y/dist))
+                x_p = (-1) * np.sin(np.deg2rad(alpha)) * undulation_sine[i]
+                y_p = np.cos(np.deg2rad(alpha)) * undulation_sine[i]
+                fasc_point_x.append(x_p + self.nerve_shape.x[i])
+                fasc_point_y.append(y_p + self.nerve_shape.y[i])
+            fasc_point_x.append(fasc_point_x[-1])
+            fasc_point_y.append(fasc_point_y[-1])
+            self.nerve_shape.x = np.asarray(fasc_point_x)
+            self.nerve_shape.y = np.asarray(fasc_point_y)
+
         if coordinate == 'y':
             self.nerve_shape.y = self.nerve_shape.y + undulation_sine
         if coordinate == 'z':
