@@ -165,59 +165,6 @@ class NerveShape(Nerve):
             self.e_z = []
 
 
-# class EFieldLayer(): # TODO: Braucht man nicht mehr oder?
-#
-#     def __init__(self, x, y, z, xRe, yRe, zRe, xIm, yIm, zIm, layer_selection):
-#         self.x = x
-#         self.y = y
-#         self.z = z
-#         self.layer = layer_selection
-#
-#         # self.xRe = xRe
-#         # self.yRe = yRe
-#         # self.xIm = xIm
-#         # self.yIm = yIm
-#         self.x_min = np.argmin(x)
-#         self.x_max = np.argmax(x)
-#         self.y_min = np.argmin(y)
-#         self.y_max = np.argmax(y)
-#         x_values = set(x)
-#         y_values = set(y)
-#         self.xshape = len(x_values)
-#         self.yshape = len(y_values)
-#         self.resolution = abs(x[1] - x[0])
-#
-#         phase_x = []
-#         phase_y = []
-#         phase_z = []
-#
-#         for i in range(x.shape[0]):
-#             phase_x.append(np.arccos(xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)) if xIm[i] >= 0 else - np.arccos(
-#                 xRe[i] / np.sqrt(xRe[i] ** 2 + xIm[i] ** 2)))
-#         # for i in range(y.shape[0]):
-#             phase_y.append(np.arccos(yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)) if yIm[i] >= 0 else - np.arccos(
-#                 yRe[i] / np.sqrt(yRe[i] ** 2 + yIm[i] ** 2)))
-#             phase_z.append(np.arccos(zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)) if zIm[i] >= 0 else - np.arccos(
-#                 zRe[i] / np.sqrt(zRe[i] ** 2 + zIm[i] ** 2)))
-#
-#         self.e_x = np.true_divide(phase_x, np.absolute(phase_x)) * np.sqrt(xRe ** 2 + xIm ** 2)
-#         self.e_y = np.true_divide(phase_y, np.absolute(phase_y)) * np.sqrt(yRe ** 2 + yIm ** 2)
-#         self.e_z = np.true_divide(phase_z, np.absolute(phase_z)) * np.sqrt(zRe ** 2 + zIm ** 2)
-#
-#         if self.xshape:
-#             self.e_x = np.reshape(self.e_x, (self.yshape, self.xshape))
-#             self.e_y = np.reshape(self.e_y, (self.yshape, self.xshape))
-#             self.e_z = np.reshape(self.e_z, (self.yshape, self.xshape))
-#             # self.e_x = np.reshape(self.e_x, (self.xshape, self.yshape))
-#             # self.e_y = np.reshape(self.e_y, (self.xshape, self.yshape))
-#             # self.e_z = np.reshape(self.e_z, (self.xshape, self.yshape))
-#             # TODO: Braucht man nicht mehr oder?
-#             # self.x_Re = np.reshape(self.xRe, (shape, shape))
-#             # self.x_Im = np.reshape(xIm, (self.yshape, self.xshape))
-#             # self.y_Re = np.reshape(self.yRe, (shape, shape))
-#             # self.y_Im = np.reshape(self.yIm, (shape, shape))
-
-
 class EField():
 
     def __init__(self):

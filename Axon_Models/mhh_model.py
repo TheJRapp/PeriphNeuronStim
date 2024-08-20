@@ -88,6 +88,7 @@ class Axon(object):
     def add_undulation(self, period, amplitude, coordinate):
         distance = np.linspace(0, self.total_length, len(self.nerve_shape.x))
         undulation_sine = amplitude * np.sin(2 * np.pi * (1 / period) * distance)
+        print('Test 1')
         if coordinate == 'x':
             # self.nerve_shape.x = self.nerve_shape.x + undulation_sine
             fasc_point_x = []
@@ -97,17 +98,20 @@ class Axon(object):
                 delta_x = self.nerve_shape.x[i + 1] - self.nerve_shape.x[i]
                 delta_y = self.nerve_shape.y[i + 1] - self.nerve_shape.y[i]
                 dist = np.sqrt(delta_x**2 + delta_y**2)
+                print('Test 2')
                 if dist > 0:
-                    alpha = np.rad2deg(np.arcsin(delta_y/dist))
+                    alpha = np.rad2deg(np.arc+(delta_y/dist))
+                    print(alpha)
                 x_p = (-1) * np.sin(np.deg2rad(alpha)) * undulation_sine[i]
                 y_p = np.cos(np.deg2rad(alpha)) * undulation_sine[i]
                 fasc_point_x.append(x_p + self.nerve_shape.x[i])
                 fasc_point_y.append(y_p + self.nerve_shape.y[i])
+                print('Test 3')
             fasc_point_x.append(fasc_point_x[-1])
             fasc_point_y.append(fasc_point_y[-1])
             self.nerve_shape.x = np.asarray(fasc_point_x)
             self.nerve_shape.y = np.asarray(fasc_point_y)
-
+        print('Test 4')
         if coordinate == 'y':
             self.nerve_shape.y = self.nerve_shape.y + undulation_sine
         if coordinate == 'z':
@@ -116,11 +120,10 @@ class Axon(object):
 
     def build_axon(self):
         self.adapt_nerve_shape_to_axon(self.nerve_shape)
+        print('nerve shape adaption done')
         self.number_node_internode_pairs = int(self.total_length / (self.internode_length + self.node_length))-1
         self.internode_start_points, self.node_start_points, self.segment_start_points = self.determine_coordinates()
-        print('Nerve shape xlen: ', len(self.nerve_shape.x))
-        print('total length: ', self.total_length)
-        print('Max seg start point: ', max(self.segment_start_points))
+        print('Coordinates done')
         self.x = self.nerve_shape.x[self.segment_start_points]
         self.y = self.nerve_shape.y[self.segment_start_points]
         self.z = self.nerve_shape.z[self.segment_start_points]

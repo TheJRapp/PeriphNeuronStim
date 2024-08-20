@@ -164,13 +164,6 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
             # ----------------------------------------------------------------------------------------------------------
             # using interpolation radius: (just possible when e_field is not a single plane)
             # --------
-            print('----------------------------')
-            print('Ex: ', e_x[iy, ix, iz])
-            print('dx: ', cable.seg_unit_vectors[j][0])
-            print('Ey: ', e_y[iy, ix, iz])
-            print('dy: ', cable.seg_unit_vectors[j][1])
-            print('Ez: ', e_z[iy, ix, iz])
-            print('dz: ', cable.seg_unit_vectors[j][2])
             e_average_current = cable.seg_unit_vectors[j][0] * e_x[iy - r:iy + r, ix - r:ix + r, iz - r:iz + r].sum() + \
                                 cable.seg_unit_vectors[j][1] * e_y[iy - r:iy + r, ix - r:ix + r, iz - r:iz + r].sum() + \
                                 cable.seg_unit_vectors[j][2] * e_z[iy - r:iy + r, ix - r:ix + r, iz - r:iz + r].sum()
@@ -212,6 +205,7 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
     # fig = plt.figure()
     # plt.plot(e_field_along_axon)
     # plt.show()
+    print('Quasipotential done')
     return stim_matrix, e_field_along_axon, quasi_pot_along_axon
 
 

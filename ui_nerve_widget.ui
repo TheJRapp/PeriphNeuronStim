@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>489</width>
+    <width>494</width>
     <height>509</height>
    </rect>
   </property>
@@ -178,6 +178,9 @@
     <widget class="QDoubleSpinBox" name="undu_amp_spinbox">
      <property name="decimals">
       <number>1</number>
+     </property>
+     <property name="maximum">
+      <double>1000000.000000000000000</double>
      </property>
      <property name="value">
       <double>40.000000000000000</double>

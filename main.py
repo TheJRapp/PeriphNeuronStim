@@ -82,7 +82,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.input_data_widget.e_field_changed.connect(self.update_plot_widget)
         self.input_data_widget.nerve_shape_changed.connect(self.set_nerve_shape)
 
-        self.nerve_widget.nerve_shape_changed.connect(self.update_plot_widget)
+        self.input_data_widget.nerve_shape_changed.connect(self.update_plot_widget)
         self.nerve_widget.axon_added.connect(self.update_plot_widget)
 
         self.stimulus_button.clicked.connect(self.open_stimulus_widget)
@@ -94,7 +94,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.e_field_along_axon_button.clicked.connect(self.create_neuronal_model)
         self.simulation_button.clicked.connect(self.single_simulation)
 
-        self.mc_button.clicked.connect(self.add_undulation_pattern_2)
+        #self.mc_button.clicked.connect(self.add_undulation_pattern_2)
 
     def add_plot(self, fig):
         self.canvas = FigureCanvas(fig)
@@ -155,12 +155,13 @@ class Main(QMainWindow, Ui_MainWindow):
         if not self.nerve_widget.axon_list:
             return
         if not self.nerve_widget.axon_list_view.currentIndex().isValid():
-            return
-        selected_index = self.nerve_widget.axon_list_view.currentIndex()
+            selected_index = 0
+        else:
+            selected_index = self.nerve_widget.axon_list_view.currentIndex().row()
         if hasattr(self, 'field_axon_canvas'):
             self.potential_layout.removeWidget(self.field_axon_canvas)
             self.field_axon_canvas.close()
-        axon = self.nerve_widget.axon_list[selected_index.row()]
+        axon = self.nerve_widget.axon_list[selected_index]
         self.neuron_sim = ns.NeuronSim(self.input_data_widget.e_field, axon, interpolation_radius_index, self.time_axis,
                                        self.stimulus, self.total_time)
         self.neuron_sim.quasipot()
@@ -175,22 +176,59 @@ class Main(QMainWindow, Ui_MainWindow):
         # self.update_plot_widget()
 
 
-    def threshold_search(self):
-        selected_nerve = self.nerve_widget.custom_nerve
-        if not selected_nerve.axon_list:
+    def threshold_search_default(self):
+        if not self.neuron_sim:
             return
-        # Dict -----------------------------------------------------------------
-        export_dict = {'Diameter': []}
-        for axon in selected_nerve.axon_list:
-            self.build_neuron_sim(axon)
-            self.neuron_sim.quasipot()
-            threshold = self.neuron_sim.threshold_simulation(self.threshold_widget)
-            self.threshold_label.setText(str(threshold))
-            current = 6000 * threshold
-            print('Threshold coil current: ', current)
+        self.neuron_sim.simple_simulation()
+        self.neuron_sim.plot_simulation()
+        threshold = self.neuron_sim.threshold_simulation(self.threshold_widget)
+        self.threshold_label.setText(str(threshold))
+        current = 6000 * threshold
+        print('Threshold coil current: ', current)
         # df = pd.DataFrame(export_dict)
         # today = date.today()
         # df.to_csv(str(today) + 'phrenic_rc_z_offset.csv', index=False, header=True)
+        print('Finished!')
+
+    def threshold_search(self):
+        # undulations
+        if not self.neuron_sim:
+            return
+
+        project_id = 'AU_24'
+        experiment_no = '020'
+        export_dict_threshold = {}
+        export_dict_efield_cable = {}
+        export_dict_efield_nodes = {}
+
+        undulation_amps_1 = np.linspace(0,150,16)  # fiber undulation amplitude in µm
+        undulation_lambdas_1 = np.linspace(100, 1000, 10)  # fiber undulation period in µm
+        undulation_amps_2 = np.linspace(0,1500,16)  # fascicle undulation amplitude in µm
+        undulation_lambdas_2 = np.linspace(10000, 100000, 10)  # fascicle undulation period in µm
+        coordinate = 'x'
+
+        for amp in undulation_amps_1:
+            for lamb in undulation_lambdas_1:
+                key = 'amp_'+str(amp)+'_lambda_'+str(lamb)
+                self.nerve_widget.reset_axon()
+                self.create_neuronal_model()  # reset undulation
+                self.neuron_sim.axon.add_undulation(lamb, amp, coordinate)
+                self.create_neuronal_model()
+                threshold = self.neuron_sim.threshold_simulation(self.threshold_widget)
+                self.threshold_label.setText(str(threshold))
+                current = 6000 * threshold
+                print('Threshold coil current: ', current)
+                export_dict_threshold[key] = current
+                export_dict_efield_cable[key] = self.neuron_sim.axon.e_field_along_axon
+                export_dict_efield_nodes[key] = self.neuron_sim.axon.e_field_along_axon[::node_segments+internode_segments]
+
+        # make values have the same length (fill with nan)
+        df_ef_cable = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in export_dict_efield_cable.items()]))
+        df_ef_nodes = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in export_dict_efield_nodes.items()]))
+        df_threshold = pd.DataFrame(export_dict_threshold.items(), columns=['Undulation', 'Threshold'])
+        df_threshold.to_csv(project_id + '-' + experiment_no + '-' + 'threshold' + '.csv', index=False, header=True)
+        df_ef_cable.to_csv(project_id + '-' + experiment_no + '-' + 'e_field_cable' + '.csv', index=False, header=True)
+        df_ef_nodes.to_csv(project_id + '-' + experiment_no + '-' + 'e_field_nodes' + '.csv', index=False, header=True)
         print('Finished!')
 
     def af_nerve_position_nerve_shape(self):
@@ -235,48 +273,7 @@ class Main(QMainWindow, Ui_MainWindow):
         df.to_csv(path + project + '_' + file_name + 'potential_'+ '.csv', index=False, header=True)
         print('Finished!')
 
-    def af_nerve_position_custom_nerve(self):
-        '''
-        Description:
-        - E field with custom nerve shape
-        - Varies nerve position
-        - Calculate quasipotenital
-        - Write files
-            - e_field_along_axon
-            - potential along axon
-        Required:
-        Single axon, single e_field
-        What is done here:
-        Different postions of the axon
-        Output:
-        Dict with activation function for each offset
-        '''
-        if not self.nerve_widget.nerve_dict:
-            return
-        selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if not selected_nerve.axon_list:
-            return
-        axon = selected_nerve.axon_list[0]
-        # Dict -----------------------------------------------------------------
-        export_dict_efield = {}
-        export_dict_potential = {}
-        x_offset = np.arange(-190000, 190000, 400)
-        for x in x_offset:
-            axon.x = axon.x + x
-            self.build_neuron_sim(axon)
-            self.neuron_sim.quasipot()
-            export_dict_efield[str(x)] = self.neuron_sim.axon.e_field_along_axon
-            export_dict_potential[str(x)] = self.neuron_sim.axon.potential_along_axon
-            axon.x = axon.x - x
-        today = date.today()
-        path = 'Y:/Sonstiges/Stimit AG/'
-        project = 'phrenic'
-        file_name = '001'
-        df = pd.DataFrame(export_dict_efield)
-        df.to_csv(path + project + '_' + file_name + 'e_field_' + '.csv', index=False, header=True)
-        df = pd.DataFrame(export_dict_potential)
-        df.to_csv(path + project + '_' + file_name + 'potential_' + '.csv', index=False, header=True)
-        print('Finished!')
+
 
     def analyze_field_contributions(self):
         if not self.nerve_widget.nerve_dict:
@@ -308,57 +305,6 @@ class Main(QMainWindow, Ui_MainWindow):
     def add_undulation_test(self):
         if self.neuron_sim:
             distance = np.linspace(0,self.neuron_sim.axon.total_length, len(self.neuron_sim.axon.x))
-            undulation_period = 200  # µm
-            undulation_amplitude = 40  # µm
-            undulation_sine = undulation_amplitude * np.sin(2 * np.pi * (1 / undulation_period) * distance)
-            print(len(undulation_sine))
-            print(len(self.neuron_sim.axon.x))
-            self.neuron_sim.axon.x = self.neuron_sim.axon.x + undulation_sine
-
-            # undulation_period = 50000  # µm
-            # undulation_amplitude = 800  # µm
-            # undulation_sine = undulation_amplitude * np.sin(2 * np.pi * (1 / undulation_period) * distance)
-            # print(len(undulation_sine))
-            # print(len(self.neuron_sim.axon.x))
-            # self.neuron_sim.axon.x = self.neuron_sim.axon.x + undulation_sine
-            self.plot_widget.add_figure(plot_functions.plot_axon_xy_coordinates(self.neuron_sim.axon),
-                                        'Axon x y coordinates')
-            self.plot_widget.add_figure(
-                plot_functions.plot_axon_xy_coordinates_with_nodes(self.neuron_sim.axon, internode_segments),
-                'Axon x y coordinates with nodes')
-            
-    def add_undulation_pattern_2(self):
-        distance = np.linspace(0,self.nerve_widget.custom_nerve.length, len(self.nerve_widget.custom_nerve.x))
-        undulation_period = 50000  # µm
-        undulation_amplitude = 50000  # µm
-        undulation_sine = undulation_amplitude * np.sin(2 * np.pi * (1 / undulation_period) * distance)
-        self.nerve_widget.custom_nerve.x = self.nerve_widget.custom_nerve.x + undulation_sine
-        self.plot_widget.add_figure(plot_functions.plot_2d_field_with_cable(self.input_data_widget.e_field,
-                                                                            self.e_field_layer_slider.value(),
-                                                                            self.nerve_widget.custom_nerve,
-                                                                            scaling), 'Nerve in Field')
-        # undulation_period = 200  # µm
-        # undulation_amplitude = 40  # µm
-        # undulation_sine = undulation_amplitude * np.sin(2 * np.pi * (1 / undulation_period) * distance)
-        # delta_x_list = []
-        # delta_y_list = []
-        # for i in range(len(self.neuron_sim.axon.x)-1):
-        #     delta_x_1 = self.neuron_sim.axon.x[i + 1] - self.neuron_sim.axon.x[i]
-        #     delta_y_1 = self.neuron_sim.axon.y[i + 1] - self.neuron_sim.axon.y[i]
-        #     print('dx:', delta_x_1)
-        #     dist = np.sqrt(delta_x_1**2 + delta_y_1**2)
-        #     ratio = undulation_sine[i] / dist
-        #     delta_x_list.append(delta_y_1 * ratio)  # delta x gets delta y for the normal line to the tangential
-        #     delta_y_list.append(delta_x_1 * ratio)
-        # delta_x_list.append(delta_x_list[-1])
-        # delta_y_list.append(delta_y_list[-1])
-        # self.neuron_sim.axon.x = self.neuron_sim.axon.x + np.asarray(delta_x_list)
-        # self.neuron_sim.axon.y = self.neuron_sim.axon.y + np.asarray(delta_y_list)
-        # self.plot_widget.add_figure(plot_functions.plot_axon_xy_coordinates(self.neuron_sim.axon),
-        #                             'Axon x y coordinates')
-        # self.plot_widget.add_figure(
-        #     plot_functions.plot_axon_xy_coordinates_with_nodes(self.neuron_sim.axon, internode_segments),
-        #     'Axon x y coordinates with nodes')
 
     def open_threshold_widget(self):
         self.threshold_widget.show()

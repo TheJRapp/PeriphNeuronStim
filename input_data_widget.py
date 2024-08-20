@@ -142,7 +142,7 @@ class InputDataWidget(QWidget_InputData, Ui_InputDataWidget):
             storage = database.DataBase()
             parser = file_parser.CSVNerveShapeParser("", filename)
             parser.parse_file(storage)
-            storage.convert_units(1e6)  # convert m from S4L to um used for cable
+            # storage.convert_units(1e3)  # convert m from S4L to um used for cable
             self.nerve_shape = storage.generate_nerve_shape()
         else:
             print('Error: Loading nerve shape')
@@ -367,12 +367,12 @@ class InputDataWidget(QWidget_InputData, Ui_InputDataWidget):
         self.nerve_shape.x = np.asarray(misc_functions.moving_average(self.nerve_shape.x, 15))
         self.nerve_shape.y = np.asarray(misc_functions.moving_average(self.nerve_shape.y, 15))
         self.nerve_shape.z = np.asarray(misc_functions.moving_average(self.nerve_shape.z, 15))
-        sorted_indices = np.argsort(self.nerve_shape.y)
+        sorted_indices = np.argsort(self.nerve_shape.z)
         self.nerve_shape.x = np.take_along_axis(self.nerve_shape.x, sorted_indices, axis=0)
         self.nerve_shape.y = np.take_along_axis(self.nerve_shape.y, sorted_indices, axis=0)
         self.nerve_shape.z = np.take_along_axis(self.nerve_shape.z, sorted_indices, axis=0)
-        self.nerve_shape.e_x = np.take_along_axis(self.nerve_shape.e_x, sorted_indices, axis=0)
-        self.nerve_shape.e_y = np.take_along_axis(self.nerve_shape.e_y, sorted_indices, axis=0)
-        self.nerve_shape.e_z = np.take_along_axis(self.nerve_shape.e_z, sorted_indices, axis=0)
+        # self.nerve_shape.e_x = np.take_along_axis(self.nerve_shape.e_x, sorted_indices, axis=0)
+        # self.nerve_shape.e_y = np.take_along_axis(self.nerve_shape.e_y, sorted_indices, axis=0)
+        # self.nerve_shape.e_z = np.take_along_axis(self.nerve_shape.e_z, sorted_indices, axis=0)
         self.nerve_shape_changed.emit()
         self.update_nerve_shape_plot()

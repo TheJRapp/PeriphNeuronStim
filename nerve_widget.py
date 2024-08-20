@@ -144,6 +144,15 @@ class NerveWidget(QWidget_Nerve, Ui_NerveWidget):
             self.axon_list = new_axon_list
         self.update_axon_list()
 
+    def reset_axon(self):
+        new_axon_list = []
+        for axon in self.axon_list:
+            if axon.type == 'MHH':
+                new_axon_list.append(mhh_model.Axon(self.get_selected_nerve(), self.nseg_node, self.nseg_internode,
+                                                    axon.diameter))
+                # TODO: repeat for RMG and HH
+        self.axon_list = new_axon_list
+        self.update_axon_list()
 
     def delete_axon(self):
         if not self.axon_list_view.currentIndex().isValid():

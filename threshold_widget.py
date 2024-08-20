@@ -110,9 +110,7 @@ class ThresholdWidget(QWidget_Threshold, Ui_ThresholdWidget):
                 return event, pulse_amp
             pulse_amp += step
             count += 1
-            print('Count: ', count)
             print('Pulse amp: ', pulse_amp)
-            print('Event: ', event)
             if count > 50:
                 return 3, 0
 
