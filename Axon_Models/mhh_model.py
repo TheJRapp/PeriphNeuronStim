@@ -100,11 +100,6 @@ class Axon(object):
                     alpha = np.rad2deg(np.arctan(delta_y/delta_x))
                 x_p = (-1) * np.sin(np.deg2rad(alpha)) * undulation_sine[i]
                 y_p = np.cos(np.deg2rad(alpha)) * undulation_sine[i]
-                print(alpha)
-                if np.isnan(x_p):
-                    print('----------------------')
-                    print('Delta x: ', delta_x, ', Delta y: ', delta_y)
-                    print(alpha)
                 fasc_point_x.append(x_p + self.nerve_shape.x[i])
                 fasc_point_y.append(y_p + self.nerve_shape.y[i])
             fasc_point_x.append(fasc_point_x[-1])
@@ -112,7 +107,23 @@ class Axon(object):
             self.nerve_shape.x = np.asarray(fasc_point_x)
             self.nerve_shape.y = np.asarray(fasc_point_y)
         if coordinate == 'y':
-            self.nerve_shape.y = self.nerve_shape.y + undulation_sine
+            # self.nerve_shape.y = self.nerve_shape.y + undulation_sine
+            fasc_point_x = []
+            fasc_point_y = []
+            alpha = 0
+            for i in range(len(self.nerve_shape.x)-1):
+                delta_x = self.nerve_shape.x[i + 1] - self.nerve_shape.x[i]
+                delta_y = self.nerve_shape.y[i + 1] - self.nerve_shape.y[i]
+                if delta_y > 0:
+                    alpha = np.rad2deg(np.arctan(delta_y/delta_x))
+                x_p = (-1) * np.sin(np.deg2rad(alpha)) * undulation_sine[i]
+                y_p = np.cos(np.deg2rad(alpha)) * undulation_sine[i]
+                fasc_point_x.append(x_p + self.nerve_shape.x[i])
+                fasc_point_y.append(y_p + self.nerve_shape.y[i])
+            fasc_point_x.append(fasc_point_x[-1])
+            fasc_point_y.append(fasc_point_y[-1])
+            self.nerve_shape.x = np.asarray(fasc_point_x)
+            self.nerve_shape.y = np.asarray(fasc_point_y)
         if coordinate == 'z':
             self.nerve_shape.z = self.nerve_shape.z + undulation_sine
         self.build_axon()

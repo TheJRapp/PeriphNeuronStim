@@ -197,14 +197,14 @@ class Main(QMainWindow, Ui_MainWindow):
 
         project_id = 'AU_24'
         experiment_no = '020'
-        export_dict_threshold = {}
+        export_dict_threshold = {'amps' : [], 'lambs' : [], 'threshold': []}
         export_dict_efield_cable = {}
         export_dict_efield_nodes = {}
 
-        undulation_amps_1 = np.linspace(0,150,16)  # fiber undulation amplitude in µm
-        undulation_lambdas_1 = np.linspace(100, 1000, 10)  # fiber undulation period in µm
-        undulation_amps_2 = np.linspace(0,1500,16)  # fascicle undulation amplitude in µm
-        undulation_lambdas_2 = np.linspace(10000, 100000, 10)  # fascicle undulation period in µm
+        undulation_amps_1 = [0,50,100,150]  # fiber undulation amplitude in µm
+        undulation_lambdas_1 = [100,200,300]  # fiber undulation period in µm
+        undulation_amps_2 = [0,500,750,1000]  # fascicle undulation amplitude in µm
+        undulation_lambdas_2 = [25000, 50000, 75000]  # fascicle undulation period in µm
         coordinate = 'x'
 
         for amp in undulation_amps_1:
@@ -218,14 +218,16 @@ class Main(QMainWindow, Ui_MainWindow):
                 self.threshold_label.setText(str(threshold))
                 current = 6000 * threshold
                 print('Threshold coil current: ', current)
-                export_dict_threshold[key] = current
+                export_dict_threshold['amps'].append(amp)
+                export_dict_threshold['lambs'].append(lamb)
+                export_dict_threshold['threshold'].append(current)
                 export_dict_efield_cable[key] = self.neuron_sim.axon.e_field_along_axon
                 export_dict_efield_nodes[key] = self.neuron_sim.axon.e_field_along_axon[::node_segments+internode_segments]
 
         # make values have the same length (fill with nan)
         df_ef_cable = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in export_dict_efield_cable.items()]))
         df_ef_nodes = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in export_dict_efield_nodes.items()]))
-        df_threshold = pd.DataFrame(export_dict_threshold.items(), columns=['Undulation', 'Threshold'])
+        df_threshold = pd.DataFrame(export_dict_threshold)
         df_threshold.to_csv(project_id + '-' + experiment_no + '-' + 'threshold' + '.csv', index=False, header=True)
         df_ef_cable.to_csv(project_id + '-' + experiment_no + '-' + 'e_field_cable' + '.csv', index=False, header=True)
         df_ef_nodes.to_csv(project_id + '-' + experiment_no + '-' + 'e_field_nodes' + '.csv', index=False, header=True)
