@@ -36,9 +36,13 @@ from copy import deepcopy
 
 import pandas as pd
 from datetime import date
+from time import time
 import glob
 import os
 import pickle
+
+# Multiprocessing
+from multiprocessing import Pool
 
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
@@ -89,7 +93,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.stimulus_widget.stimulus_changed.connect(self.update_stimulus)
 
         self.threshold_config_button.clicked.connect(self.open_threshold_widget)
-        self.threshold_search_button.clicked.connect(self.threshold_search)
+        self.threshold_search_button.clicked.connect(self.threshold_search_multiprocessing)
 
         self.e_field_along_axon_button.clicked.connect(self.create_neuronal_model)
         self.simulation_button.clicked.connect(self.single_simulation)
@@ -167,12 +171,13 @@ class Main(QMainWindow, Ui_MainWindow):
         self.neuron_sim.quasipot()
         self.update_plot_widget()
 
-    def single_simulation(self):
+    def single_simulation(self, value):
         if not self.neuron_sim:
             return
         self.neuron_sim.simple_simulation()
         self.neuron_sim.plot_simulation()
-        plt.show()
+        return value
+        # plt.show()
         # self.update_plot_widget()
 
 
@@ -232,6 +237,21 @@ class Main(QMainWindow, Ui_MainWindow):
         df_ef_cable.to_csv(project_id + '-' + experiment_no + '-' + 'e_field_cable' + '.csv', index=False, header=True)
         df_ef_nodes.to_csv(project_id + '-' + experiment_no + '-' + 'e_field_nodes' + '.csv', index=False, header=True)
         print('Finished!')
+
+    def threshold_search_multiprocessing(self):
+        time_start = time()
+        for i in range(3):
+            self.single_simulation(i)
+        print('Time for-loop: ', time()-time_start)
+
+        # Multiprocessing:
+        # https://superfastpython.com/multiprocessing-for-loop/
+        # https://stackoverflow.com/questions/66805185/parallel-python-for-loop-iterating-over-list-of-function-arguments
+        # https://www.delftstack.com/howto/python/parallel-for-loops-python/
+        time_start = time()
+        pool_obj = Pool()
+        answer = pool_obj.map(self.single_simulation, range(0, 3))
+        print('Time for-loop: ', time() - time_start)
 
     def af_nerve_position_nerve_shape(self):
         '''
