@@ -42,7 +42,7 @@ import os
 import pickle
 
 # Multiprocessing
-from multiprocessing import Pool
+import multiprocessing as mp
 
 Ui_MainWindow, QMainWindow = loadUiType('ui_master_sim.ui')
 scaling = 1e3  # ui and CST uses mm, we use um; elements from gui and e_field are scaled by scaling
@@ -171,12 +171,13 @@ class Main(QMainWindow, Ui_MainWindow):
         self.neuron_sim.quasipot()
         self.update_plot_widget()
 
-    def single_simulation(self, value):
+    def single_simulation(self, value, dic):
         if not self.neuron_sim:
             return
         self.neuron_sim.simple_simulation()
         self.neuron_sim.plot_simulation()
-        return value
+        dic[str(value)] = 10 * value
+        return dic
         # plt.show()
         # self.update_plot_widget()
 
@@ -240,18 +241,23 @@ class Main(QMainWindow, Ui_MainWindow):
 
     def threshold_search_multiprocessing(self):
         time_start = time()
-        for i in range(3):
-            self.single_simulation(i)
+        for i in range(2):
+            dic = self.single_simulation(i, dict())
         print('Time for-loop: ', time()-time_start)
-
+        print(dic)
         # Multiprocessing:
-        # https://superfastpython.com/multiprocessing-for-loop/
-        # https://stackoverflow.com/questions/66805185/parallel-python-for-loop-iterating-over-list-of-function-arguments
-        # https://www.delftstack.com/howto/python/parallel-for-loops-python/
         time_start = time()
-        pool_obj = Pool()
-        answer = pool_obj.map(self.single_simulation, range(0, 3))
-        print('Time for-loop: ', time() - time_start)
+        processes = []
+        manager = mp.Manager()
+        return_dict = manager.dict()
+        for i in range(4):
+            p = mp.Process(target=Main.single_simulation, args=(self,i,return_dict))
+            processes.append(p)
+
+        [x.start() for x in processes]
+        [x.join() for x in processes]
+        print(return_dict)
+        print('Time multiprocessing: ', time() - time_start)
 
     def af_nerve_position_nerve_shape(self):
         '''
