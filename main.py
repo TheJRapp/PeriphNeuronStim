@@ -174,6 +174,7 @@ class Main(QMainWindow, Ui_MainWindow):
     def single_simulation(self, value, dic):
         if not self.neuron_sim:
             return
+        print('Gooooo')
         self.neuron_sim.simple_simulation()
         self.neuron_sim.plot_simulation()
         dic[str(value)] = 10 * value
@@ -240,23 +241,30 @@ class Main(QMainWindow, Ui_MainWindow):
         print('Finished!')
 
     def threshold_search_multiprocessing(self):
-        time_start = time()
-        for i in range(2):
-            dic = self.single_simulation(i, dict())
-        print('Time for-loop: ', time()-time_start)
-        print(dic)
-        # Multiprocessing:
+        # time_start = time()
+        # for i in range(2):
+        #     dic = self.single_simulation(i, dict())
+        # print('Time for-loop: ', time()-time_start)
+        # print(dic)
+        # # Multiprocessing:
+
         time_start = time()
         processes = []
         manager = mp.Manager()
         return_dict = manager.dict()
-        for i in range(4):
-            p = mp.Process(target=Main.single_simulation, args=(self,i,return_dict))
-            processes.append(p)
+        # for i in range(4):
+        #     p = mp.Process(target=Main.single_simulation, args=(self,i,return_dict))
+        #     processes.append(p)
+        # [x.start() for x in processes]
+        # [x.join() for x in processes]
 
-        [x.start() for x in processes]
-        [x.join() for x in processes]
+        pool = mp.Pool()  # use all available cores, otherwise specify the number you want as an argument
+        for i in range(0, 8):
+            test_dict = pool.apply_async(Main.single_simulation, args=(self, range(5),return_dict,))
+        pool.close()
+        pool.join()
         print(return_dict)
+        print(test_dict)
         print('Time multiprocessing: ', time() - time_start)
 
     def af_nerve_position_nerve_shape(self):
@@ -301,6 +309,13 @@ class Main(QMainWindow, Ui_MainWindow):
         df.to_csv(path + project + '_' + file_name + 'potential_'+ '.csv', index=False, header=True)
         print('Finished!')
 
+
+    def undulation_montecalo(self):
+        sample_number = 100
+        fibre_amp = 200 * np.random.rand(sample_number)
+        fibre_lamb = 100 + 300 * np.random.rand(sample_number)
+        fascilce_amp = 1000 * np.random.rand(sample_number)
+        fascicle_lamb = 25000 + 50000 * np.random.rand(sample_number)
 
 
     def analyze_field_contributions(self):
