@@ -37,6 +37,7 @@ from copy import deepcopy
 import pandas as pd
 from datetime import date
 from time import time
+
 import glob
 import os
 import pickle
@@ -51,6 +52,13 @@ nerve_shape_step_size = 2
 internode_segments = 50
 node_segments = 1
 
+from itertools import product
+
+
+def merge_names(a, b):
+    return '{} & {}'.format(a, b)
+def testfunc(a, b):
+    return a+b
 
 class Main(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
@@ -258,14 +266,20 @@ class Main(QMainWindow, Ui_MainWindow):
         # [x.start() for x in processes]
         # [x.join() for x in processes]
 
-        pool = mp.Pool()  # use all available cores, otherwise specify the number you want as an argument
-        for i in range(0, 8):
-            test_dict = pool.apply_async(Main.single_simulation, args=(self, range(5),return_dict,))
-        pool.close()
-        pool.join()
-        print(return_dict)
-        print(test_dict)
+        names = ['Brown', 'Wilson', 'Bartlett', 'Rivera', 'Molloy', 'Opie']
+        tests = [(1,2) , (3,4), (5,6), (7,8)]
+        with mp.Pool(processes=3) as pool:
+            results = pool.starmap(Main.testfuncself, tests)
+            # results = pool.starmap(merge_names, product(names, repeat=2))
+        print(results)
+
         print('Time multiprocessing: ', time() - time_start)
+
+    # def merge_names(self, a, b):
+    #     return '{} & {}'.format(a, b)
+    def testfuncself(self, a, b):
+        return a + b
+
 
     def af_nerve_position_nerve_shape(self):
         '''
@@ -316,7 +330,18 @@ class Main(QMainWindow, Ui_MainWindow):
         fibre_lamb = 100 + 300 * np.random.rand(sample_number)
         fascilce_amp = 1000 * np.random.rand(sample_number)
         fascicle_lamb = 25000 + 50000 * np.random.rand(sample_number)
+        with mp.Pool(processes=3) as pool:
+            results = pool.starmap(self.undulation_find_max_af, product(fibre_amp, fascilce_amp, fibre_lamb, fascicle_lamb))
 
+    def undulation_find_max_af(self, amp1, amp2, lamb1, lamb2, coordinate):
+        key = 'amp1_'+str(amp1)+'_amp2_'+str(amp2)+'_lambda1_'+str(lamb1)+'_lambda2_'+str(lamb2)
+        self.nerve_widget.reset_axon()
+        self.create_neuronal_model()  # reset undulation
+        self.neuron_sim.axon.add_undulation(lamb2, amp2, coordinate)  # fascicle
+        self.neuron_sim.axon.add_undulation(lamb1, amp1, coordinate)  # fascicle
+        self.create_neuronal_model()
+        max_af = max(abs(np.diff(self.neuron_sim.axon.e_field_along_axon)))
+        return max_af
 
     def analyze_field_contributions(self):
         if not self.nerve_widget.nerve_dict:
