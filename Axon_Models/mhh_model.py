@@ -161,6 +161,7 @@ class Axon(object):
         node_start_points = [i * (spacings_per_internode + spacings_per_node + 1) for i in
                              range(self.number_node_internode_pairs+1)]
         internode_start_points = [i + spacings_per_node for i in node_start_points]
+        internode_start_points = internode_start_points[:-1]  # delete last element, since cable has one node more than internode
         spacings_per_in_seg = int((self.internode_length/self.nseg_internode) / self.spacing)
         spacings_per_n_seg = int((self.node_length / self.nseg_node) / self.spacing)
         if spacings_per_in_seg == 0:
