@@ -122,7 +122,6 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
 
     e_average_prev = 0
     quasi_pot_prev = 0
-
     offset = 0
     for j in range(len(cable.x)):
         # identify relevant e_field points
@@ -167,7 +166,6 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
             e_average_current = cable.seg_unit_vectors[j][0] * e_x[iy - r:iy + r, ix - r:ix + r, iz - r:iz + r].sum() + \
                                 cable.seg_unit_vectors[j][1] * e_y[iy - r:iy + r, ix - r:ix + r, iz - r:iz + r].sum() + \
                                 cable.seg_unit_vectors[j][2] * e_z[iy - r:iy + r, ix - r:ix + r, iz - r:iz + r].sum()
-
             # this section is new and must be evaluated ----------------------------------------------------------------
             if e_x[iy - r:iy + r, ix - r:ix + r, iz - r:iz + r].size > 0:
                 e_average_current = e_average_current / e_x[iy - r:iy + r, ix - r:ix + r, iz - r:iz + r].size
@@ -197,7 +195,6 @@ def quasi_potentials(stimulus, e_field, cable, interpolation_radius_index):
 
         e_average_prev = e_average_current
         quasi_pot_prev = quasi_pot_current
-
         e_field_along_axon.append(e_average_current)
         stim_matrix.append(stimulus * quasi_pot_current)
         quasi_pot_along_axon.append(quasi_pot_current)

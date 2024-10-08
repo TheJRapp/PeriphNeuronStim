@@ -7,7 +7,7 @@ from PyQt5 import uic, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
 
 import neuron_sim as ns
-from Axon_Models import mhh_model
+from Axon_Models import dummy_mhh_model as mhh_model
 import database
 
 Ui_NerveWidget, QWidget_Nerve = uic.loadUiType("ui_nerve_widget.ui")

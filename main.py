@@ -8,6 +8,7 @@ from PyQt5.uic import loadUiType
 from PyQt5 import uic, QtGui, QtWidgets
 
 import matplotlib
+#from scipy.special import result
 
 import input_data_widget
 
@@ -52,13 +53,30 @@ nerve_shape_step_size = 2
 internode_segments = 50
 node_segments = 1
 
-from itertools import product
+export_dict_max_af = {'amp1' : [], 'lamb1' : [], 'amp2' : [], 'lamb2' : [], 'max_af': []}
+export_dict_x = {}
+export_dict_y = {}
+export_dict_z = {}
+def log_result(results):
+    # This is called whenever undulation_find_max_af(i) returns a result.
+    # the dicts are modified only by the main process, not the pool workers.
+    export_dict_max_af['amp1'].append(results[0])
+    export_dict_max_af['lamb1'].append(results[2])
+    export_dict_max_af['amp2'].append(results[1])
+    export_dict_max_af['lamb2'].append(results[3])
+    export_dict_max_af['max_af'].append(results[4])
+    export_dict_x[results[5]] = results[6]
+    export_dict_y[results[5]] = results[7]
+    export_dict_z[results[5]] = results[8]
 
-
-def merge_names(a, b):
-    return '{} & {}'.format(a, b)
-def testfunc(a, b):
-    return a+b
+def undulation_find_max_af(axon, amp1, amp2, lamb1, lamb2, coordinate, e_field, time_ax, stimulus, tot_time):
+    key = 'amp1_'+str(amp1)+'_amp2_'+str(amp2)+'_lambda1_'+str(lamb1)+'_lambda2_'+str(lamb2)
+    working_axon = deepcopy(axon)
+    working_axon.add_undulation(lamb2, amp2, coordinate)  # fascicle
+    working_axon.add_undulation(lamb1, amp1, coordinate)  # fiber
+    stim_matrix, e_field_along_axon, potential_along_axon = mf.quasi_potentials(stimulus[0], e_field, working_axon, interpolation_radius_index)
+    max_af = max(abs(np.diff(e_field_along_axon)))
+    return amp1, amp2, lamb1, lamb2, max_af, key, working_axon.x, working_axon.y, working_axon.z
 
 class Main(QMainWindow, Ui_MainWindow):
     def __init__(self, ):
@@ -101,7 +119,7 @@ class Main(QMainWindow, Ui_MainWindow):
         self.stimulus_widget.stimulus_changed.connect(self.update_stimulus)
 
         self.threshold_config_button.clicked.connect(self.open_threshold_widget)
-        self.threshold_search_button.clicked.connect(self.threshold_search_multiprocessing)
+        self.threshold_search_button.clicked.connect(self.undulation_montecalo)
 
         self.e_field_along_axon_button.clicked.connect(self.create_neuronal_model)
         self.simulation_button.clicked.connect(self.single_simulation)
@@ -248,100 +266,48 @@ class Main(QMainWindow, Ui_MainWindow):
         df_ef_nodes.to_csv(project_id + '-' + experiment_no + '-' + 'e_field_nodes' + '.csv', index=False, header=True)
         print('Finished!')
 
-    def threshold_search_multiprocessing(self):
-        # time_start = time()
-        # for i in range(2):
-        #     dic = self.single_simulation(i, dict())
-        # print('Time for-loop: ', time()-time_start)
-        # print(dic)
-        # # Multiprocessing:
-
-        time_start = time()
-        processes = []
-        manager = mp.Manager()
-        return_dict = manager.dict()
-        # for i in range(4):
-        #     p = mp.Process(target=Main.single_simulation, args=(self,i,return_dict))
-        #     processes.append(p)
-        # [x.start() for x in processes]
-        # [x.join() for x in processes]
-
-        names = ['Brown', 'Wilson', 'Bartlett', 'Rivera', 'Molloy', 'Opie']
-        tests = [(1,2) , (3,4), (5,6), (7,8)]
-        with mp.Pool(processes=3) as pool:
-            results = pool.starmap(Main.testfuncself, tests)
-            # results = pool.starmap(merge_names, product(names, repeat=2))
-        print(results)
-
-        print('Time multiprocessing: ', time() - time_start)
-
-    # def merge_names(self, a, b):
-    #     return '{} & {}'.format(a, b)
-    def testfuncself(self, a, b):
-        return a + b
-
-
-    def af_nerve_position_nerve_shape(self):
-        '''
-        Description:
-        - E field with e_field and nerve shape
-        - Varies nerve position
-        - Calculate quasipotenital
-        - Write files
-            - e_field_along_axon
-            - potential along axon
-        Required:
-        Single axon, single e_field
-        What is done here:
-        Different postions of the axon
-        Output:
-        Dict with activation function for each offset
-        '''
-        if not self.nerve_widget.nerve_dict:
-            return
-        selected_nerve = self.nerve_widget.nerve_dict[self.nerve_widget.nerve_combo_box.currentText()]
-        if not selected_nerve.axon_list:
-            return
-        axon = selected_nerve.axon_list[0]
-        # Dict -----------------------------------------------------------------
-        export_dict_efield = {}
-        export_dict_potential = {}
-        x_offset = np.arange(-190000, 190000, 400)
-        for x in x_offset:
-            self.nerve_widget.get_selected_nerve().x = self.nerve_widget.get_selected_nerve().x + x
-            self.build_neuron_sim(axon)
-            self.neuron_sim.quasipot()
-            export_dict_efield[str(x)] = self.neuron_sim.axon.e_field_along_axon
-            export_dict_potential[str(x)] = self.neuron_sim.axon.potential_along_axon
-            self.nerve_widget.get_selected_nerve().x = self.nerve_widget.get_selected_nerve().x + x
-        path = 'Y:/Sonstiges/Stimit AG/'
-        project = 'phrenic'
-        file_name = '001'
-        df = pd.DataFrame(export_dict_efield)
-        df.to_csv(path + project + '_' + file_name + 'e_field_'+ '.csv', index=False, header=True)
-        df = pd.DataFrame(export_dict_potential)
-        df.to_csv(path + project + '_' + file_name + 'potential_'+ '.csv', index=False, header=True)
-        print('Finished!')
-
 
     def undulation_montecalo(self):
-        sample_number = 100
-        fibre_amp = 200 * np.random.rand(sample_number)
-        fibre_lamb = 100 + 300 * np.random.rand(sample_number)
-        fascilce_amp = 1000 * np.random.rand(sample_number)
-        fascicle_lamb = 25000 + 50000 * np.random.rand(sample_number)
-        with mp.Pool(processes=3) as pool:
-            results = pool.starmap(self.undulation_find_max_af, product(fibre_amp, fascilce_amp, fibre_lamb, fascicle_lamb))
+        project_id = 'AU_24'
+        experiment_no = '028'
 
-    def undulation_find_max_af(self, amp1, amp2, lamb1, lamb2, coordinate):
-        key = 'amp1_'+str(amp1)+'_amp2_'+str(amp2)+'_lambda1_'+str(lamb1)+'_lambda2_'+str(lamb2)
-        self.nerve_widget.reset_axon()
-        self.create_neuronal_model()  # reset undulation
-        self.neuron_sim.axon.add_undulation(lamb2, amp2, coordinate)  # fascicle
-        self.neuron_sim.axon.add_undulation(lamb1, amp1, coordinate)  # fascicle
-        self.create_neuronal_model()
-        max_af = max(abs(np.diff(self.neuron_sim.axon.e_field_along_axon)))
-        return max_af
+        sample_number = 5
+        # fibre_amp = 200 * np.random.rand(sample_number)
+        # fibre_lamb = 100 + 300 * np.random.rand(sample_number)
+        # fascilce_amp = 1000 * np.random.rand(sample_number)
+        # fascicle_lamb = 25000 + 50000 * np.random.rand(sample_number)
+        fibre_amp = np.linspace(0, 200, 10)
+        fibre_lamb = np.linspace(100, 400, 7)
+        fascicle_amp = np.linspace(0, 1000, 10)
+        fascicle_lamb = np.linspace(20000, 100000, 9)
+        axon = deepcopy(self.nerve_widget.axon_list[0])
+        coordinate = 'x'
+        e_field = deepcopy(self.input_data_widget.e_field)
+        time_ax = deepcopy(self.time_axis)
+        stimulus = deepcopy(self.stimulus)
+        tot_time = deepcopy(self.total_time)
+        print('Starting pool')
+        pool = mp.Pool()
+        time_start = time()
+        for amp1 in fibre_amp:
+            for lam1 in fibre_lamb:
+                for amp2 in fascicle_amp:
+                    for lam2 in fascicle_lamb:
+                        pool.apply_async(undulation_find_max_af, args=(axon, amp1, amp2, lam1, lam2, coordinate,
+                                                                       e_field, time_ax, stimulus, tot_time), callback=log_result)
+        pool.close()
+        pool.join()
+        print('Time : ', time() - time_start)
+        df_x_cable = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in export_dict_x.items()]))
+        df_y_cable = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in export_dict_y.items()]))
+        df_z_cable = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in export_dict_z.items()]))
+        df_max_af = pd.DataFrame(export_dict_max_af)
+        df_max_af.to_csv(project_id + '-' + experiment_no + '-' + 'max_af' + '.csv', index=False, header=True)
+        df_x_cable.to_csv(project_id + '-' + experiment_no + '-' + 'x_cable' + '.csv', index=False, header=True)
+        df_y_cable.to_csv(project_id + '-' + experiment_no + '-' + 'y_cable' + '.csv', index=False, header=True)
+        df_z_cable.to_csv(project_id + '-' + experiment_no + '-' + 'z_cable' + '.csv', index=False, header=True)
+        print('Finished!')
+
 
     def analyze_field_contributions(self):
         if not self.nerve_widget.nerve_dict:
