@@ -222,3 +222,19 @@ def plot_2d_field_with_cable(e_field, layer, nerve, scale):
     ax1f1 = fig1.add_subplot(111)
     ax1f1.imshow(e_modified, extent=[min(e_field.y)/scale, max(e_field.y)/scale, max(e_field.x)/scale, min(e_field.x)/scale])
     return fig1
+
+
+def plot_3d_nerve_shape_with_field(axon):
+    fig1 = plt.Figure()
+    ax1f1 = fig1.add_subplot(111, projection='3d')
+    sc = ax1f1.scatter3D(axon.x, axon.y, axon.z, c=axon.e_field_along_axon)
+    cbar = fig1.colorbar(sc)
+    return fig1
+
+
+def plot_2d_nerve_shape_with_field(axon):
+    fig1 = plt.Figure()
+    ax1f1 = fig1.add_subplot(111)
+    sc = ax1f1.scatter(axon.z, axon.y, c=axon.e_field_along_axon)
+    cbar = fig1.colorbar(sc)
+    return fig1

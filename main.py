@@ -86,6 +86,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.setWindowIcon(QtGui.QIcon('icon.png'))
         self.setWindowTitle("MFE Neuro Simulation")
 
+        self.add_plot(plt.figure())
+
         # E-Field widget
         self.input_data_widget = InputDataWidget()
 
@@ -115,6 +117,8 @@ class Main(QMainWindow, Ui_MainWindow):
         self.input_data_widget.nerve_shape_changed.connect(self.update_plot_widget)
         self.nerve_widget.axon_added.connect(self.update_plot_widget)
 
+        self.plot_widget.plot_requested.connect(self.change_plot)
+
         self.stimulus_button.clicked.connect(self.open_stimulus_widget)
         self.stimulus_widget.stimulus_changed.connect(self.update_stimulus)
 
@@ -126,18 +130,23 @@ class Main(QMainWindow, Ui_MainWindow):
 
         #self.mc_button.clicked.connect(self.add_undulation_pattern_2)
 
+    def change_plot(self,):
+        self.remove_plot()
+        fig = self.plot_widget.get_plot()
+        self.add_plot(fig)
+
     def add_plot(self, fig):
         self.canvas = FigureCanvas(fig)
-        self.e_field_layout.addWidget(self.canvas)
+        self.main_plot_layout.addWidget(self.canvas)
         self.canvas.draw()
         self.toolbar = NavigationToolbar(self.canvas,
-                                         self.input_data_widget, coordinates=True)
-        self.e_field_layout.addWidget(self.toolbar)
+                                         self.main_plot_widget, coordinates=True)
+        self.main_plot_layout.addWidget(self.toolbar)
 
     def remove_plot(self,):
-        self.e_field_layout.removeWidget(self.canvas)
+        self.main_plot_layout.removeWidget(self.canvas)
         self.canvas.close()
-        self.e_field_layout.removeWidget(self.toolbar)
+        self.main_plot_layout.removeWidget(self.toolbar)
         self.toolbar.close()
 
     def configure_efield(self):
@@ -164,6 +173,8 @@ class Main(QMainWindow, Ui_MainWindow):
             if axon.e_field_along_axon:
                 self.plot_widget.add_figure(plot_functions.plot_e_field_along_nerve(self.neuron_sim.axon.e_field_along_axon),
                                             'E_field_along_nerve')
+                self.plot_widget.add_figure(
+                    plot_functions.plot_2d_nerve_shape_with_field(axon), '2d nerve with field')
             if axon.potential_along_axon:
                 self.plot_widget.add_figure(plot_functions.plot_potential_along_nerve(self.neuron_sim.axon.potential_along_axon),
                                             'Potential_along_nerve')
@@ -197,16 +208,17 @@ class Main(QMainWindow, Ui_MainWindow):
         self.neuron_sim.quasipot()
         self.update_plot_widget()
 
-    def single_simulation(self, value, dic):
+    def single_simulation(self):
         if not self.neuron_sim:
             return
         print('Gooooo')
+        self.update_stimulus()
+        self.neuron_sim.stimulus = self.stimulus[0]
+        self.neuron_sim.quasipot()
         self.neuron_sim.simple_simulation()
         self.neuron_sim.plot_simulation()
-        dic[str(value)] = 10 * value
-        return dic
-        # plt.show()
-        # self.update_plot_widget()
+        plt.show()
+        self.update_plot_widget()
 
 
     def threshold_search_default(self):

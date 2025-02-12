@@ -123,7 +123,7 @@
        <item row="3" column="0">
         <widget class="QPushButton" name="threshold_search_button">
          <property name="text">
-          <string>Sarch threshold</string>
+          <string>Search threshold</string>
          </property>
         </widget>
        </item>
@@ -142,14 +142,14 @@
         </widget>
        </item>
        <item row="4" column="0" colspan="3">
-        <widget class="QWidget" name="axon_potential_widget" native="true">
+        <widget class="QWidget" name="main_plot_widget" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-         <layout class="QVBoxLayout" name="potential_layout"/>
+         <layout class="QVBoxLayout" name="main_plot_layout"/>
         </widget>
        </item>
       </layout>
@@ -163,7 +163,7 @@
      <x>0</x>
      <y>0</y>
      <width>1040</width>
-     <height>22</height>
+     <height>18</height>
     </rect>
    </property>
   </widget>
